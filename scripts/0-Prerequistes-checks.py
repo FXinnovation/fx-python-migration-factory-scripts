@@ -119,7 +119,7 @@ def check_windows(Servers_Windows, CEServerIP, Domain_User):
         final = ""
         command = "Invoke-Command -ComputerName " + s["server_fqdn"] + " -FilePath 0-Prerequistes-Windows.ps1 -ArgumentList " + CEServerIP
         if Domain_User != "":
-            command += " -Credential (New-Object System.Management.Automation.PSCredential(\"" + Domain_User + "\", (ConvertTo-SecureString \"" + Domain_Password + "\" -AsPlainText -Force))) -Authentication Negotiate"
+            command += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
         p = subprocess.Popen(["pwsh", "-Command", command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, error = p.communicate()
         if output != "":

@@ -226,6 +226,7 @@ def main(arguments):
     args = parser.parse_args(arguments)
     LoginHOST = endpoints['LoginApiUrl']
     UserHOST = endpoints['UserApiUrl']
+    Domain_User = args.WindowsUser
     print("")
     print("****************************")
     print("*Login to Migration factory*")
@@ -304,10 +305,10 @@ def main(arguments):
             for server in project['Windows']:
                 server_string = server_string + server['server_fqdn'] + ','
             server_string = server_string[:-1]
-            command = ".\\1-Install-Windows.ps1 \"No\" " + project['InstallToken'] + " " + server_string 
+            command = ".\\1-Install-Windows.ps1 \"No\" \"" + project['InstallToken'] + "\" \"" + server_string + "\""
             if Domain_User != "":
-              command += " " + Domain_User + " " + Domain_Password
-            p = subprocess.Popen(["pwsh", "-Command", command, stdout=sys.stdout)
+              command += " '" + Domain_User + "' '" + Domain_Password + "'"
+            p = subprocess.Popen(["pwsh", "-Command", command], stdout=sys.stdout)
             p.communicate()
         if len(project['Linux']) > 0:
             for server in project['Linux']:

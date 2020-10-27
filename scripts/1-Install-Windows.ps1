@@ -5,25 +5,23 @@ param ($reinstall = "No",
        $Password = ""
 )
 
-# Read Server name #
-
 function agent-install {
-Param($key, $account)
+Param($key, $account, $Username, $Password)
 
 $ScriptPath = "c:\Scripts\"
 if ($account -ne "") {
   foreach ($machine in $account) {
-  if ($Username != "") {
+  if ($Username -ne "") {
     $s = New-PSSession -ComputerName $machine -Credential (New-Object System.Management.Automation.PSCredential($Username, (ConvertTo-SecureString $Password -AsPlainText -Force))) -Authentication Negotiate
   }
   else {
     $s = New-PSSession -ComputerName $machine
   }
-  if ($reinstall -eq 'Yes' -or ($reinstall -eq 'No' -and (!(Invoke-Command -ComputerName $machine -ScriptBlock {Test-path "c:\Program Files (x86)\CloudEndure\dist\windows_service_wrapper.exe"})))) {
+  if ($reinstall -eq 'Yes' -or ($reinstall -eq 'No' -and (!(Invoke-Command -Session $s -ScriptBlock {Test-path "c:\Program Files (x86)\CloudEndure\dist\windows_service_wrapper.exe"})))) {
   write-host "--------------------------------------------------------"
   write-host "- Installing CloudEndure for:   $machine -" -BackgroundColor Blue
   write-host "--------------------------------------------------------"
-  if (!(Invoke-Command -Session $s -ScriptBlock {Test-path "c:\Scripts\"})) {Invoke-Command -ComputerName $machine -ScriptBlock {New-Item -Path "c:\Scripts\" -ItemType directory}}
+  if (!(Invoke-Command -Session $s -ScriptBlock {Test-path "c:\Scripts\"})) {Invoke-Command -Session $s -ScriptBlock {New-Item -Path "c:\Scripts\" -ItemType directory}}
   Invoke-Command -Session $s -ScriptBlock {(New-Object System.Net.WebClient).DownloadFile("https://console.cloudendure.com/installer_win.exe","C:\Scripts\installer_win.exe")}
   $fileexist = Invoke-Command -Session $s -ScriptBlock {Test-path "c:\Scripts\installer_win.exe"}
   if ($fileexist -eq "true") {
@@ -45,4 +43,4 @@ if ($account -ne "") {
   }
 }
 
-agent-install $API_Token $Servername
+agent-install $API_Token $Servername $Username $Password
