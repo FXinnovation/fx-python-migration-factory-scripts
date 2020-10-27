@@ -98,6 +98,7 @@ def main(arguments):
     args = parser.parse_args(arguments)
     LoginHOST = endpoints['LoginApiUrl']
     UserHOST = endpoints['UserApiUrl']
+    Domain_User = args.WindowsUser
     choice_flag = True
     choice = 3
     while choice_flag:
@@ -141,7 +142,7 @@ def main(arguments):
         for s in Servers:
             command1 = "Invoke-Command -ComputerName " + s + " -ScriptBlock {net user " + LocalAdminUser + " " + localadmin_pass + " /add}"
             if Domain_User != "":
-              command1 += " -Credential (New-Object System.Management.Automation.PSCredential(\"" + Domain_User + "\", (ConvertTo-SecureString \"" + Domain_Password + "\" -AsPlainText -Force))) -Authentication Negotiate"
+              command1 += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
             print("------------------------------------------------------")
             print("- Creating a local user on: " + s + " -")
             print("------------------------------------------------------")
@@ -149,7 +150,7 @@ def main(arguments):
             p.communicate()
             command2 = "Invoke-Command -ComputerName " + s + " -ScriptBlock {net localgroup Administrators " + LocalAdminUser + " /add}"
             if Domain_User != "":
-              command2 += " -Credential (New-Object System.Management.Automation.PSCredential(\"" + Domain_User + "\", (ConvertTo-SecureString \"" + Domain_Password + "\" -AsPlainText -Force))) -Authentication Negotiate"
+              command2 += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
             print("Adding user to local admin group on server: " + s)
             p = subprocess.Popen(["pwsh", "-Command", command2], stdout=sys.stdout)
             p.communicate()
@@ -165,7 +166,7 @@ def main(arguments):
         for s in Servers:
             command1 = "Invoke-Command -ComputerName " + s + " -ScriptBlock {net user " + LocalAdminUser + " /delete}"
             if Domain_User != "":
-              command1 += " -Credential (New-Object System.Management.Automation.PSCredential(\"" + Domain_User + "\", (ConvertTo-SecureString \"" + Domain_Password + "\" -AsPlainText -Force))) -Authentication Negotiate"
+              command1 += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
             print("------------------------------------------------------")
             print("- Deleting a local user on: " + s + " -")
             print("------------------------------------------------------")

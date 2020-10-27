@@ -96,6 +96,7 @@ def main(arguments):
     args = parser.parse_args(arguments)
     LoginHOST = endpoints['LoginApiUrl']
     UserHOST = endpoints['UserApiUrl']
+    Domain_User = args.WindowsUser
     print("")
     print("****************************")
     print("*Login to Migration factory*")
@@ -119,8 +120,8 @@ def main(arguments):
         command1 = "Invoke-Command -ComputerName " + server + " -ScriptBlock {if (!(Test-path \"" + dest_path + "\")) {New-Item -Path \"" + dest_path + "\"  -ItemType directory}}"
         command2 = "Copy-Item \""+ args.Source  +"/*\" \"" + dest_path + "\" -ToSession (New-PSSession -ComputerName '"+ server  +"')"
         if Domain_User != "":
-            command1 += " -Credential (New-Object System.Management.Automation.PSCredential(\"" + Domain_User + "\", (ConvertTo-SecureString \"" + Domain_Password + "\" -AsPlainText -Force))) -Authentication Negotiate"
-            command2 = "Copy-Item \""+ args.Source  +"/*\" \"" + dest_path + "\" -ToSession (New-PSSession -ComputerName '"+ server  +"'  -Authentication Negotiate -Credential (New-Object System.Management.Automation.PSCredential(\"" + Domain_User + "\", (ConvertTo-SecureString \"" + Domain_Password + "\" -AsPlainText -Force))))"
+            command1 += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
+            command2 = "Copy-Item \""+ args.Source  +"/*\" \"" + dest_path + "\" -ToSession (New-PSSession -ComputerName '"+ server  +"'  -Authentication Negotiate -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))))"
         print("Copying files to server: " + server)
         p1 = subprocess.Popen(["pwsh", "-Command", command1], stdout=sys.stdout)
         p1.communicate()
