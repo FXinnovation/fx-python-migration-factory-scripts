@@ -142,10 +142,11 @@ def main(arguments):
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--Waveid', required=True)
+    parser.add_argument('--WindowsUser', default="")
     args = parser.parse_args(arguments)
     LoginHOST = endpoints['LoginApiUrl']
     UserHOST = endpoints['UserApiUrl']
-
+    Domain_User = args.WindowsUser
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
@@ -156,10 +157,14 @@ def main(arguments):
         print("****************************")
         print("*Shutting down Windows servers*")
         print("****************************")
+        if Domain_User != "":
+          Domain_Password = getpass.getpass("Windows User Password: ")
         for s in winServers:
-            command = "Stop-Computer -ComputerName " + s + " -Force"
+            command = "Invoke-Command -ComputerName " + s + "-ScriptBlock {Stop-Computer -Force}"
+            if Domain_User != "":
+              command += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
             print("Shutting down server: " + s)
-            p = subprocess.Popen(["powershell.exe", command], stdout=sys.stdout)
+            p = subprocess.Popen(["pwsh", "-Command", command], stdout=sys.stdout)
             p.communicate()
     if len(linuxServers) > 0:
         print("")

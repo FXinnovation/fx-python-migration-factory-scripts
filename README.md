@@ -18,4 +18,4 @@ Linux and Windows compliant scripts for the migration factory.
 ## NOTE
 
 * This works only on Linux
-* `0-AddProxy-Windows.py` and `4-Shutdown-all-servers.py` are not working for now. 
+* `0-AddProxy-Windows.py` is not working for now. 
