@@ -6,6 +6,7 @@
 * feat: Add environment variable support for all asked credentials
 * feat: Add parameter to define where endpoint config file is locacted
 * feat: Add install script
+* chore: Change dos encoding file to unix
 
 ## 1.0.0
 
