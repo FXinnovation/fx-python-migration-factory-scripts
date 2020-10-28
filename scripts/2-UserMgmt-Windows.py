@@ -74,7 +74,7 @@ def main(arguments):
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--Waveid', required=True)
-    parser.add_argument('--WindowsUser', Default = os.environ.get('MF_WINDOWS_USERNAME', ''), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+    parser.add_argument('--WindowsUser', default = os.environ.get('MF_WINDOWS_USERNAME', ''), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
     parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', '/etc/migration_factory/endpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
     args = parser.parse_args(arguments)
 
@@ -123,7 +123,7 @@ def main(arguments):
     if Domain_User != "":
       if 'MF_WINDOWS_PASSWORD' not in os.environ:
             Domain_Password = getpass.getpass("Windows User Password: ")
-        else:
+      else:
             Domain_Password = os.getenv('MF_WINDOWS_PASSWORD')
     if choice == '1':
         print("")

@@ -456,7 +456,7 @@ def main(arguments):
     parser.add_argument('--Waveid', required=True)
     parser.add_argument('--CloudEndureProjectName', default="")
     parser.add_argument('--CEServerIP', required=True)
-    parser.add_argument('--WindowsUser', Default = os.environ.get('MF_WINDOWS_USERNAME', ''), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+    parser.add_argument('--WindowsUser', default = os.environ.get('MF_WINDOWS_USERNAME', ''), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
     parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', '/etc/migration_factory/endpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
     args = parser.parse_args(arguments)
 
