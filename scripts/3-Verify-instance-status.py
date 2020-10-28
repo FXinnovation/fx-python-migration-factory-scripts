@@ -7,6 +7,7 @@ import boto3
 import getpass
 import datetime
 import time
+import os
 
 HOST = 'https://console.cloudendure.com'
 headers = {'Content-Type': 'application/json'}
@@ -15,11 +16,6 @@ endpoint = '/api/latest/{}'
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
-
-with open('FactoryEndpoints.json') as json_file:
-    endpoints = json.load(json_file)
-LoginHOST = endpoints['LoginApiUrl']
-UserHOST = endpoints['UserApiUrl']
 
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
@@ -299,18 +295,42 @@ def main(arguments):
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--CloudEndureProjectName', required=True)
     parser.add_argument('--Waveid', required=True)
+    parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', 'FactoryEndpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+
     args = parser.parse_args(arguments)
+
+    with open('FactoryEndpoints.json') as json_file:
+      endpoints = json.load(json_file)
+
+    global LoginHOST, UserHOST
+    LoginHOST = endpoints['LoginApiUrl']
+    UserHOST = endpoints['UserApiUrl']
+
 
     print("******************************")
     print("* Login to Migration factory *")
     print("******************************")
-    token = Factorylogin(input("Factory Username: "), getpass.getpass('Factory Password: '), LoginHOST)
+    if 'MF_USERNAME' not in os.environ:
+        username = input('Factory Username: ')
+    else:
+        username = os.getenv('MF_USERNAME')
+    if 'MF_PASSWORD' not in os.environ:
+        password = getpass.getpass('Factory Password: ')
+    else:
+        password = os.getenv('MF_PASSWORD')
+
+    token = Factorylogin(username, password, LoginHOST)
 
     print("")
     print("************************")
     print("* Login to CloudEndure *")
     print("************************")
-    r = CElogin(input('CE API Token: '), endpoint)
+    if 'MF_CE_API_TOKEN' not in os.environ:
+        ce_api_token = input('CE API Token: ')
+    else:
+        ce_api_token = os.getenv('MF_CE_API_TOKEN')
+
+    r = CElogin(ce_api_token, endpoint)
     if r is not None and "ERROR" in r:
         print(r)
     project_id = GetCEProject(args.CloudEndureProjectName, session, headers, endpoint, HOST)
@@ -335,8 +355,16 @@ def main(arguments):
     print("*****************************")
     print("** Verify instance  status **")
     print("*****************************")
+    if 'MF_AWS_ACCESS_KEY_ID' not in os.environ:
+        aws_access_key_id = input("AWS Access key id: ")
+    else:
+        aws_access_key_id = os.getenv('MF_AWS_ACCESS_KEY_ID')
+    if 'MF_AWS_SECRET_ACCESS_KEY' not in os.environ:
+        aws_secret_acess_key = getpass.getpass('Secret access key: ')
+    else:
+        aws_secret_acess_key = os.getenv('MF_AWS_SECRET_ACCESS_KEY')
 
-    verify_instance_status(InstanceList, serverlist, token, input("AWS Access key id: "), getpass.getpass('Secret access key: '), region_id)
+    verify_instance_status(InstanceList, serverlist, token, aws_access_key_id, aws_secret_acess_key, region_id)
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

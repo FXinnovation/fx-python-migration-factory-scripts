@@ -7,13 +7,8 @@ import json
 import getpass
 import os
 
-
-with open('FactoryEndpoints.json') as json_file:
-    endpoints = json.load(json_file)
-
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
-
 
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
@@ -30,7 +25,6 @@ def Factorylogin(username, password, LoginHOST):
     else:
         print(r.text)
         sys.exit(2)
-
 
 def ServerList(waveid, token, UserHOST):
     # Get all Apps and servers from migration factory
@@ -78,7 +72,6 @@ def ServerList(waveid, token, UserHOST):
         print("")
         return serverlist
 
-
 def open_ssh(host, username, key_pwd, using_key):
     ssh = None
     try:
@@ -100,7 +93,6 @@ def open_ssh(host, username, key_pwd, using_key):
                 username + " due to " + str(ssh_exception)
         print(error)
     return ssh
-
 
 def upload_files(host, username, key_pwd, using_key, local_file_path):
     error = ''
@@ -136,21 +128,34 @@ def upload_files(host, username, key_pwd, using_key, local_file_path):
             ssh.close()
     return error
 
-
 def main(arguments):
     parser = argparse.ArgumentParser(description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--Waveid', required=True)
     parser.add_argument('--Source', required=True)
+    parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', 'FactoryEndpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+
     args = parser.parse_args(arguments)
+
+    with open('FactoryEndpoints.json') as json_file:
+      endpoints = json.load(json_file)
+
     LoginHOST = endpoints['LoginApiUrl']
     UserHOST = endpoints['UserApiUrl']
     print("")
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    token = Factorylogin(input("Factory Username: "),
-                         getpass.getpass('Factory Password: '), LoginHOST)
+    if 'MF_USERNAME' not in os.environ:
+        username = input('Factory Username: ')
+    else:
+        username = os.getenv('MF_USERNAME')
+    if 'MF_PASSWORD' not in os.environ:
+        password = getpass.getpass('Factory Password: ')
+    else:
+        password = os.getenv('MF_PASSWORD')
+
+    token = Factorylogin(username, password, LoginHOST)
 
     print("****************************")
     print("*Getting Server List*")

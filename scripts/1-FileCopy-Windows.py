@@ -5,9 +5,7 @@ import requests
 import json
 import subprocess
 import getpass
-
-with open('FactoryEndpoints.json') as json_file:
-    endpoints = json.load(json_file)
+import os
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
@@ -74,16 +72,33 @@ def main(arguments):
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--Waveid', required=True)
     parser.add_argument('--Source', required=True)
-    parser.add_argument('--WindowsUser', default="")
+    parser.add_argument('--WindowsUser', Default = os.environ.get('MF_WINDOWS_USERNAME', ''), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+    parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', 'FactoryEndpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
     args = parser.parse_args(arguments)
+
+    with open('FactoryEndpoints.json') as json_file:
+      endpoints = json.load(json_file)
+
     LoginHOST = endpoints['LoginApiUrl']
     UserHOST = endpoints['UserApiUrl']
+
     Domain_User = args.WindowsUser
+
     print("")
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    token = Factorylogin(input("Factory Username: ") , getpass.getpass('Factory Password: '), LoginHOST)
+
+    if 'MF_USERNAME' not in os.environ:
+        username = input('Factory Username: ')
+    else:
+        username = os.getenv('MF_USERNAME')
+    if 'MF_PASSWORD' not in os.environ:
+        password = getpass.getpass('Factory Password: ')
+    else:
+        password = os.getenv('MF_PASSWORD')
+
+    token = Factorylogin(username, password, LoginHOST)    
 
     print("****************************")
     print("*Getting Server List*")
@@ -96,7 +111,10 @@ def main(arguments):
     print("*************************************")
 
     if Domain_User != "":
-        Domain_Password = getpass.getpass("Windows User Password: ")
+      if 'MF_WINDOWS_PASSWORD' not in os.environ:
+            Domain_Password = getpass.getpass("Windows User Password: ")
+        else:
+            Domain_Password = os.getenv('MF_WINDOWS_PASSWORD')
     dest_path = "c:\\Program Files (x86)\\CloudEndure\\post_launch"
     for server in Servers:
         command1 = "Invoke-Command -ComputerName " + server + " -ScriptBlock {if (!(Test-path \"" + dest_path + "\")) {New-Item -Path \"" + dest_path + "\"  -ItemType directory}}"

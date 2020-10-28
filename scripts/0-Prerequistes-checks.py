@@ -7,9 +7,7 @@ import subprocess
 import getpass
 import paramiko
 import socket
-
-with open('FactoryEndpoints.json') as json_file:
-    endpoints = json.load(json_file)
+import os
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
@@ -89,7 +87,10 @@ def ServerList(waveid, token, UserHOST, Projectname):
 
 def check_windows(Servers_Windows, CEServerIP, Domain_User):
     if Domain_User != "":
-        Domain_Password = getpass.getpass("Windows User Password: ")
+        if 'MF_WINDOWS_PASSWORD' not in os.environ:
+            Domain_Password = getpass.getpass("Windows User Password: ")
+        else:
+            Domain_Password = os.getenv('MF_WINDOWS_PASSWORD')
     print("")
     windows_results = []
     for s in Servers_Windows:
@@ -455,15 +456,29 @@ def main(arguments):
     parser.add_argument('--Waveid', required=True)
     parser.add_argument('--CloudEndureProjectName', default="")
     parser.add_argument('--CEServerIP', required=True)
-    parser.add_argument('--WindowsUser', default="")
+    parser.add_argument('--WindowsUser', Default = os.environ.get('MF_WINDOWS_USERNAME', ''), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+    parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', 'FactoryEndpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
     args = parser.parse_args(arguments)
+
+    with open('FactoryEndpoints.json') as json_file:
+      endpoints = json.load(json_file)
+
     LoginHOST = endpoints['LoginApiUrl']
     UserHOST = endpoints['UserApiUrl']
     print("")
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    token = Factorylogin(input("Factory Username: ") , getpass.getpass('Factory Password: '), LoginHOST)
+    if 'MF_USERNAME' not in os.environ:
+        username = input('Factory Username: ')
+    else:
+        username = os.getenv('MF_USERNAME')
+    if 'MF_PASSWORD' not in os.environ:
+        password = getpass.getpass('Factory Password: ')
+    else:
+        password = os.getenv('MF_PASSWORD')
+
+    token = Factorylogin(username, password, LoginHOST)
 
     print("****************************")
     print("*** Getting Server List ****")

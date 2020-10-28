@@ -10,9 +10,6 @@ import paramiko
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
 
-with open('FactoryEndpoints.json') as json_file:
-    endpoints = json.load(json_file)
-
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
     r = requests.post(LoginHOST + '/prod/login',
@@ -124,15 +121,33 @@ def main(arguments):
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--Waveid', required=True)
-    parser.add_argument('--WindowsUser', default="")
+    parser.add_argument('--WindowsUser', Default = os.environ.get('MF_WINDOWS_USERNAME', ''), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+    parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', 'FactoryEndpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+
     args = parser.parse_args(arguments)
+
+    with open('FactoryEndpoints.json') as json_file:
+      endpoints = json.load(json_file)
+
     LoginHOST = endpoints['LoginApiUrl']
     UserHOST = endpoints['UserApiUrl']
+
     Domain_User = args.WindowsUser
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    token = Factorylogin(input("Factory Username: ") , getpass.getpass('Factory Password: '), LoginHOST)
+    
+    if 'MF_USERNAME' not in os.environ:
+        username = input('Factory Username: ')
+    else:
+        username = os.getenv('MF_USERNAME')
+    if 'MF_PASSWORD' not in os.environ:
+        password = getpass.getpass('Factory Password: ')
+    else:
+        password = os.getenv('MF_PASSWORD')
+
+    token = Factorylogin(username, password, LoginHOST)
+
     winServers, linuxServers = ServerList(args.Waveid, token, UserHOST,
                                    serverendpoint, appendpoint)
     if len(winServers) > 0:
@@ -140,7 +155,10 @@ def main(arguments):
         print("*Shutting down Windows servers*")
         print("****************************")
         if Domain_User != "":
-          Domain_Password = getpass.getpass("Windows User Password: ")
+          if 'MF_WINDOWS_PASSWORD' not in os.environ:
+            Domain_Password = getpass.getpass("Windows User Password: ")
+        else:
+            Domain_Password = os.getenv('MF_WINDOWS_PASSWORD')
         for s in winServers:
             command = "Invoke-Command -ComputerName " + s + " -ScriptBlock {Stop-Computer -Force}"
             if Domain_User != "":

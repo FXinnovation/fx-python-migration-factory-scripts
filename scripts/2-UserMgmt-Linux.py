@@ -4,15 +4,11 @@ import json
 import requests
 import getpass
 import paramiko
-
-
-with open('FactoryEndpoints.json') as json_file:
-    endpoints = json.load(json_file)
+import os
 
 
 server_endpoint = '/prod/user/servers'
 app_endpoint = '/prod/user/apps'
-
 
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
@@ -29,7 +25,6 @@ def Factorylogin(username, password, LoginHOST):
     else:
         print(r.text)
         sys.exit(2)
-
 
 def ServerList(waveid, token, UserHOST, Projectname):
     # Get all Apps and servers from migration factory
@@ -78,7 +73,6 @@ def ServerList(waveid, token, UserHOST, Projectname):
         print("")
         return servers_linux
 
-
 def open_ssh(host, username, key_pwd, using_key):
     ssh = None
     try:
@@ -100,7 +94,6 @@ def open_ssh(host, username, key_pwd, using_key):
                 username + " due to " + str(ssh_exception)
         print(error)
     return ssh
-
 
 def find_distribution(ssh):
     distribution = "linux"
@@ -124,7 +117,6 @@ def find_distribution(ssh):
         distribution = "suse"
     return distribution
 
-
 def get_add_user_cmd(ssh, new_user_name, new_user_password):
     try:
         distribution = find_distribution(ssh)
@@ -136,7 +128,6 @@ def get_add_user_cmd(ssh, new_user_name, new_user_password):
         print("Error while fetching add user command due to " + str(ex))
     else:
         return command
-
 
 def create_user(host, system_login_username, system_key_pwd, using_key, new_user_name, new_password):
     if not (new_user_name and new_password):
@@ -172,7 +163,6 @@ def create_user(host, system_login_username, system_key_pwd, using_key, new_user
         if ssh_client:
             ssh_client.close()
 
-
 def delete_linux_user(host, system_login_username, system_key_pwd, using_key, username_to_delete):
     if not username_to_delete:
         print("User name to delete cannot be null or empty")
@@ -204,16 +194,22 @@ def delete_linux_user(host, system_login_username, system_key_pwd, using_key, us
         if ssh_client:
             ssh_client.close()
 
-
 def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--Waveid', required=True)
     parser.add_argument('--CloudEndureProjectName', default="")
+    parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', 'FactoryEndpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+
     args = parser.parse_args(arguments)
+
+    with open('FactoryEndpoints.json') as json_file:
+      endpoints = json.load(json_file)
+
     LoginHOST = endpoints['LoginApiUrl']
     UserHOST = endpoints['UserApiUrl']
+
     choice_flag = True
     choice = 3
     while choice_flag:
@@ -232,8 +228,18 @@ def main(arguments):
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    token = Factorylogin(input("Factory Username: "),
-                         getpass.getpass('Factory Password: '), LoginHOST)
+
+    if 'MF_USERNAME' not in os.environ:
+        username = input('Factory Username: ')
+    else:
+        username = os.getenv('MF_USERNAME')
+    if 'MF_PASSWORD' not in os.environ:
+        password = getpass.getpass('Factory Password: ')
+    else:
+        password = os.getenv('MF_PASSWORD')
+
+    token = Factorylogin(username, password, LoginHOST)
+
     print("****************************")
     print("*** Getting Server List ****")
     print("****************************")

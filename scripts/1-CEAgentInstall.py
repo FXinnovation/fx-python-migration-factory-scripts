@@ -6,6 +6,7 @@ import json
 import subprocess
 import getpass
 import time
+import os
 linuxpkg = __import__("1-Install-Linux")
 
 
@@ -13,9 +14,6 @@ HOST = 'https://console.cloudendure.com'
 headers = {'Content-Type': 'application/json'}
 session = {}
 endpoint = '/api/latest/{}'
-
-with open('FactoryEndpoints.json') as json_file:
-    endpoints = json.load(json_file)
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
@@ -204,22 +202,43 @@ def main(arguments):
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--Waveid', required=True)
-    parser.add_argument('--WindowsUser', default="")
+    parser.add_argument('--WindowsUser', Default = os.environ.get('MF_WINDOWS_USERNAME', ''), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+    parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', 'FactoryEndpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
     args = parser.parse_args(arguments)
+
+    with open('FactoryEndpoints.json') as json_file:
+      endpoints = json.load(json_file)
+
     LoginHOST = endpoints['LoginApiUrl']
     UserHOST = endpoints['UserApiUrl']
+
     Domain_User = args.WindowsUser
+
     print("")
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    token = Factorylogin(input("Factory Username: ") , getpass.getpass('Factory Password: '), LoginHOST)
+    if 'MF_USERNAME' not in os.environ:
+        username = input('Factory Username: ')
+    else:
+        username = os.getenv('MF_USERNAME')
+    if 'MF_PASSWORD' not in os.environ:
+        password = getpass.getpass('Factory Password: ')
+    else:
+        password = os.getenv('MF_PASSWORD')
+
+    token = Factorylogin(username, password, LoginHOST)
 
     print("")
     print("************************")
     print("* Login to CloudEndure *")
     print("************************")
-    r = CElogin(input('CE API Token: '), endpoint)
+    if 'MF_CE_API_TOKEN' not in os.environ:
+        ce_api_token = input('CE API Token: ')
+    else:
+        ce_api_token = os.getenv('MF_CE_API_TOKEN')
+
+    r = CElogin(ce_api_token, endpoint)
     if r is not None and "ERROR" in r:
         print(r)
 
@@ -239,6 +258,7 @@ def main(arguments):
                    print("       " + s['server_fqdn'])
             if len(project['Linux']) > 0:
                 linux_machines = True
+
                 try:
                     print("   # Linux Server List #: ")
                     for s in project['Linux']:
@@ -279,7 +299,10 @@ def main(arguments):
     print("*********************************")
     print("")
     if Domain_User != "":
-        Domain_Password = getpass.getpass("Windows User Password: ")
+        if 'MF_WINDOWS_PASSWORD' not in os.environ:
+            Domain_Password = getpass.getpass("Windows User Password: ")
+        else:
+            Domain_Password = os.getenv('MF_WINDOWS_PASSWORD')
     server_status = {}
     for project in Projects:
         server_string = ""
