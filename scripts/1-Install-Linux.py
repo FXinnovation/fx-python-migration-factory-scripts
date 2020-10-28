@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import paramiko
 
 def execute_cmd(host, username, key, cmd, using_key):

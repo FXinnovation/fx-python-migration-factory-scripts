@@ -11,7 +11,9 @@ Linux and Windows compliant scripts for the migration factory.
 
 ## Installation
 
-1. Run the script install.sh 
+You need to have git and curl install on the machine. 
+
+1. Run the command `curl -L https://scm.dazzlingwrench.fxinnovation.com/fxinnovation-public/python-migration-factory-scripts/raw/tag/2.0.0/install.sh && ./install.sh && rm -f install.sh`
 1. Modify the file `/etc/migration_factory/endpoints.json` to add the user and login API
 1. Enjoy !
 
