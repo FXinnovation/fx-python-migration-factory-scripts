@@ -133,10 +133,10 @@ def main(arguments):
     parser.add_argument('--SSHPort', default="22")
     parser.add_argument('--RDPPort', default="3389")
     parser.add_argument('--CloudEndureProjectName', default="")
-    parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', 'FactoryEndpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+    parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', '/etc/migration_factory/endpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
     args = parser.parse_args(arguments)
 
-    with open('FactoryEndpoints.json') as json_file:
+    with open(args.EndpointConfigFile) as json_file:
       endpoints = json.load(json_file)
 
     LoginHOST = endpoints['LoginApiUrl']

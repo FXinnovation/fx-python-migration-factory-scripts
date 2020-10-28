@@ -97,10 +97,10 @@ def main(arguments):
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--Intakeform', required=True)
-    parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', 'FactoryEndpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+    parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', '/etc/migration_factory/endpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
     args = parser.parse_args(arguments)
 
-    with open('FactoryEndpoints.json') as json_file:
+    with open(args.EndpointConfigFile) as json_file:
       endpoints = json.load(json_file)
 
     global LoginHOST, UserHOST
