@@ -5,7 +5,7 @@ config=/etc/migration_factory
 
 sudo cp scripts/* /usr/local/bin/
 sudo mkdir -p $config
-sudo cp endpoints.json $config
+sudo cp config/endpoints.json $config
 sudo mkdir -p $doc
-sudo cp 0-import-tags.csv 0-Migration-intake-form.csv $doc
+sudo cp config/0-import-tags.csv config/0-Migration-intake-form.csv $doc
 rm -rf $tmp_folder
