@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.0
+
+* feat: Add `mf_setup_environment` script
+
 ## 2.0.0
 
 * feat (BREAKING): Default endpoint config file is now located in `/etc/migration_factory/`
