@@ -1,0 +1,91 @@
+#!/usr/bin/sh
+
+if [ "$#" -ne 1 ] && [ "$#" -ne 0 ]
+then
+  echo "Usage: $0 [-o]" >&2
+  exit -1
+fi
+
+force=0
+
+if [ "$#" -eq 1 ]
+then
+  if [[ $1 != "-o" ]]
+    then "Usage: $0 [-o]" >&2
+    exit -1
+  else
+    force=1
+  fi
+fi
+
+echo "Setting up your environment for migration factory"
+
+if [[ -z $MF_USERNAME ]] || [ "$force" -eq 1 ]
+then
+  read -p "Factory username: " username
+  echo "Setting MF_USERNAME environment variable ..."
+  export MF_USERNAME=$username
+  echo "  ✔ Done"
+else
+  echo "MF_USERNAME already set. Skipping..."
+fi
+
+if [[ -z $MF_PASSWORD ]] || [ "$force" -eq 1 ]
+then
+  read -s -p "Factory password: " password
+  echo "Setting MF_PASSWORD environment variable ..."
+  export MF_PASSWORD=$password
+  echo "  ✔ Done"
+else
+  echo "MF_PASSWORD already set. Skipping..."
+fi
+
+if [[ -z $MF_CE_API_TOKEN ]] || [ "$force" -eq 1 ]
+then
+  read -s -p "Cloud Endure API token: " api_token
+  echo "Setting MF_CE_API_TOKEN environment variable ..."
+  export MF_CE_API_TOKEN=$api_token
+  echo "  ✔ Done"
+else
+  echo "MF_CE_API_TOKEN already set. Skipping..."
+fi
+
+if [[ -z $MF_WINDOWS_USERNAME ]] || [ "$force" -eq 1 ]
+then
+  read -p "Windows username: " username_windows
+  echo "Setting MF_WINDOWS_USERNAME environment variable ..."
+  export MF_WINDOWS_USERNAME=$username_windows
+  echo "  ✔ Done"
+else
+  echo "MF_WINDOWS_USERNAME already set. Skipping..."
+fi
+
+if [[ -z $MF_WINDOWS_PASSWORD ]] || [ "$force" -eq 1 ]
+then
+  read -s -p "Windows password: " password_windows
+  echo "Setting MF_WINDOWS_PASSWORD environment variable ..."
+  export MF_WINDOWS_PASSWORD=$password_windows
+  echo "  ✔ Done"
+else
+  echo "MF_WINDOWS_PASSWORD already set. Skipping..."
+fi
+
+if [[ -z $MF_AWS_ACCESS_KEY_ID ]] || [ "$force" -eq 1 ]
+then
+  read -p "AWS access key ID: " aws_access_key_id
+  echo "Setting MF_AWS_ACCESS_KEY_ID environment variable ..."
+  export MF_AWS_ACCESS_KEY_ID=$aws_access_key_id
+  echo "  ✔ Done"
+else
+  echo "MF_AWS_ACCESS_KEY_ID already set. Skipping..."
+fi
+
+if [[ -z $MF_AWS_SECRET_ACCESS_KEY ]] || [ "$force" -eq 1 ]
+then
+  read -s -p "AWS secret access key: " aws_secret_access_key
+  echo "Setting MF_AWS_SECRET_ACCESS_KEY environment variable ..."
+  export MF_AWS_SECRET_ACCESS_KEY=$aws_secret_access_key
+  echo "  ✔ Done"
+else
+  echo "MF_AWS_SECRET_ACCESS_KEY already set. Skipping..."
+fi

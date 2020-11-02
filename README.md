@@ -17,6 +17,7 @@ You need to have git and curl install on the machine.
 1. Move to into it
 1. Run `install.sh`
 1. Modify the file `/etc/migration_factory/endpoints.json` to add the user and login API
+1. *optional* - Add an alias on your shell profile to run the script `mf_setup_environment` properly. `alias mf_setup_environment="source /usr/local/bin/mf_setup_environment"`
 1. Enjoy !
 
 ## Environment variable
@@ -31,6 +32,8 @@ Here are all supported environment variable:
 * `MF_ENDPOINT_CONFIG_FILE`: The location of endpoint config file
 * `MF_WINDOWS_USERNAME`: The Windows username to connect to source host
 * `MF_WINDOWS_PASSWORD`: The Windows password to connect to source host
+
+You can also use the command `source mf_setup_environment` to set all those environment variable
 
 ## NOTE
 
