@@ -33,7 +33,7 @@ Here are all supported environment variable:
 * `MF_WINDOWS_USERNAME`: The Windows username to connect to source host
 * `MF_WINDOWS_PASSWORD`: The Windows password to connect to source host
 
-You can also use the command `source mf_setup_environment` to set all those environment variable
+You can also use the command `source mf_setup_environment` to set all these environment variables
 
 ## NOTE
 
