@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0
+
+* refactor (BREAKING): Rename scripts
+
 ## 2.1.0
 
 * feat: Add `mf_setup_environment` script
