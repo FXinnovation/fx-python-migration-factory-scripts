@@ -1,0 +1,24 @@
+# This configuration file contains default values for CloudEndure migration factory
+
+# Environment name (this is a logical container for default values - can represent a wave, a workload, an account or anything else)
+# You can duplicate this block if you have multiple environments
+environment:
+  # Subnet where the replication servers for CloudEndure will be created
+  replication_subnet_id: subnet-0a5802dc352c7b10c
+  # Security group IDs to bind to the destination instance, in the cutover subnet
+  target_security_group_ids:
+    - sg-0665bf7bc6bfda502
+  # Subnet ID where to create the destination instances
+  target_subnet_id: subnet-0b5c747378f8c86c7
+  # Security group IDs to bind to the destination instance, in the test subnet
+  test_security_group_ids:
+    - sg-0665bf7bc6bfda502
+  # Subnet ID where to create the destination test instances, before the cutover
+  test_subnet_id: subnet-04606316f055a675e
+  # IAM role to attach to all destination instances
+  iam_role:
+  # Security group ID to be duplicated and attach to any destination instance (test & cutover).
+  # Will be merged with Security Group IDs defined as defaults
+  template_security_group_id: sg-031d550cb0989b743
+  # AWS account ID of the environemnt
+  account_id: 429862036125
