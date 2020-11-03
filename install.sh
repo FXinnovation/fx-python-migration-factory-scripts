@@ -8,7 +8,6 @@ DEFAULTS_FILE=defaults.yml
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 set -e
-set -x
 
 display_help() {
   echo "$0"
@@ -55,9 +54,9 @@ install_without_override() {
 
 check_arguments "$@"
 
-#git reset --hard HEAD
-#git checkout master
-#git pull --rebase origin master
+git reset --hard HEAD
+git checkout master
+git pull --rebase origin master
 
 sudo cp scripts/* /usr/local/bin/
 sudo mkdir -p "$CONFIG_DESTINATION_PATH"
