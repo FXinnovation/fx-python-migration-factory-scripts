@@ -8,6 +8,7 @@ DEFAULTS_FILE=defaults.yml
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 set -e
+set -x
 
 display_help() {
   echo "$0"
@@ -54,9 +55,9 @@ install_without_override() {
 
 check_arguments "$@"
 
-git reset --hard HEAD
-git checkout master
-git pull --rebase origin master
+#git reset --hard HEAD
+#git checkout master
+#git pull --rebase origin master
 
 sudo cp scripts/* /usr/local/bin/
 sudo mkdir -p "$CONFIG_DESTINATION_PATH"
@@ -68,7 +69,7 @@ sudo mkdir -p "$DOC"
 sudo cp config/0-import-tags.csv config/0-Migration-intake-form.csv "$DOC"
 
 if [ "$INSTALL_CRON" = true ] ; then
-    if [ $(crontab -l | grep -q "*/10 * * * * $DIR/$0") ] ; then
+    if [ $(crontab -l | grep -q "$DIR/$0" && echo 0 || echo 1) -eq 1 ] ; then
         crontab -l > install_mf_script
         echo "*/10 * * * * $DIR/$0" >> install_mf_script
         crontab install_mf_script
