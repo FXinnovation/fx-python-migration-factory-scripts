@@ -1,4 +1,7 @@
-# Changelog
+## 3.1.0
+
+* feat: improve installation script to handle cron creation
+* feat: improve installation script to create a .new file
 
 ## 3.0.0
 
