@@ -1,4 +1,5 @@
 {
     "LoginApiUrl":"https://xxxxxx.execute-api.us-east-1.amazonaws.com",
-    "UserApiUrl":"https://xxxxxx.execute-api.us-east-1.amazonaws.com"
+    "UserApiUrl":"https://xxxxxx.execute-api.us-east-1.amazonaws.com",
+    "AdminApiUrl":"https://xxxxxx.execute-api.us-east-1.amazonaws.com"
 }
