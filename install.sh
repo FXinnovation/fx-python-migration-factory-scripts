@@ -38,6 +38,10 @@ check_arguments() {
 
 check_arguments "$@"
 
+git reset --hard HEAD
+git checkout master
+git pull --rebase origin master
+
 sudo cp scripts/* /usr/local/bin/
 sudo mkdir -p "$CONFIG_DESTINATION_PATH"
 
