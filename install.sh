@@ -7,7 +7,7 @@ ENDPOINT_FILE=endpoints.json
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 display_help() {
-  echo "install.sh"
+  echo "$0"
   echo " "
   echo "options:"
   echo "-h, --help                show brief help"
@@ -22,7 +22,6 @@ check_arguments() {
       display_help
       ;;
     --cron)
-      shift
       INSTALL_CRON=true
       shift
       ;;
@@ -52,7 +51,7 @@ sudo cp config/0-import-tags.csv config/0-Migration-intake-form.csv $DOC
 
 if [ "$INSTALL_CRON" = true ] ; then
     crontab -l > install_mf_script
-    echo "*/10 * * * * $DIR/install.sh" >> install_mf_script
+    echo "*/10 * * * * $DIR/$0" >> install_mf_script
     crontab install_mf_script
     rm install_mf_script
 fi
