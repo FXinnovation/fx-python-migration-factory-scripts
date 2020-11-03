@@ -13,9 +13,9 @@ Linux and Windows compliant scripts for the migration factory.
 
 You need to have git and curl install on the machine. 
 
-1. Clone the repository https://scm.dazzlingwrench.fxinnovation.com/fxinnovation-public/python-migration-factory-scripts
-1. Move to into it
-1. Run `install.sh`
+1. Clone this repository;
+1. Move to into it;
+1. Run `install.sh`. You can use `--cron` to force scripts installation regularly, making sure VCS and server have the same code;
 1. Modify the file `/etc/migration_factory/endpoints.json` to add the user and login API
 1. *optional* - Add an alias on your shell profile to run the script `mf_setup_environment` properly. `alias mf_setup_environment="source /usr/local/bin/mf_setup_environment"`
 1. Enjoy !
