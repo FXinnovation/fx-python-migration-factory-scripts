@@ -20,5 +20,5 @@ environment:
   # Security group ID to be duplicated and attach to any destination instance (test & cutover).
   # Will be merged with Security Group IDs defined as defaults
   template_security_group_id: sg-031d550cb0989b743
-  # AWS account ID of the environemnt
+  # AWS account ID of the environment
   account_id: 429862036125

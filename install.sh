@@ -4,6 +4,7 @@ INSTALL_CRON=false
 DOC=/usr/local/share/applications/migration_factory
 CONFIG_DESTINATION_PATH=/etc/migration_factory
 ENDPOINT_FILE=endpoints.json
+DEFAULTS_FILE=defaults.yml
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 set -e
@@ -36,6 +37,21 @@ check_arguments() {
   done
 }
 
+install_without_override() {
+  local source_file="$1"
+  local destination_file="$2"
+
+  if [ -f "$destination_file.new" ]; then
+    cmp --silent "$source_file" "$destination_file.new" || cp "$source_file" "$destination_file.new"
+  else
+    if [ -f "$destination_file" ]; then
+      cmp --silent "$source_file" "$destination_file" || cp "$source_file" "$destination_file.new"
+    else
+      cp "$source_file" "$destination_file"
+    fi
+  fi
+}
+
 check_arguments "$@"
 
 git reset --hard HEAD
@@ -45,21 +61,14 @@ git pull --rebase origin master
 sudo cp scripts/* /usr/local/bin/
 sudo mkdir -p "$CONFIG_DESTINATION_PATH"
 
-if [ -f "$CONFIG_DESTINATION_PATH/$ENDPOINT_FILE.new" ]; then
-    cmp --silent "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDPOINT_FILE.new" || cp "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDPOINT_FILE.new"
-else
-  if [ -f "$CONFIG_DESTINATION_PATH/$ENDPOINT_FILE" ]; then
-    cmp --silent "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDPOINT_FILE" || cp "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDPOINT_FILE.new"
-  else
-    cp "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_FILE/$ENDPOINT_FILE"
-  fi
-fi
+install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDPOINT_FILE"
+install_without_override "config/$DEFAULTS_FILE" "$CONFIG_DESTINATION_PATH/$DEFAULTS_FILE"
 
 sudo mkdir -p "$DOC"
 sudo cp config/0-import-tags.csv config/0-Migration-intake-form.csv "$DOC"
 
 if [ "$INSTALL_CRON" = true ] ; then
-    if [ `crontab -l | grep -q "*/10 * * * * $DIR/$0"` ] ; then
+    if [ $(crontab -l | grep -q "*/10 * * * * $DIR/$0") ] ; then
         crontab -l > install_mf_script
         echo "*/10 * * * * $DIR/$0" >> install_mf_script
         crontab install_mf_script
