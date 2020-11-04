@@ -26,6 +26,8 @@ class DefaultsLoader:
         with open(default_config_file, 'r') as stream:
             try:
                 all_defaults = yaml.safe_load(stream)
+                if not environment in all_defaults:
+                    raise Exception('Environment “'+ environment +'” does not exists in “'+ default_config_file +'”.')
                 self._defaults = all_defaults[environment]
                 logging.debug(self._defaults)
 
