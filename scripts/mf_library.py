@@ -27,7 +27,7 @@ class DefaultsLoader:
                 logging.debug(self._defaults)
 
                 for environment, defaults in all_defaults.items():
-                    Utils.check_is_serializable_as_path(environment)
+                    Utils.check_is_serializable_as_path(string_to_test=environment)
                     self._environments.append(environment)
             except yaml.YAMLError as exception:
                 logging.error(exception)

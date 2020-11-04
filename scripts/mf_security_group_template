@@ -7,7 +7,6 @@ from pathlib import Path
 from shutil import copy2
 import re
 from mf_library import DefaultsLoader
-from mf_library import Logger
 import mf_library
 import logging
 
