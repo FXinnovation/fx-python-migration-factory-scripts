@@ -1,3 +1,10 @@
+## 3.2.0
+
+* feat: `mf_import_intake_form` Add wave id in outputs
+* fix: wrong path for powershell libraries
+* fix: `mf_setup_environment` issue with backslashes
+* refactor: `mf_setup_environment` de-duplicate code
+
 ## 3.1.0
 
 * feat: improve installation script to handle cron creation
