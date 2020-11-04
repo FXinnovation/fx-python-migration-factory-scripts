@@ -97,8 +97,13 @@ def uploading_data(data, token):
             wave_name = {}
             wave_name['wave_name'] = "Wave " + wave
             r = requests.post(UserHOST + waveendpoint, headers=auth, data=json.dumps(wave_name))
+            new_waves = json.loads(requests.get(UserHOST + waveendpoint, headers=auth).text)
+            for new_wave in new_waves:
+                if wave_name['wave_name'] == new_wave['wave_name']:
+                    new_wave_id = new_wave['wave_id']
+                    break
             if r.status_code == 200:
-                print("Wave " + wave + " created in the migration factory")
+                print("Wave " + wave + " (ID: " + new_wave_id + ") created in the migration factory")
             else:
                 print("Wave " + wave + " failed : " + r.text + ".......")
         print("")
