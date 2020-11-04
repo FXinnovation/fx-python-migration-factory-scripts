@@ -18,6 +18,7 @@ DIRECTORY_POST_LAUNCH='post-launch'
 
 class DefaultsLoader:
     _defaults = {}
+    _environments = []
 
     def load(self, default_config_file, environment):
         with open(default_config_file, 'r') as stream:
@@ -27,13 +28,16 @@ class DefaultsLoader:
                 logging.debug(self._defaults)
 
                 for environment, defaults in all_defaults.items():
-                    self.Utils.check_is_serializable_as_path(string_to_test=environment)
+                    Utils().check_is_serializable_as_path(string_to_test=environment)
                     self._environments.append(environment)
             except yaml.YAMLError as exception:
                 logging.error(exception)
 
     def get(self):
         return self._defaults
+
+    def getAllEnvironments(self):
+        return self._environments
 
 class Utils:
     def check_is_serializable_as_path(self, string_to_test):
