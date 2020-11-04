@@ -31,7 +31,7 @@ class TemplateSecurityGroupCreator:
         defaults_loader = DefaultsLoader()
         self._defaults = defaults_loader.load(default_config_file=self._arguments.config_file_defaults, environment=self._arguments.environment)
 
-        environment_arg.choices = self._defaults[defaults_loader.getAllEnvironments()]
+        environment_arg.choices = defaults_loader.getAvailableEnvironments()
 
         self._arguments = parser.parse_args()
 
