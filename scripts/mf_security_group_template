@@ -8,10 +8,11 @@ from shutil import copy2
 import re
 from mf_library import DefaultsLoader
 from mf_library import Logger
-
+import mf_library
+import logging
 
 class TemplateSecurityGroupCreator:
-    """ Prepare Migration Factory wave """
+    """ Create copies of template security groups """
 
     _arguments = []
     _defaults = {}
@@ -23,11 +24,12 @@ class TemplateSecurityGroupCreator:
         parser.add_argument('-v', action='store_true', help='Enable debug outputs')
         parser.add_argument('--wave-name', required=True, help='Name of the wave to prepare')
         parser.add_argument('--config-file-defaults', default=os.environ.get('MF_DEFAULTS_CONFIG_FILE', '/etc/migration_factory/defaults.yml'), help='Configuration file containing default IDs')
-        environment_arg = parser.add_argument('--environment', help='Environment of the wave')
+        environment_arg = parser.add_argument('--environment', default='prod', help='Environment of the wave')
 
         self._arguments = parser.parse_args()
 
-        defaults_loader = DefaultsLoader(Logger(self._arguments.v))
+        mf_library.setup_logging(self._arguments.v)
+        defaults_loader = DefaultsLoader()
         self._defaults = defaults_loader.load(default_config_file=self._arguments.config_file_defaults, environment=self._arguments.environment)
 
         environment_arg.choices = self._defaults[self._environments]
@@ -36,6 +38,8 @@ class TemplateSecurityGroupCreator:
 
         self._check_is_serializable_as_path(self._arguments.wave_name)
         self._path_wave = os.path.join(self.PATH_HOME, self._arguments.wave_name)
+
+        logging.debug('TEST')
 
     def create(self):
         pass
