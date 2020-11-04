@@ -17,6 +17,8 @@ FILE_DONE_MARKER='.mf_done'
 DIRECTORY_POST_LAUNCH='post-launch'
 
 class DefaultsLoader:
+    """ Loads default configuration values for every wave and fetch available environments """
+
     _defaults = {}
     _available_environments = []
 
@@ -40,6 +42,8 @@ class DefaultsLoader:
         return self._available_environments
 
 class Utils:
+    """ Primitive type utilities """
+
     def check_is_serializable_as_path(self, string_to_test):
         is_serializable_as_path = re.search("^[a-zA-Z0-9_-]+$", string_to_test)
         if not is_serializable_as_path:

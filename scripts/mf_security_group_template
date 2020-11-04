@@ -7,6 +7,7 @@ from pathlib import Path
 from shutil import copy2
 import re
 from mf_library import DefaultsLoader
+from mf_library import Utils
 import mf_library
 import logging
 
@@ -35,7 +36,7 @@ class TemplateSecurityGroupCreator:
 
         self._arguments = parser.parse_args()
 
-        self._check_is_serializable_as_path(self._arguments.wave_name)
+        Utils().check_is_serializable_as_path(self._arguments.wave_name)
         self._path_wave = os.path.join(self.PATH_HOME, self._arguments.wave_name)
 
         logging.debug('TEST')
