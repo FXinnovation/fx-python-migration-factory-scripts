@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import logging, sys
+from pathlib import Path
+from shutil import copy2
+import re
+from mf_library import DefaultsLoader
+from mf_library import Logger
+
+
+class TemplateSecurityGroupCreator:
+    """ Prepare Migration Factory wave """
+
+    _arguments = []
+    _defaults = {}
+    _environments = []
+    _path_wave = ''
+
+    def __init__(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-v', action='store_true', help='Enable debug outputs')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to prepare')
+        parser.add_argument('--config-file-defaults', default=os.environ.get('MF_DEFAULTS_CONFIG_FILE', '/etc/migration_factory/defaults.yml'), help='Configuration file containing default IDs')
+        environment_arg = parser.add_argument('--environment', help='Environment of the wave')
+
+        self._arguments = parser.parse_args()
+
+        defaults_loader = DefaultsLoader(Logger(self._arguments.v))
+        self._defaults = defaults_loader.load(default_config_file=self._arguments.config_file_defaults, environment=self._arguments.environment)
+
+        environment_arg.choices = self._defaults[self._environments]
+
+        self._arguments = parser.parse_args()
+
+        self._check_is_serializable_as_path(self._arguments.wave_name)
+        self._path_wave = os.path.join(self.PATH_HOME, self._arguments.wave_name)
+
+    def create(self):
+        pass
+
+
+if __name__ == '__main__':
+    template_sg_creator = TemplateSecurityGroupCreator()
+    template_sg_creator.create()
