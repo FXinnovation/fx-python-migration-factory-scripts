@@ -11,6 +11,7 @@ import time
 import os
 linuxpkg = __import__("mf_install_linux_package")
 
+PATH = os.path.dirname(os.path.abspath(__file__))
 
 HOST = 'https://console.cloudendure.com'
 headers = {'Content-Type': 'application/json'}
@@ -312,7 +313,7 @@ def main(arguments):
             for server in project['Windows']:
                 server_string = server_string + server['server_fqdn'] + ','
             server_string = server_string[:-1]
-            command = ".\\mf_install_windows.ps1 \"No\" \"" + project['InstallToken'] + "\" \"" + server_string + "\""
+            command = PATH + "/mf_install_windows.ps1 \"No\" \"" + project['InstallToken'] + "\" \"" + server_string + "\""
             if Domain_User != "":
               command += " '" + Domain_User + "' '" + Domain_Password + "'"
             p = subprocess.Popen(["pwsh", "-Command", command], stdout=sys.stdout)
