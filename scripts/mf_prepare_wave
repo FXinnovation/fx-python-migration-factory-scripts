@@ -58,25 +58,26 @@ class WavePreparator:
         copy2(self.FILE_CSV_INIT_WAVE_TEMPLATE, self._path_wave)
         print('✔ Done')
 
-        #        print('### Pre-fill .csv templates…', end=' ')
-        #       with open(os.path.join(self._path_wave, self.FILE_CSV_WAVE_TEMPLATE), 'a') as file_object:
-        #            file_object.write(','.join([
-        #                self._arguments.wave_name,
-        #                'SET_APP_NAME_VALUE',
-        #                'SET_CE_PROJECT_NAME',
-        #                self._defaults.account_id,
-        #                'SET_SERVERNAME',
-        #                'SET_SERVEROS',
-        #                'SET_SERVEROS_VERSION',
-        #                'SET_SERVER_FQDN',
-        #                'SET_SERVERTIER',
-        #                self._defaults.subnet_id,
-        #                self._defaults.security_group_id,
-        #
-        #            ]))
-        #        copy2(self.FILE_CSV_WAVE_TEMPLATE, self._path_wave)
-        #        copy2(self.FILE_CSV_INIT_WAVE_TEMPLATE, self._path_wave)
-        #        print('✔ Done')
+        print('### Pre-fill .csv templates…', end=' ')
+        with open(os.path.join(self._path_wave, self.FILE_CSV_WAVE_TEMPLATE), 'a') as file_object:
+            file_object.write(','.join([
+                self._arguments.wave_name,
+                'SET_APP_NAME_VALUE',
+                self._arguments.wave_name,
+                self._defaults.account_id,
+                'SET_SERVERNAME',
+                'SET_SERVEROS',
+                'SET_SERVEROS_VERSION',
+                'SET_SERVER_FQDN',
+                'app',
+                self._defaults.subnet_id,
+                self._defaults.security_group_id,
+                self._defaults.test_subnet_id,
+                self._defaults.test_security_group_ids,
+                'SET_INSTANCE_TYPE',
+                'SharedORDedicatedORDedicated Host',
+            ]))
+        print('✔ Done')
 
         print('### Add marker…', end=' ')
         Path(os.path.join(self._path_wave, self.FILE_DONE_MARKER)).touch()
