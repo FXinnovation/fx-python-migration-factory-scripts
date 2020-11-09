@@ -5,7 +5,6 @@ import os
 from mf_library import DefaultsLoader
 from mf_library import Utils
 import mf_library
-import logging
 
 class TemplateSecurityGroupCreator:
     """ Create copies of template security groups """
