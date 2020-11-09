@@ -38,6 +38,8 @@ class DefaultsLoader:
                     Utils().check_is_serializable_as_path(string_to_test=environment)
                     self._available_environments.append(environment)
 
+            return self.get()
+
             except yaml.YAMLError as exception:
                 logging.error(exception)
 

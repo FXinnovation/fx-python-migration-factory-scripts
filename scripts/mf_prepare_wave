@@ -60,7 +60,6 @@ class WavePreparator:
         print('✔ Done')
 
         print('### Pre-fill .csv templates…', end=' ')
-
         with open(os.path.join(self._path_wave, mf_library.FILE_CSV_WAVE_TEMPLATE), 'a') as file_object:
             file_object.write(','.join([
                 self._arguments.wave_name,
