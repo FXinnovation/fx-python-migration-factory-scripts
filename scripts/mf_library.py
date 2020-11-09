@@ -51,7 +51,7 @@ class Utils:
     """ Primitive type utilities """
 
     def check_is_serializable_as_path(self, string_to_test):
-        is_serializable_as_path = re.search("^[a-zA-Z0-9_-]+$", string_to_test)
+        is_serializable_as_path = re.search("^[a-zA-Z0-9_ -]+$", string_to_test)
         if not is_serializable_as_path:
             logging.warning('The string “'+string_to_test+'” will need to be serialized for a path or a filename. It might not be suitable because it contains special characters. Use at your own risk.')
         return bool(is_serializable_as_path)
