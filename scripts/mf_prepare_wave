@@ -77,7 +77,8 @@ class WavePreparator:
                 self._defaults['test_subnet_id'],
                 ';'.join(self._defaults['test_security_group_ids']),
                 'SET_INSTANCE_TYPE',
-                'Shared'
+                'Shared',
+                'SET_IAM_ROLE',
             ]))
             print('✔ Done')
 
