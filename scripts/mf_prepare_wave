@@ -14,7 +14,7 @@ class WavePreparator:
     """ Prepare Migration Factory wave """
 
     PATH_HOME=os.path.join(str(Path.home()), 'migration')
-    PATH_TEMPLATE=os.path.join(PATH_HOME, 'templates')
+    PATH_TEMPLATE='/usr/local/share/applications/migration_factory'
 
     FILE_CSV_WAVE_TEMPLATE='migration-intake-form.csv'
     FILE_CSV_INIT_WAVE_TEMPLATE='migration-intake-form-init.csv'
@@ -78,9 +78,9 @@ class WavePreparator:
                 ';'.join(self._defaults['test_security_group_ids']),
                 'SET_INSTANCE_TYPE',
                 'Shared',
-                'SET_IAM_ROLE',
+                self._defaults['iam_role'],
             ]))
-            print('✔ Done')
+        print('✔ Done')
 
         print('### Add marker…', end=' ')
         Path(os.path.join(self._path_wave, mf_library.FILE_DONE_MARKER)).touch()
