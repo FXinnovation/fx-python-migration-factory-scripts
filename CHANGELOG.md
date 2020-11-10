@@ -1,3 +1,7 @@
+## 4.0.0
+
+* feat (BREAKING): Add iamRole support in CSV import
+
 ## 3.3.1
 
 * fix: fixes installation script
