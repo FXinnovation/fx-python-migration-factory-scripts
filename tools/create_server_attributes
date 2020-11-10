@@ -72,7 +72,7 @@ def CreateServerAttributeIfNotExist(attribute_name, attribute_description, attri
         sys.exit(-1)
 
 def AddServerAttributeToStage(stage_id, attribute_name, token):
-    #try:
+    try:
         auth = {"Authorization": token}
 
         stage = json.loads(requests.get(AdminHOST + '/prod/admin/stage/' + stage_id, headers=auth).text)
@@ -96,9 +96,9 @@ def AddServerAttributeToStage(stage_id, attribute_name, token):
         else:
             print(attribute_name + " server attribute update failed to the stage " + stage_id + ": " + r.text + ".......")
             return -1
-    #except:
-    #    print("ERROR: Fail to add server attribute " + attribute_name + " to stage id " + stage_id)
-    #    sys.exit(-1)
+    except:
+        print("ERROR: Fail to add server attribute " + attribute_name + " to stage id " + stage_id)
+        sys.exit(-1)
 
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
