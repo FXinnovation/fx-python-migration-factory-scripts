@@ -68,6 +68,8 @@ install_without_override "config/$DEFAULTS_FILE" "$CONFIG_DESTINATION_PATH/$DEFA
 sudo mkdir -p "$DOC"
 sudo cp config/0-import-tags.csv config/0-Migration-intake-form.csv "$DOC"
 
+sh ./tools/create_server_attributes
+
 if [ "$INSTALL_CRON" = true ] ; then
     if [ $(crontab -l | grep -q "$DIR/$0" && echo 0 || echo 1) -eq 1 ] ; then
         crontab -l > install_mf_script

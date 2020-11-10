@@ -175,6 +175,7 @@ def uploading_data(data, token):
         server_item['securitygroup_IDs_test'] = convert_string_to_list(row['securitygroup_IDs_test'].strip())
         server_item['instanceType'] = row['instanceType'].strip()
         server_item['tenancy'] = row['tenancy'].strip()
+        server_item['iamRole'] = row['iamRole'].strip()
         server_list.append(server_item)
     if len(server_list) is not 0:
         print("New Servers: ")
