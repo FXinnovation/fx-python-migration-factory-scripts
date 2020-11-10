@@ -10,6 +10,7 @@
 * feat: improve installation script to handle cron creation
 * feat: improve installation script to create a .new file
 * feat: adds default.yml template
+* feat: changes .csv templates to add examples + defaults
 
 ## 3.0.0
 
