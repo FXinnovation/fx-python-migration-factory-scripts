@@ -1,3 +1,7 @@
+## 3.3.1
+
+* fix: fixes installation script
+
 ## 3.3.0
 
 * feat: changes .csv templates to add examples + defaults
