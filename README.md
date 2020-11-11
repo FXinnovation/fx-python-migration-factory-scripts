@@ -21,6 +21,11 @@ You need to have git and curl install on the machine.
 1. *optional* - Add an alias on your shell profile to run the script `mf_setup_environment` properly. `alias mf_setup_environment="source /usr/local/bin/mf_setup_environment"`
 1. Enjoy !
 
+## Defaults
+
+A file containing default values will be installed. See [installation](#installation).
+When environment in passed as an argument of any script, it will check dynamically that a key corresponding to the given environment exists in the defaults file.
+
 ## Environment variable
 
 Here are all supported environment variable: 
