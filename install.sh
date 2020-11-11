@@ -54,6 +54,7 @@ install_without_override() {
 
 check_arguments "$@"
 
+cd "$DIR"
 git reset --hard HEAD
 git checkout master
 git pull --rebase origin master
