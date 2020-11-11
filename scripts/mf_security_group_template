@@ -4,6 +4,7 @@ import argparse
 import os
 from mf_library import DefaultsLoader
 from mf_library import Utils
+from mf_library import AWSServiceAccessor
 import mf_library
 
 class TemplateSecurityGroupCreator:
@@ -35,8 +36,8 @@ class TemplateSecurityGroupCreator:
         self._path_wave = os.path.join(mf_library.PATH_HOME, self._arguments.wave_name)
 
     def create(self):
-        pass
-
+        aws_service_accessor = AWSServiceAccessor()
+        print(type(aws_service_accessor.get_ec2()))
 
 if __name__ == '__main__':
     template_sg_creator = TemplateSecurityGroupCreator()
