@@ -49,10 +49,10 @@ class TemplateSecurityGroupCreator:
         ]))
 
     def _template_security_group_id_default_exists(self):
-        return 'template_security_group_id' in dict.keys() and self._defaults['template_security_group_id'] is not ''
+        return 'template_security_group_id' in self._defaults.keys() and self._defaults['template_security_group_id'] is not ''
 
-    def _template_security_group_id_default_exists(self):
-        return 'template_security_group_id' in dict.keys() and self._defaults['template_security_group_id'] is not ''
+    # def _template_security_group_id_default_exists(self):
+    #     return 'template_security_group_id' in dict.keys() and self._defaults['template_security_group_id'] is not ''
 
 if __name__ == '__main__':
     template_sg_creator = TemplateSecurityGroupCreator()
