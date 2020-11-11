@@ -91,9 +91,10 @@ class AWSServiceAccessor():
 
     def __init__(self):
         self._environment_variable_fetcher = EnvironmentVariableFetcher()
-        self._environment_variable_fetcher.fetch(ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID')
-        self._environment_variable_fetcher.fetch(ENV_VAR_AWS_SECRET_KEY_NAMES, 'AWS Access Secret Key', sensitive=True)
-        self._environment_variable_fetcher.fetch(ENV_VAR_AWS_REGION_NAMES, 'AWS Region')
+        self._aws_access_key = self._environment_variable_fetcher.fetch(ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID')
+        self._aws_secret_access_key = self._environment_variable_fetcher.fetch(ENV_VAR_AWS_SECRET_KEY_NAMES, 'AWS Access Secret Key', sensitive=True)
+        self._aws_region = self._environment_variable_fetcher.fetch(ENV_VAR_AWS_REGION_NAMES, 'AWS Region')
+
 
     def get_ec2(self):
         if self._ec2_client is None:
