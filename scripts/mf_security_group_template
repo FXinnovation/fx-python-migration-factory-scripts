@@ -39,7 +39,7 @@ class TemplateSecurityGroupCreator:
 
         self._aws_service_accessor = AWSServiceAccessor()
 
-def create(self):
+    def create(self):
         if not self._template_security_group_id_default_exists():
             logging.debug('No security group template. Skipping security group copy.')
             return None
