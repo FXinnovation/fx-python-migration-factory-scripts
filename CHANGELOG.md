@@ -1,3 +1,7 @@
+## 3.3.0
+
+* feat: changes .csv templates to add examples + defaults
+
 ## 3.2.0
 
 * feat: `mf_import_intake_form` Add wave id in outputs
@@ -10,7 +14,6 @@
 * feat: improve installation script to handle cron creation
 * feat: improve installation script to create a .new file
 * feat: adds default.yml template
-* feat: changes .csv templates to add examples + defaults
 
 ## 3.0.0
 
