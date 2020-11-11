@@ -6,6 +6,7 @@ from mf_library import DefaultsLoader
 from mf_library import Utils
 from mf_library import AWSServiceAccessor
 import mf_library
+import logging
 
 class TemplateSecurityGroupCreator:
     """ Create copies of template security groups """
@@ -14,6 +15,7 @@ class TemplateSecurityGroupCreator:
     _defaults = {}
     _environments = []
     _path_wave = ''
+    _aws_service_accessor = None
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -35,9 +37,22 @@ class TemplateSecurityGroupCreator:
         Utils().check_is_serializable_as_path(self._arguments.wave_name)
         self._path_wave = os.path.join(mf_library.PATH_HOME, self._arguments.wave_name)
 
-    def create(self):
-        aws_service_accessor = AWSServiceAccessor()
-        print(type(aws_service_accessor.get_ec2()))
+        self._aws_service_accessor = AWSServiceAccessor()
+
+def create(self):
+        if not self._template_security_group_id_default_exists():
+            logging.debug('No security group template. Skipping security group copy.')
+            return None
+
+        print(self._aws_service_accessor.get_ec2().describe_security_groups(GroupIds=[
+            self._defaults['template_security_group_id']
+        ]))
+
+    def _template_security_group_id_default_exists(self):
+        return 'template_security_group_id' in dict.keys() and self._defaults['template_security_group_id'] is not ''
+
+    def _template_security_group_id_default_exists(self):
+        return 'template_security_group_id' in dict.keys() and self._defaults['template_security_group_id'] is not ''
 
 if __name__ == '__main__':
     template_sg_creator = TemplateSecurityGroupCreator()
