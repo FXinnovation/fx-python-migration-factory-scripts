@@ -70,7 +70,6 @@ class EnvironmentVariableFetcher():
 
     def fetch(self, env_var_names, env_var_description, sensitive=False):
         for env_var_name in env_var_names:
-            print(env_var_name)
             logging.debug('EnvironmentVariableFetcher: Trying to fetch '+ env_var_name +' environment variable.')
 
             if env_var_name in os.environ:
@@ -92,9 +91,9 @@ class AWSServiceAccessor():
 
     def __init__(self):
         self._environment_variable_fetcher = EnvironmentVariableFetcher()
-        self._environment_variable_fetcher.fetch([ENV_VAR_AWS_ACCESS_KEY_NAMES], 'AWS Access Key ID')
-        self._environment_variable_fetcher.fetch([ENV_VAR_AWS_SECRET_KEY_NAMES], 'AWS Access Secret Key', sensitive=True)
-        self._environment_variable_fetcher.fetch([ENV_VAR_AWS_REGION_NAMES], 'AWS Region')
+        self._environment_variable_fetcher.fetch(ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID')
+        self._environment_variable_fetcher.fetch(ENV_VAR_AWS_SECRET_KEY_NAMES, 'AWS Access Secret Key', sensitive=True)
+        self._environment_variable_fetcher.fetch(ENV_VAR_AWS_REGION_NAMES, 'AWS Region')
 
     def get_ec2(self):
         if self._ec2_client is None:
