@@ -70,6 +70,8 @@ class EnvironmentVariableFetcher():
 
     def fetch(self, env_var_names, env_var_description, sensitive=False):
         for env_var_name in env_var_names:
+            logging.debug('EnvironmentVariableFetcher: Trying to fetch '+ env_var_name +' environment variable.')
+
             if env_var_name in os.environ:
                 return os.getenv(env_var_name)
 
