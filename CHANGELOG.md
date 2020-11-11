@@ -1,3 +1,8 @@
+## 4.1.0
+
+* feat: (library) adds AWSServiceAccessor to get access to AWS services
+* feat: (library) adds EnvironmentVariableFetcher to fetch environment variables and fallback to user input
+
 ## 4.0.0
 
 * feat (BREAKING): Add iamRole support in CSV import

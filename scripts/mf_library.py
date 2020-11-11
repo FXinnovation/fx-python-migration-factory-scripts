@@ -6,6 +6,8 @@ import sys
 import yaml
 import os
 import re
+import getpass
+import boto3
 
 PATH_HOME=os.path.join(str(Path.home()), 'migration')
 PATH_TEMPLATE=os.path.join(PATH_HOME, 'templates')
@@ -15,6 +17,10 @@ FILE_CSV_INIT_WAVE_TEMPLATE=os.path.join(PATH_TEMPLATE, 'migration-intake-form-i
 FILE_DONE_MARKER='.mf_done'
 
 DIRECTORY_POST_LAUNCH='post-launch'
+
+ENV_VAR_AWS_ACCESS_KEY_NAMES=['MF_AWS_ACCESS_KEY_ID', 'AWS_ACCESS_KEY_ID', 'AWS_ACCESS_KEY']
+ENV_VAR_AWS_SECRET_KEY_NAMES=['MF_AWS_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY', 'AWS_SECRET_KEY']
+ENV_VAR_AWS_REGION_NAMES=['MF_AWS_REGION', 'AWS_REGION']
 
 class DefaultsLoader:
     """ Loads default configuration values for every wave and fetch available environments """
@@ -57,6 +63,41 @@ class Utils:
         if not is_serializable_as_path:
             logging.warning('The string “'+string_to_test+'” will need to be serialized for a path or a filename. It might not be suitable because it contains special characters. Use at your own risk.')
         return bool(is_serializable_as_path)
+
+
+class EnvironmentVariableFetcher():
+    """ Fetch environment variables """
+
+    def fetch(self, env_var_names, env_var_description, sensitive=False):
+        for env_var_name in env_var_names:
+            if env_var_name in os.environ:
+                return os.getenv(env_var_name)
+
+        if sensitive is True:
+            return getpass.getpass(env_var_description + ": ")
+
+        return input(env_var_description + ": ")
+
+class AWSServiceAccessor():
+    """ Login to AWS """
+
+    _environment_variable_fetcher = None
+    _aws_access_key = ''
+    _aws_secret_access_key = ''
+    _aws_region = ''
+    _ec2_client = None
+
+    def __init__(self, region):
+        self._environment_variable_fetcher = EnvironmentVariableFetcher()
+        self._environment_variable_fetcher.fetch([self.ENV_VAR_AWS_ACCESS_KEY_NAMES], 'AWS Access Key ID')
+        self._environment_variable_fetcher.fetch([self.ENV_VAR_AWS_SECRET_KEY_NAMES], 'AWS Access Secret Key', sensitive=True)
+        self._environment_variable_fetcher.fetch([self.ENV_VAR_AWS_REGION_NAMES], 'AWS Region')
+
+    def get_ec2(self):
+        if self._ec2_client is None:
+            self._ec2_client = boto3.client('ec2', aws_access_key_id=self._aws_access_key, aws_secret_access_key=self._aws_secret_access_key, region_name=self._aws_region)
+
+        return self._ec2_client
 
 
 def setup_logging(verbose=False):
