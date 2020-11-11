@@ -34,7 +34,8 @@ Here are all supported environment variable:
 * `MF_PASSWORD`: The password used to log on the migration factory
 * `MF_CE_API_TOKEN`: The Cloud Endure API token
 * `MF_AWS_ACCESS_KEY_ID`: The AWS access key id of the target account
-* `MF_AWS_SECRET_ACCESS_KEY`: The AWS secret acces key of the target account
+* `MF_AWS_SECRET_ACCESS_KEY`: The AWS secret access key of the target account
+* `MF_AWS_REGION`: The AWS region of the target account
 * `MF_ENDPOINT_CONFIG_FILE`: The location of endpoint config file
 * `MF_WINDOWS_USERNAME`: The Windows username to connect to source host
 * `MF_WINDOWS_PASSWORD`: The Windows password to connect to source host

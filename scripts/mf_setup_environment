@@ -61,3 +61,4 @@ set_environment_variable "MF_WINDOWS_USERNAME" "Windows username"
 set_environment_variable "MF_WINDOWS_PASSWORD" "Windows password" true
 set_environment_variable "MF_AWS_ACCESS_KEY_ID" "AWS access key ID"
 set_environment_variable "MF_AWS_SECRET_ACCESS_KEY" "AWS secret access key" true
+set_environment_variable "MF_AWS_REGION" "AWS Region" true
