@@ -62,14 +62,6 @@ class WavePreparator:
         sg_template_copy_testing = template_sg_creator.create_for_testing()
 
         print('### Pre-fill .csv templates…', end=' ')
-        print(sg_template_copy)
-        print(self._defaults['target_security_group_ids'])
-        print(self._defaults['target_security_group_ids'] + [sg_template_copy])
-        print(type(self._defaults['target_security_group_ids'] + [sg_template_copy]))
-
-
-        print()
-
 
         with open(os.path.join(self._path_wave, mf_library.FILE_CSV_WAVE_TEMPLATE), 'a') as file_object:
             file_object.write(','.join([
