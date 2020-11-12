@@ -7,6 +7,7 @@ from mf_library import Utils
 from mf_library import AWSServiceAccessor
 import mf_library
 import logging
+import botocore
 
 class TemplateSecurityGroupCreator:
     """ Create copies of template security groups """
