@@ -68,7 +68,7 @@ class TemplateSecurityGroupCreator:
             )
             print('✔ Done')
         except botocore.exceptions.ClientError as error:
-            if error['response']['Error']['Code'] is 'InvalidGroup.Duplicate':
+            if error.response['Error']['Code'] is 'InvalidGroup.Duplicate':
                 print('✔ Already Done')
             else:
                 raise
