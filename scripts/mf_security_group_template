@@ -50,43 +50,42 @@ class TemplateSecurityGroupCreator:
             self._defaults['template_security_group_id']
         ])['SecurityGroups'][0]
 
-        print('### Create template Security Group copy…', end=' ')
-
-        try:
-            response = self._aws_service_accessor.get_ec2().create_security_group(
-                Description='For the ' + self._arguments.wave_name + ' wave.',
-                GroupName=self._arguments.wave_sg_prefix + '-' + self._arguments.wave_name,
-                VpcId=template_security_group['VpcId'],
-                DryRun=False
-            )
-        except botocore.exceptions.ClientError as err:
-            print(err.__dict__)
-
-        logging.debug('SGCreate:'+str(response))
-
-        response = self._aws_service_accessor.get_ec2().authorize_security_group_ingress(
-            GroupId=response['GroupId'],
-            IpPermissions=template_security_group['IpPermissions'],
-        )
-
-        logging.debug('SGCreate:'+str(response))
-
-        response = self._aws_service_accessor.get_ec2().create_security_group(
-            Description='For the ' + self._arguments.wave_name + ' wave (testing).',
-            GroupName=self._arguments.wave_sg_prefix + '-testing-' + self._arguments.wave_name,
-            VpcId=template_security_group['VpcId'],
-            DryRun=True
-        )
-        logging.debug('SGTestingCreate:'+str(response))
-
-        print(response)
-
+        self._copy_security_group(template_security_group)
+        self._copy_security_group(template_security_group, for_testing=True)
 
     def _template_security_group_id_default_exists(self):
         return 'template_security_group_id' in self._defaults.keys() and self._defaults['template_security_group_id'] is not ''
 
-    # def _template_security_group_id_default_exists(self):
-    #     return 'template_security_group_id' in dict.keys() and self._defaults['template_security_group_id'] is not ''
+    def _copy_security_group(self, security_group, for_testing=False):
+        print('### Create template Security Group copy…', end=' ')
+
+        try:
+            response = self._aws_service_accessor.get_ec2().create_security_group(
+                Description='For the ' + self._arguments.wave_name + ' wave '+ (if for_testing: '(testing)') + ' .',
+                GroupName=self._arguments.wave_sg_prefix + (if for_testing: '-testing-' else '-') + self._arguments.wave_name,
+                VpcId=security_group['VpcId'],
+                DryRun=False
+            )
+            print('✔ Done')
+        except botocore.exceptions.ClientError as error:
+            if error['response']['Error']['Code'] is 'InvalidGroup.Duplicate':
+                print('✔ Already Done')
+            else
+                raise
+
+        logging.debug(self.__class__.__name__ + ':'+str(response))
+
+        try:
+            response = self._aws_service_accessor.get_ec2().authorize_security_group_ingress(
+                GroupId=response['GroupId'],
+                IpPermissions=security_group['IpPermissions'],
+            )
+        except botocore.exceptions.ClientError as error:
+            print('')
+            raise
+
+        logging.debug(self.__class__.__name__ + ':'+str(response))
+
 
 if __name__ == '__main__':
     template_sg_creator = TemplateSecurityGroupCreator()
