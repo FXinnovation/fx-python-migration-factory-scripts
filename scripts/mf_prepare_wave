@@ -73,7 +73,7 @@ class WavePreparator:
                 self._arguments.wave_name,
                 str(self.self._get_default('account_id', 'SET_ACCOUNT_ID')),
                 'SET_SERVERNAME',
-                'SET_SERVEROS',
+                self.self._get_default('server_os', 'SET_SERVEROS'),
                 'SET_SERVEROS_VERSION',
                 'SET_SERVER_FQDN',
                 'app',

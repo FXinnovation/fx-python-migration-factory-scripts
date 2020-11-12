@@ -15,10 +15,14 @@ environment:
     - sg-0a512345678
   # Subnet ID where to create the destination test instances, before the cutover
   test_subnet_id: subnet-0a512345678
-  # IAM role to attach to all destination instances
-  iam_role:
-  # Security group ID to be duplicated and attach to any destination instance (test & cutover).
-  # Will be merged with Security Group IDs defined as defaults
-  template_security_group_id: sg-0a512345678
   # AWS account ID of the environment
   account_id: 12345678790
+  # IAM role to attach to all destination instances
+#  iam_role:
+  # Security group ID to be duplicated and attach to any destination instance (test & cutover).
+  # Will be merged with Security Group IDs defined as defaults
+#  template_security_group_id: sg-0a512345678
+  # Tenancy for the servers: "Shared", "Dedicated" or "Dedicated Host"
+#  tenancy: Shared
+  # Server type: windows or linux
+#  server_os: windows
