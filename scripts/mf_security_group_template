@@ -96,7 +96,10 @@ class TemplateSecurityGroupCreator:
                         ])
                     ])['SecurityGroups'][0]
             else:
+                print('')
                 raise
+
+        print('### Populate Security Group copy rules…', end=' ')
 
         try:
             sg_authorize_response = self._aws_service_accessor.get_ec2().authorize_security_group_ingress(
@@ -105,8 +108,11 @@ class TemplateSecurityGroupCreator:
             )
             logging.debug(self.__class__.__name__ + ':' + str(sg_authorize_response))
         except botocore.exceptions.ClientError as error:
-            print('')
-            raise
+            if error.response['Error']['Code'] == 'InvalidPermission.Duplicate':
+                print('✔ Already Done')
+            else:
+                print('')
+                raise
 
 
 if __name__ == '__main__':
