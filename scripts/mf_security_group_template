@@ -50,7 +50,7 @@ class TemplateSecurityGroupCreator:
         print("#####")
         print("#####")
 
-        template_security_group = (self._aws_service_accessor.get_ec2().describe_security_groups(GroupIds=[
+        template_security_group = self._aws_service_accessor.get_ec2().describe_security_groups(GroupIds=[
             self._defaults['template_security_group_id']
         ])['SecurityGroups'][0]
 
