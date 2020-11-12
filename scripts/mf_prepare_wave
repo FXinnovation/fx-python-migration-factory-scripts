@@ -64,6 +64,7 @@ class WavePreparator:
         print('### Pre-fill .csv templates…', end=' ')
         print(sg_template_copy)
         print(self._defaults['target_security_group_ids'])
+        print(self._defaults['target_security_group_ids'].append(sg_template_copy))
         print(filter(None, self._defaults['target_security_group_ids'].append(sg_template_copy)))
         with open(os.path.join(self._path_wave, mf_library.FILE_CSV_WAVE_TEMPLATE), 'a') as file_object:
             file_object.write(','.join([
