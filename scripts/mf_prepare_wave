@@ -64,8 +64,8 @@ class WavePreparator:
         print('### Pre-fill .csv templates…', end=' ')
         print(sg_template_copy)
         print(self._defaults['target_security_group_ids'])
-        print(self._defaults['target_security_group_ids'].append(sg_template_copy))
-        print(filter(None, self._defaults['target_security_group_ids'].append(sg_template_copy)))
+        print(self._defaults['target_security_group_ids'] + [sg_template_copy])
+        print(filter(None, self._defaults['target_security_group_ids'] + [sg_template_copy]))
         with open(os.path.join(self._path_wave, mf_library.FILE_CSV_WAVE_TEMPLATE), 'a') as file_object:
             file_object.write(','.join([
                 self._arguments.wave_name,
@@ -79,9 +79,9 @@ class WavePreparator:
                 'app',
                 self._arguments.environment,
                 self._defaults['target_subnet_id'],
-                ';'.join(filter(None, self._defaults['target_security_group_ids'].append(sg_template_copy))),
+                ';'.join(filter(None, self._defaults['target_security_group_ids'] + [sg_template_copy])),
                 self._defaults['test_subnet_id'],
-                ';'.join(filter(None, self._defaults['test_security_group_ids'].append(sg_template_copy_testing))),
+                ';'.join(filter(None, self._defaults['test_security_group_ids'] + [sg_template_copy_testing])),
                 'SET_INSTANCE_TYPE',
                 'Shared',
                 self._defaults['iam_role'],
