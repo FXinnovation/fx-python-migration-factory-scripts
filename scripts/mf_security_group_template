@@ -61,8 +61,8 @@ class TemplateSecurityGroupCreator:
 
         try:
             response = self._aws_service_accessor.get_ec2().create_security_group(
-                Description='For the ' + self._arguments.wave_name + ' wave '+ (if for_testing: '(testing)') + ' .',
-                GroupName=self._arguments.wave_sg_prefix + (if for_testing: '-testing-' else '-') + self._arguments.wave_name,
+                Description='For the ' + self._arguments.wave_name + ' wave '+ ('(testing)' if for_testing else '') + ' .',
+                GroupName=self._arguments.wave_sg_prefix + ('-testing-' if for_testing else '-') + self._arguments.wave_name,
                 VpcId=security_group['VpcId'],
                 DryRun=False
             )
@@ -70,7 +70,7 @@ class TemplateSecurityGroupCreator:
         except botocore.exceptions.ClientError as error:
             if error['response']['Error']['Code'] is 'InvalidGroup.Duplicate':
                 print('✔ Already Done')
-            else
+            else:
                 raise
 
         logging.debug(self.__class__.__name__ + ':'+str(response))
