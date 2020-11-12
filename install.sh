@@ -65,8 +65,8 @@ sudo mkdir -p "$CONFIG_DESTINATION_PATH"
 install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDPOINT_FILE"
 install_without_override "config/$DEFAULTS_FILE" "$CONFIG_DESTINATION_PATH/$DEFAULTS_FILE"
 
-sudo mkdir -p "$DOC"
-sudo cp config/0-*.csv "$DOC"
+sudo mkdir -p "$TEMPLATES_PATH"
+sudo cp config/0-*.csv "$TEMPLATES_PATH"
 
 sh ./tools/create_server_attributes
 
