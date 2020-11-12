@@ -76,10 +76,13 @@ class WavePreparator:
                 'app',
                 self._arguments.environment,
                 self._get_default('target_subnet_id', 'SET_TARGET_SUBNET_ID'),
-                self._defaults['target_subnet_id'],
-                ';'.join(list(x for x in (self._get_default('target_security_group_ids', []) + [sg_template_copy]) if x != None)),
+                ';'.join(list(
+                    x for x in (self._get_default('target_security_group_ids', []) + [sg_template_copy]) if x != None
+                )),
                 self._get_default('test_subnet_id', 'SET_TEST_SUBNET_ID'),
-                ';'.join(list(x for x in (self._get_default('test_security_group_ids', []) + [sg_template_copy_testing]) if x != None)),
+                ';'.join(list(
+                    x for x in (self._get_default('test_security_group_ids', []) + [sg_template_copy_testing]) if x != None
+                )),
                 self._get_default('instance_type', 'SET_INSTANCE_TYPE'),
                 self._get_default('tenancy', 'Shared'),
                 self._get_default('iam_role', 'SET_IAM_ROLE'),
@@ -91,7 +94,7 @@ class WavePreparator:
         print('✔ Done')
 
     def _get_default(self, key, default=''):
-        if key not in self._defaults.keys():
+        if key not in self._defaults.keys() or self._defaults[key] is None:
             return default
 
         return self._defaults[key]
