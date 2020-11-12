@@ -68,7 +68,7 @@ class WavePreparator:
         print(type(self._defaults['target_security_group_ids'] + [sg_template_copy]))
 
 
-        print(list(x for x in (self._defaults['target_security_group_ids'] + [sg_template_copy]) if x != None))
+        print()
 
 
         with open(os.path.join(self._path_wave, mf_library.FILE_CSV_WAVE_TEMPLATE), 'a') as file_object:
@@ -85,9 +85,9 @@ class WavePreparator:
                 self._arguments.environment,
                 self._get_default('target_subnet_id', 'SET_TARGET_SUBNET_ID'),
                 self._defaults['target_subnet_id'],
-                ';'.join(filter(None, self._get_default('target_security_group_ids', []) + [sg_template_copy])),
+                ';'.join(list(x for x in (self._get_default('target_security_group_ids', []) + [sg_template_copy]) if x != None)),
                 self._get_default('test_subnet_id', 'SET_TEST_SUBNET_ID'),
-                ';'.join(filter(None, self._get_default('test_security_group_ids', []) + [sg_template_copy_testing])),
+                ';'.join(list(x for x in (self._get_default('test_security_group_ids', []) + [sg_template_copy_testing]) if x != None)),
                 self._get_default('instance_type', 'SET_INSTANCE_TYPE'),
                 self._get_default('tenancy', 'Shared'),
                 self._get_default('iam_role', 'SET_IAM_ROLE'),
