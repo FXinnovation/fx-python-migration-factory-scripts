@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 INSTALL_CRON=false
-DOC=/usr/local/share/applications/migration_factory
+TEMPLATES_PATH=/usr/local/share/applications/migration_factory
 CONFIG_DESTINATION_PATH=/etc/migration_factory
 ENDPOINT_FILE=endpoints.json
 DEFAULTS_FILE=defaults.yml
@@ -66,7 +66,7 @@ install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDP
 install_without_override "config/$DEFAULTS_FILE" "$CONFIG_DESTINATION_PATH/$DEFAULTS_FILE"
 
 sudo mkdir -p "$TEMPLATES_PATH"
-sudo cp config/0-*.csv "$TEMPLATES_PATH"
+sudo cp config/*.csv "$TEMPLATES_PATH"
 
 sh ./tools/create_server_attributes
 
