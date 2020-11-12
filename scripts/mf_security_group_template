@@ -21,6 +21,7 @@ class TemplateSecurityGroupCreator:
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable debug outputs')
         parser.add_argument('--wave-name', required=True, help='Name of the wave to prepare')
+        parser.add_argument('--wave-sg-prefix', default='rehost', required=True, help='Prefix of the Security Group duplicates from the template Security Group')
         parser.add_argument('--config-file-defaults', default=os.environ.get('MF_DEFAULTS_CONFIG_FILE', '/etc/migration_factory/defaults.yml'), help='Configuration file containing default IDs')
         environment_arg = parser.add_argument('--environment', default='prod', help='Environment of the wave')
 
@@ -44,9 +45,33 @@ class TemplateSecurityGroupCreator:
             logging.debug('No security group template. Skipping security group copy.')
             return None
 
-        print(self._aws_service_accessor.get_ec2().describe_security_groups(GroupIds=[
+        print("#####")
+        print("#####")
+        print("#####")
+        print("#####")
+
+        template_security_group = (self._aws_service_accessor.get_ec2().describe_security_groups(GroupIds=[
             self._defaults['template_security_group_id']
-        ]).SecurityGroups[0].I)
+        ])['SecurityGroups'][0]
+
+        print("#####")
+        print("#####")
+        print("#####")
+        print("#####")
+
+        response = client.create_security_group(
+            Description='For the ' + self._arguments.wave_name + ' wave.',
+            GroupName=self._arguments.wave_sg_prefix + '-' + self._arguments.wave_name,
+            VpcId=template_security_group['VpcId'],
+            TagSpecifications=[
+                {
+                    'ResourceType': 'security-group',
+                    'Tags': template_security_group['Tags']
+                },
+            ],
+            DryRun=True
+        )
+
 
     def _template_security_group_id_default_exists(self):
         return 'template_security_group_id' in self._defaults.keys() and self._defaults['template_security_group_id'] is not ''
