@@ -71,26 +71,33 @@ class WavePreparator:
                 self._arguments.wave_name,
                 'SET_APP_NAME_VALUE',
                 self._arguments.wave_name,
-                str(self._defaults['account_id']),
+                str(self.self._get_default('account_id', 'SET_ACCOUNT_ID')),
                 'SET_SERVERNAME',
                 'SET_SERVEROS',
                 'SET_SERVEROS_VERSION',
                 'SET_SERVER_FQDN',
                 'app',
                 self._arguments.environment,
+                self._get_default('target_subnet_id', 'SET_TARGET_SUBNET_ID'),
                 self._defaults['target_subnet_id'],
-                ';'.join(filter(None, self._defaults['target_security_group_ids'] + [sg_template_copy])),
-                self._defaults['test_subnet_id'],
-                ';'.join(filter(None, self._defaults['test_security_group_ids'] + [sg_template_copy_testing])),
-                'SET_INSTANCE_TYPE',
-                'Shared',
-                self._defaults['iam_role'],
+                ';'.join(filter(None, self._get_default('target_security_group_ids', []) + [sg_template_copy])),
+                self._get_default('test_subnet_id', 'SET_TEST_SUBNET_ID'),
+                ';'.join(filter(None, self._get_default('test_security_group_ids', []) + [sg_template_copy_testing])),
+                self.self._get_default('instance_type', 'SET_INSTANCE_TYPE'),
+                self.self._get_default('tenancy', 'Shared'),
+                self.self._get_default('iam_role', 'SET_IAM_ROLE'),
             ]))
         print('✔ Done')
 
         print('### Add marker…', end=' ')
         Path(os.path.join(self._path_wave, mf_library.FILE_DONE_MARKER)).touch()
         print('✔ Done')
+
+    def _get_default(self, key, default=''):
+        if key not in self._defaults.keys():
+            return default
+
+        return self._defaults['key']
 
 
 if __name__ == '__main__':
