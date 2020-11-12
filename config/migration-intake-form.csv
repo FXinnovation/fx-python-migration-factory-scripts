@@ -1,0 +1,1 @@
+wave_id,app_name,cloudendure_projectname,aws_accountid,server_name,server_os,server_os_version,server_fqdn,server_tier,server_environment,subnet_IDs,securitygroup_IDs,subnet_IDs_test,securitygroup_IDs_test,instanceType,tenancy,iamRole
