@@ -44,10 +44,9 @@ class TemplateSecurityGroupCreator:
             logging.debug('No security group template. Skipping security group copy.')
             return None
 
-        # GroupIds=[
-        #     self._defaults['template_security_group_id']
-        # ]
-        print(self._aws_service_accessor.get_ec2().describe_security_groups())
+        print(self._aws_service_accessor.get_ec2().describe_security_groups(GroupIds=[
+            self._defaults['template_security_group_id']
+        ]))
 
     def _template_security_group_id_default_exists(self):
         return 'template_security_group_id' in self._defaults.keys() and self._defaults['template_security_group_id'] is not ''
