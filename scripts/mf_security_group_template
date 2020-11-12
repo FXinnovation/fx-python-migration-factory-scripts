@@ -89,10 +89,12 @@ class TemplateSecurityGroupCreator:
             if error.response['Error']['Code'] == 'InvalidGroup.Duplicate':
                 print('✔ Already Done')
 
-                sg_create_response = self._aws_service_accessor.get_ec2().describe_security_groups(GroupNames=[
-                    self._arguments.wave_sg_prefix + (
-                        '-testing-' if for_testing else '-') + self._arguments.wave_name
-                ])['SecurityGroups'][0]
+                sg_create_response = self._aws_service_accessor.get_ec2().describe_security_groups(Filters=[
+                        dict(Name='group-name', Values=[
+                            self._arguments.wave_sg_prefix + (
+                                '-testing-' if for_testing else '-') + self._arguments.wave_name
+                        ])
+                    ])['SecurityGroups'][0]
             else:
                 raise
 
