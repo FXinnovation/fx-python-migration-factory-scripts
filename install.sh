@@ -66,7 +66,7 @@ install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDP
 install_without_override "config/$DEFAULTS_FILE" "$CONFIG_DESTINATION_PATH/$DEFAULTS_FILE"
 
 sudo mkdir -p "$DOC"
-sudo cp config/0-import-tags.csv config/0-Migration-intake-form.csv "$DOC"
+sudo cp config/0-*.csv "$DOC"
 
 sh ./tools/create_server_attributes
 
