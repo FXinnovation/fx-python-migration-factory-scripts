@@ -73,6 +73,7 @@ class TemplateSecurityGroupCreator:
     def _copy_security_group(self, security_group, for_testing=False):
         print('### Create template Security Group copy…', end=' ')
 
+        response = None
         try:
             response = self._aws_service_accessor.get_ec2().create_security_group(
                 Description='For the ' + self._arguments.wave_name + ' wave ' + (
