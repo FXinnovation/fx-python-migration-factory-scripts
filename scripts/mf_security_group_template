@@ -49,12 +49,17 @@ class TemplateSecurityGroupCreator:
             self._defaults['template_security_group_id']
         ])['SecurityGroups'][0]
 
-        response = self._aws_service_accessor.get_ec2().create_security_group(
-            Description='For the ' + self._arguments.wave_name + ' wave.',
-            GroupName=self._arguments.wave_sg_prefix + '-' + self._arguments.wave_name,
-            VpcId=template_security_group['VpcId'],
-            DryRun=False
-        )
+        print('### Create template Security Group copy…', end=' ')
+
+        try:
+            response = self._aws_service_accessor.get_ec2().create_security_group(
+                Description='For the ' + self._arguments.wave_name + ' wave.',
+                GroupName=self._arguments.wave_sg_prefix + '-' + self._arguments.wave_name,
+                VpcId=template_security_group['VpcId'],
+                DryRun=False
+            )
+        except botocore.exceptions.ClientError as err:
+            print(err.__dict__)
 
         logging.debug('SGCreate:'+str(response))
 
