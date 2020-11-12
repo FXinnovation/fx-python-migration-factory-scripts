@@ -71,7 +71,7 @@ class TemplateSecurityGroupCreator:
             'template_security_group_id'] is not ''
 
     def _copy_security_group(self, security_group, for_testing=False):
-        print('### Create template Security Group copy…', end=' ')
+        print('### Create template Security Group copy' + ('(testing)' if for_testing else '') + '…', end=' ')
 
         try:
             sg_create_response = self._aws_service_accessor.get_ec2().create_security_group(
@@ -90,22 +90,24 @@ class TemplateSecurityGroupCreator:
                 print('✔ Already Done')
 
                 sg_create_response = self._aws_service_accessor.get_ec2().describe_security_groups(Filters=[
-                        dict(Name='group-name', Values=[
-                            self._arguments.wave_sg_prefix + (
-                                '-testing-' if for_testing else '-') + self._arguments.wave_name
-                        ])
-                    ])['SecurityGroups'][0]
+                    dict(Name='group-name', Values=[
+                        self._arguments.wave_sg_prefix + (
+                            '-testing-' if for_testing else '-') + self._arguments.wave_name
+                    ])
+                ])['SecurityGroups'][0]
             else:
                 print('')
                 raise
 
-        print('### Populate Security Group copy rules…', end=' ')
+        print('### Populate Security Group copy ' + ('(testing) ' if for_testing else '') + 'rules…', end=' ')
 
         try:
             sg_authorize_response = self._aws_service_accessor.get_ec2().authorize_security_group_ingress(
                 GroupId=sg_create_response['GroupId'],
                 IpPermissions=security_group['IpPermissions'],
             )
+
+            print('✔ Done')
             logging.debug(self.__class__.__name__ + ':' + str(sg_authorize_response))
         except botocore.exceptions.ClientError as error:
             if error.response['Error']['Code'] == 'InvalidPermission.Duplicate':
