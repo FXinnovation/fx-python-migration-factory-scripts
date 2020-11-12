@@ -98,11 +98,9 @@ class TemplateSecurityGroupCreator:
             else:
                 raise
 
-        print(sg_create_response)
-
         try:
             sg_authorize_response = self._aws_service_accessor.get_ec2().authorize_security_group_ingress(
-                GroupId=sg_create_response.GroupId,
+                GroupId=sg_create_response['GroupId'],
                 IpPermissions=security_group['IpPermissions'],
             )
             logging.debug(self.__class__.__name__ + ':' + str(sg_authorize_response))
