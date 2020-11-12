@@ -46,7 +46,7 @@ class TemplateSecurityGroupCreator:
 
         print(self._aws_service_accessor.get_ec2().describe_security_groups(GroupIds=[
             self._defaults['template_security_group_id']
-        ]).IpPermissions)
+        ]).SecurityGroups[0].I)
 
     def _template_security_group_id_default_exists(self):
         return 'template_security_group_id' in self._defaults.keys() and self._defaults['template_security_group_id'] is not ''
