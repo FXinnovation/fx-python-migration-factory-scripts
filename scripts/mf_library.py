@@ -11,7 +11,7 @@ import boto3
 import yaml
 
 PATH_HOME = os.path.join(str(Path.home()), 'migration')
-PATH_TEMPLATE = os.path.join(PATH_HOME, 'templates')
+PATH_TEMPLATE = '/usr/local/share/applications/migration_factory'
 
 FILE_CSV_WAVE_TEMPLATE = os.path.join(PATH_TEMPLATE, 'migration-intake-form.csv')
 FILE_CSV_INIT_WAVE_TEMPLATE = os.path.join(PATH_TEMPLATE, 'migration-intake-form-init.csv')
