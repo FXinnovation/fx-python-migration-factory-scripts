@@ -63,14 +63,18 @@ class TemplateSecurityGroupCreator:
             Description='For the ' + self._arguments.wave_name + ' wave.',
             GroupName=self._arguments.wave_sg_prefix + '-' + self._arguments.wave_name,
             VpcId=template_security_group['VpcId'],
-            TagSpecifications=[
-                {
-                    'ResourceType': 'security-group',
-                    'Tags': template_security_group['Tags']
-                },
-            ],
             DryRun=True
         )
+
+        logging.debug('SGCreate:'+str(response))
+
+        response = self._aws_service_accessor.get_ec2().create_security_group(
+            Description='For the ' + self._arguments.wave_name + ' wave (testing).',
+            GroupName=self._arguments.wave_sg_prefix + '-testing-' + self._arguments.wave_name,
+            VpcId=template_security_group['VpcId'],
+            DryRun=True
+        )
+        logging.debug('SGTestingCreate:'+str(response))
 
         print(response)
 
