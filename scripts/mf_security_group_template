@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import os
+
+import botocore
+
+import mf_library
+from mf_library import AWSServiceAccessor
 from mf_library import DefaultsLoader
 from mf_library import Utils
-from mf_library import AWSServiceAccessor
-import mf_library
-import logging
-import botocore
+
 
 class TemplateSecurityGroupCreator:
     """ Create copies of template security groups """
@@ -22,15 +25,19 @@ class TemplateSecurityGroupCreator:
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable debug outputs')
         parser.add_argument('--wave-name', required=True, help='Name of the wave to prepare')
-        parser.add_argument('--wave-sg-prefix', default='rehost', help='Prefix of the Security Group duplicates from the template Security Group')
-        parser.add_argument('--config-file-defaults', default=os.environ.get('MF_DEFAULTS_CONFIG_FILE', '/etc/migration_factory/defaults.yml'), help='Configuration file containing default IDs')
+        parser.add_argument('--wave-sg-prefix', default='rehost',
+                            help='Prefix of the Security Group duplicates from the template Security Group')
+        parser.add_argument('--config-file-defaults',
+                            default=os.environ.get('MF_DEFAULTS_CONFIG_FILE', '/etc/migration_factory/defaults.yml'),
+                            help='Configuration file containing default IDs')
         environment_arg = parser.add_argument('--environment', default='prod', help='Environment of the wave')
 
         self._arguments = parser.parse_args()
 
         mf_library.setup_logging(self._arguments.v)
         defaults_loader = DefaultsLoader()
-        self._defaults = defaults_loader.load(default_config_file=self._arguments.config_file_defaults, environment=self._arguments.environment)
+        self._defaults = defaults_loader.load(default_config_file=self._arguments.config_file_defaults,
+                                              environment=self._arguments.environment)
 
         environment_arg.choices = defaults_loader.getAvailableEnvironments()
 
@@ -54,40 +61,39 @@ class TemplateSecurityGroupCreator:
         self._copy_security_group(template_security_group, for_testing=True)
 
     def _template_security_group_id_default_exists(self):
-        return 'template_security_group_id' in self._defaults.keys() and self._defaults['template_security_group_id'] is not ''
+        return 'template_security_group_id' in self._defaults.keys() and self._defaults[
+            'template_security_group_id'] is not ''
 
     def _copy_security_group(self, security_group, for_testing=False):
         print('### Create template Security Group copy…', end=' ')
 
         try:
             response = self._aws_service_accessor.get_ec2().create_security_group(
-                Description='For the ' + self._arguments.wave_name + ' wave '+ ('(testing)' if for_testing else '') + ' .',
-                GroupName=self._arguments.wave_sg_prefix + ('-testing-' if for_testing else '-') + self._arguments.wave_name,
+                Description='For the ' + self._arguments.wave_name + ' wave ' + (
+                    '(testing)' if for_testing else '') + ' .',
+                GroupName=self._arguments.wave_sg_prefix + (
+                    '-testing-' if for_testing else '-') + self._arguments.wave_name,
                 VpcId=security_group['VpcId'],
                 DryRun=False
             )
             print('✔ Done')
+
+            logging.debug(self.__class__.__name__ + ':' + str(response))
         except botocore.exceptions.ClientError as error:
-            print(type(error.response['Error']['Code']))
             if error.response['Error']['Code'] == 'InvalidGroup.Duplicate':
                 print('✔ Already Done')
             else:
-                print(error.response['Error']['Code'])
-                print('✔ WAAAAHAH')
                 raise
-
-        logging.debug(self.__class__.__name__ + ':'+str(response))
 
         try:
             response = self._aws_service_accessor.get_ec2().authorize_security_group_ingress(
                 GroupId=response['GroupId'],
                 IpPermissions=security_group['IpPermissions'],
             )
+            logging.debug(self.__class__.__name__ + ':' + str(response))
         except botocore.exceptions.ClientError as error:
             print('')
             raise
-
-        logging.debug(self.__class__.__name__ + ':'+str(response))
 
 
 if __name__ == '__main__':
