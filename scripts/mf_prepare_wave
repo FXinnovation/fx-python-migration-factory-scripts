@@ -56,8 +56,6 @@ class WavePreparator:
         else:
             print('✔ Already Done')
 
-        print('✔ Done')
-
         print('### Copy .csv templates…', end=' ')
         if not pathlib.Path(os.path.join(self._path_wave, mf_library.FILE_CSV_WAVE_TEMPLATE)).exists() or not pathlib.Path(
                 os.path.join(self._path_wave, mf_library.FILE_CSV_INIT_WAVE_TEMPLATE)).exists():
