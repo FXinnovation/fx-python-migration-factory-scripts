@@ -3,6 +3,7 @@
 * feat: (library) adds AWSServiceAccessor to get access to AWS services
 * feat: (library) adds EnvironmentVariableFetcher to fetch environment variables and fallback to user input
 * feat: adds AWS_REGION environment variable
+* fix: (installation script) removes error when trying to copy .pyc files
 
 ## 4.0.0
 
