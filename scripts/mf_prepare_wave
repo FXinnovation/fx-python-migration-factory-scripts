@@ -71,9 +71,9 @@ class WavePreparator:
                 self._arguments.wave_name,
                 'SET_APP_NAME_VALUE',
                 self._arguments.wave_name,
-                str(self.self._get_default('account_id', 'SET_ACCOUNT_ID')),
+                str(self._get_default('account_id', 'SET_ACCOUNT_ID')),
                 'SET_SERVERNAME',
-                self.self._get_default('server_os', 'SET_SERVEROS'),
+                self._get_default('server_os', 'SET_SERVEROS'),
                 'SET_SERVEROS_VERSION',
                 'SET_SERVER_FQDN',
                 'app',
@@ -83,9 +83,9 @@ class WavePreparator:
                 ';'.join(filter(None, self._get_default('target_security_group_ids', []) + [sg_template_copy])),
                 self._get_default('test_subnet_id', 'SET_TEST_SUBNET_ID'),
                 ';'.join(filter(None, self._get_default('test_security_group_ids', []) + [sg_template_copy_testing])),
-                self.self._get_default('instance_type', 'SET_INSTANCE_TYPE'),
-                self.self._get_default('tenancy', 'Shared'),
-                self.self._get_default('iam_role', 'SET_IAM_ROLE'),
+                self._get_default('instance_type', 'SET_INSTANCE_TYPE'),
+                self._get_default('tenancy', 'Shared'),
+                self._get_default('iam_role', 'SET_IAM_ROLE'),
             ]))
         print('✔ Done')
 
