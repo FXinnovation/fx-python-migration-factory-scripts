@@ -54,8 +54,18 @@ class TemplateSecurityGroupCreator:
 
         self._aws_service_accessor = AWSServiceAccessor()
 
+    def template_security_group_id_default_exists(self):
+        return 'template_security_group_id' in self._defaults.keys() and \
+               self._defaults['template_security_group_id'] is not ''
+
     def create(self):
-        if not self._template_security_group_id_default_exists():
+        return self._create()
+
+    def create_for_testing(self):
+        return self._create(for_testing=True)
+
+    def _create(self, for_testing=False):
+        if not self.template_security_group_id_default_exists():
             logging.debug('No security group template. Skipping security group copy.')
             return None
 
@@ -63,15 +73,7 @@ class TemplateSecurityGroupCreator:
             self._defaults['template_security_group_id']
         ])['SecurityGroups'][0]
 
-        self._copy_security_group(template_security_group)
-        self._copy_security_group(template_security_group, for_testing=True)
-
-    def _template_security_group_id_default_exists(self):
-        return 'template_security_group_id' in self._defaults.keys() and self._defaults[
-            'template_security_group_id'] is not ''
-
-    def _copy_security_group(self, security_group, for_testing=False):
-        print('### Create template Security Group copy' + ('(testing)' if for_testing else '') + '…', end=' ')
+        print('### Create template Security Group copy' + (' (testing)' if for_testing else '') + '…', end=' ')
 
         try:
             sg_create_response = self._aws_service_accessor.get_ec2().create_security_group(
@@ -79,7 +81,7 @@ class TemplateSecurityGroupCreator:
                     '(testing)' if for_testing else '') + ' .',
                 GroupName=self._arguments.wave_sg_prefix + (
                     '-testing-' if for_testing else '-') + self._arguments.wave_name,
-                VpcId=security_group['VpcId'],
+                VpcId=template_security_group['VpcId'],
                 DryRun=False
             )
             print('✔ Done')
@@ -104,7 +106,7 @@ class TemplateSecurityGroupCreator:
         try:
             sg_authorize_response = self._aws_service_accessor.get_ec2().authorize_security_group_ingress(
                 GroupId=sg_create_response['GroupId'],
-                IpPermissions=security_group['IpPermissions'],
+                IpPermissions=template_security_group['IpPermissions'],
             )
 
             print('✔ Done')
@@ -115,6 +117,8 @@ class TemplateSecurityGroupCreator:
             else:
                 print('')
                 raise
+
+        return sg_create_response['GroupId']
 
 
 if __name__ == '__main__':

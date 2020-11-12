@@ -9,6 +9,7 @@ from shutil import copy2
 import mf_library
 from mf_library import DefaultsLoader
 from mf_library import Utils
+from mf_security_group_template import TemplateSecurityGroupCreator
 
 
 class WavePreparator:
@@ -65,6 +66,10 @@ class WavePreparator:
         copy2(os.path.join(mf_library.PATH_TEMPLATE, mf_library.FILE_CSV_INIT_WAVE_TEMPLATE), self._path_wave)
         print('✔ Done')
 
+        template_sg_creator = TemplateSecurityGroupCreator()
+        sg_template_copy = template_sg_creator.create()
+        sg_template_copy_testing = template_sg_creator.create_for_testing()
+
         print('### Pre-fill .csv templates…', end=' ')
         with open(os.path.join(self._path_wave, mf_library.FILE_CSV_WAVE_TEMPLATE), 'a') as file_object:
             file_object.write(','.join([
@@ -79,9 +84,9 @@ class WavePreparator:
                 'app',
                 self._arguments.environment,
                 self._defaults['target_subnet_id'],
-                ';'.join(self._defaults['target_security_group_ids']),
+                ';'.join(self._defaults['target_security_group_ids'], sg_template_copy),
                 self._defaults['test_subnet_id'],
-                ';'.join(self._defaults['test_security_group_ids']),
+                ';'.join(self._defaults['test_security_group_ids'], sg_template_copy_testing),
                 'SET_INSTANCE_TYPE',
                 'Shared',
                 self._defaults['iam_role'],
