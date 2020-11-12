@@ -59,7 +59,7 @@ git reset --hard HEAD
 git checkout master
 git pull --rebase origin master
 
-find scripts -type f -not -iname '*pyc' -exec cp '{}' '/usr/local/bin/' ';'
+find scripts -type f -not -iname '*pyc' -exec install '{}' '/usr/local/bin/' ';'
 sudo mkdir -p "$CONFIG_DESTINATION_PATH"
 
 install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDPOINT_FILE"
