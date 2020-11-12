@@ -73,7 +73,6 @@ class TemplateSecurityGroupCreator:
     def _copy_security_group(self, security_group, for_testing=False):
         print('### Create template Security Group copy…', end=' ')
 
-        sg_create_response = None
         try:
             sg_create_response = self._aws_service_accessor.get_ec2().create_security_group(
                 Description='For the ' + self._arguments.wave_name + ' wave ' + (
@@ -89,8 +88,15 @@ class TemplateSecurityGroupCreator:
         except botocore.exceptions.ClientError as error:
             if error.response['Error']['Code'] == 'InvalidGroup.Duplicate':
                 print('✔ Already Done')
+
+                sg_create_response = self._aws_service_accessor.get_ec2().describe_security_groups(GroupName=[
+                    self._arguments.wave_sg_prefix + (
+                        '-testing-' if for_testing else '-') + self._arguments.wave_name
+                ])['SecurityGroups'][0]
             else:
                 raise
+
+        print(sg_create_response)
 
         try:
             sg_authorize_response = self._aws_service_accessor.get_ec2().authorize_security_group_ingress(
