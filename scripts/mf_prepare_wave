@@ -65,7 +65,7 @@ class WavePreparator:
         print(sg_template_copy)
         print(self._defaults['target_security_group_ids'])
         print(self._defaults['target_security_group_ids'] + [sg_template_copy])
-        print(filter(None, self._defaults['target_security_group_ids'] + [sg_template_copy]))
+        print(dict(filter(None, self._defaults['target_security_group_ids'] + [sg_template_copy])))
         with open(os.path.join(self._path_wave, mf_library.FILE_CSV_WAVE_TEMPLATE), 'a') as file_object:
             file_object.write(','.join([
                 self._arguments.wave_name,
@@ -97,7 +97,7 @@ class WavePreparator:
         if key not in self._defaults.keys():
             return default
 
-        return self._defaults['key']
+        return self._defaults[key]
 
 
 if __name__ == '__main__':
