@@ -32,9 +32,11 @@ class WavePreparator:
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable debug outputs')
         parser.add_argument('--wave-name', required=True, help='Name of the wave to prepare')
-        parser.add_argument('--config-file-defaults',
-                            default=os.environ.get('MF_DEFAULTS_CONFIG_FILE', '/etc/migration_factory/defaults.yml'),
-                            help='Configuration file containing default IDs')
+        parser.add_argument(
+            '--config-file-defaults',
+            default=os.environ.get('MF_DEFAULTS_CONFIG_FILE', '/etc/migration_factory/defaults.yml'),
+            help='Configuration file containing default IDs'
+        )
         environment_arg = parser.add_argument('--environment', help='Environment of the wave')
 
         self._arguments = parser.parse_args()

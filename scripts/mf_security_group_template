@@ -25,19 +25,25 @@ class TemplateSecurityGroupCreator:
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable debug outputs')
         parser.add_argument('--wave-name', required=True, help='Name of the wave to prepare')
-        parser.add_argument('--wave-sg-prefix', default='rehost',
-                            help='Prefix of the Security Group duplicates from the template Security Group')
-        parser.add_argument('--config-file-defaults',
-                            default=os.environ.get('MF_DEFAULTS_CONFIG_FILE', '/etc/migration_factory/defaults.yml'),
-                            help='Configuration file containing default IDs')
+        parser.add_argument(
+            '--wave-sg-prefix',
+            default='rehost',
+            help='Prefix of the Security Group duplicates from the template Security Group'
+        )
+        parser.add_argument(
+            '--config-file-defaults',
+            default=os.environ.get('MF_DEFAULTS_CONFIG_FILE', '/etc/migration_factory/defaults.yml'),
+            help='Configuration file containing default IDs'
+        )
         environment_arg = parser.add_argument('--environment', default='prod', help='Environment of the wave')
 
         self._arguments = parser.parse_args()
 
         mf_library.setup_logging(self._arguments.v)
         defaults_loader = DefaultsLoader()
-        self._defaults = defaults_loader.load(default_config_file=self._arguments.config_file_defaults,
-                                              environment=self._arguments.environment)
+        self._defaults = defaults_loader.load(
+            default_config_file=self._arguments.config_file_defaults, environment=self._arguments.environment
+        )
 
         environment_arg.choices = defaults_loader.getAvailableEnvironments()
 
