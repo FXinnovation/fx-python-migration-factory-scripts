@@ -45,25 +45,22 @@ class TemplateSecurityGroupCreator:
             logging.debug('No security group template. Skipping security group copy.')
             return None
 
-        print("#####")
-        print("#####")
-        print("#####")
-        print("#####")
-
         template_security_group = self._aws_service_accessor.get_ec2().describe_security_groups(GroupIds=[
             self._defaults['template_security_group_id']
         ])['SecurityGroups'][0]
-
-        print("#####")
-        print("#####")
-        print("#####")
-        print("#####")
 
         response = self._aws_service_accessor.get_ec2().create_security_group(
             Description='For the ' + self._arguments.wave_name + ' wave.',
             GroupName=self._arguments.wave_sg_prefix + '-' + self._arguments.wave_name,
             VpcId=template_security_group['VpcId'],
-            DryRun=True
+            DryRun=False
+        )
+
+        logging.debug('SGCreate:'+str(response))
+
+        response = self._aws_service_accessor.get_ec2().authorize_security_group_ingress(
+            GroupId=response['GroupId'],
+            IpPermissions=template_security_group['IpPermissions'],
         )
 
         logging.debug('SGCreate:'+str(response))
