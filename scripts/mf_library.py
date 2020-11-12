@@ -13,8 +13,8 @@ import yaml
 PATH_HOME = os.path.join(str(Path.home()), 'migration')
 PATH_TEMPLATE = '/usr/local/share/applications/migration_factory'
 
-FILE_CSV_WAVE_TEMPLATE = os.path.join(PATH_TEMPLATE, 'migration-intake-form.csv')
-FILE_CSV_INIT_WAVE_TEMPLATE = os.path.join(PATH_TEMPLATE, 'migration-intake-form-init.csv')
+FILE_CSV_WAVE_TEMPLATE = 'migration-intake-form.csv'
+FILE_CSV_INIT_WAVE_TEMPLATE = 'migration-intake-form-init.csv'
 FILE_DONE_MARKER = '.mf_done'
 
 DIRECTORY_POST_LAUNCH = 'post-launch'
