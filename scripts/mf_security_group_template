@@ -72,6 +72,7 @@ class TemplateSecurityGroupCreator:
             if str(error.response['Error']['Code']) is 'InvalidGroup.Duplicate':
                 print('✔ Already Done')
             else:
+                print(error.response['Error']['Code'])
                 print('✔ WAAAAHAH')
                 raise
 
