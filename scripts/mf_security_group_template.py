@@ -49,7 +49,7 @@ class TemplateSecurityGroupCreator:
 
         self._arguments = parser.parse_args()
 
-        Utils().check_is_serializable_as_path(self._arguments.wave_name)
+        Utils.check_is_serializable_as_path(self._arguments.wave_name)
         self._path_wave = os.path.join(mf_library.PATH_HOME, self._arguments.wave_name)
 
         self._aws_service_accessor = AWSServiceAccessor()

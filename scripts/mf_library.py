@@ -63,7 +63,8 @@ class DefaultsLoader:
 class Utils:
     """ Primitive type utilities """
 
-    def check_is_serializable_as_path(self, string_to_test):
+    @staticmethod
+    def check_is_serializable_as_path(string_to_test):
         is_serializable_as_path = re.search("^[a-zA-Z0-9_ -]+$", string_to_test)
         if not is_serializable_as_path:
             logging.warning(
