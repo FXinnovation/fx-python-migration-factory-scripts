@@ -73,10 +73,11 @@ class Utils:
         return bool(is_serializable_as_path)
 
 
-class EnvironmentVariableFetcher():
+class EnvironmentVariableFetcher:
     """ Fetch environment variables """
 
-    def fetch(self, env_var_names, env_var_description, sensitive=False):
+    @staticmethod
+    def fetch(self, env_var_names, env_var_description, default=False, sensitive=False):
         for env_var_name in env_var_names:
             logging.debug(self.__class__.__name__ + ': Trying to fetch ' + env_var_name + ' environment variable.')
 
@@ -89,7 +90,7 @@ class EnvironmentVariableFetcher():
         return input(env_var_description + ": ")
 
 
-class AWSServiceAccessor():
+class AWSServiceAccessor:
     """ Login to AWS """
 
     _environment_variable_fetcher = None
@@ -99,14 +100,13 @@ class AWSServiceAccessor():
     _ec2_client = None
 
     def __init__(self):
-        self._environment_variable_fetcher = EnvironmentVariableFetcher()
-        self._aws_access_key = self._environment_variable_fetcher.fetch(
+        self._aws_access_key = EnvironmentVariableFetcher.fetch(
             ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID'
         )
-        self._aws_secret_access_key = self._environment_variable_fetcher.fetch(
+        self._aws_secret_access_key = EnvironmentVariableFetcher.fetch(
             ENV_VAR_AWS_SECRET_KEY_NAMES, 'AWS Access Secret Key', sensitive=True
         )
-        self._aws_region = self._environment_variable_fetcher.fetch(ENV_VAR_AWS_REGION_NAMES, 'AWS Region')
+        self._aws_region = EnvironmentVariableFetcher.fetch(ENV_VAR_AWS_REGION_NAMES, 'AWS Region')
 
     def get_ec2(self):
         if self._ec2_client is None:
