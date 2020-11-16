@@ -3,7 +3,7 @@
 INSTALL_CRON=false
 TEMPLATES_PATH=/usr/local/share/applications/migration_factory
 CONFIG_DESTINATION_PATH=/etc/migration_factory
-ENDPOINT_FILE=endpoints.json
+ENDPOINT_FILE=endpoints.yml
 DEFAULTS_FILE=defaults.yml
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -64,6 +64,9 @@ sudo mkdir -p "$CONFIG_DESTINATION_PATH"
 
 install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDPOINT_FILE"
 install_without_override "config/$DEFAULTS_FILE" "$CONFIG_DESTINATION_PATH/$DEFAULTS_FILE"
+
+# Deprecated - To remove once no scripts uses "endpoints.json" anymore
+install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/endpoints.json"
 
 sudo mkdir -p "$TEMPLATES_PATH"
 sudo cp config/*.csv "$TEMPLATES_PATH"

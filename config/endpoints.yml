@@ -1,0 +1,6 @@
+# API URL used to login to the migration factory
+LoginApiUrl: https://xxxxxx.execute-api.us-east-1.amazonaws.com
+# API URL used to query/make user actions on the migration factory API
+UserApiUrl: https://xxxxxx.execute-api.us-east-1.amazonaws.com
+# API URL used to query/make admin actions on the migration factory API
+AdminApiUrl: https://xxxxxx.execute-api.us-east-1.amazonaws.com
