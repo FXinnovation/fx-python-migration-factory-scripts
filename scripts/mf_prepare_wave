@@ -10,6 +10,7 @@ from shutil import copy2
 import mf_library
 from mf_library import DefaultsLoader
 from mf_library import Utils
+from mf_library import EnvironmentVariableFetcher
 from mf_security_group_template import TemplateSecurityGroupCreator
 
 
@@ -27,9 +28,21 @@ class WavePreparator:
         parser.add_argument('--wave-name', required=True, help='Name of the wave to prepare')
         parser.add_argument(
             '--config-file-defaults',
-            default=os.environ.get('MF_DEFAULTS_CONFIG_FILE', '/etc/migration_factory/defaults.yml'),
+            default=EnvironmentVariableFetcher.fetch(
+                mf_library.ENV_VAR_DEFAULTS_CONFIG_FILE,
+                default=mf_library.DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE
+            ),
             help='Configuration file containing default IDs'
         )
+        parser.add_argument(
+            '--config-file-endpoints',
+            default=EnvironmentVariableFetcher.fetch(
+                mf_library.ENV_VAR_ENDPOINT_CONFIG_FILE,
+                default=mf_library.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+            ),
+            help='Configuration file containing the Migration Factory endpoint URLs'
+        )
+
         environment_arg = parser.add_argument('--environment', help='Environment of the wave')
 
         self._arguments = parser.parse_args()

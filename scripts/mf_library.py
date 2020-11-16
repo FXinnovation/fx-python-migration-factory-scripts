@@ -12,6 +12,7 @@ import yaml
 
 PATH_HOME = os.path.join(str(Path.home()), 'migration')
 PATH_TEMPLATE = '/usr/local/share/applications/migration_factory'
+PATH_CONFIG = '/etc/migration_factory'
 
 FILE_CSV_WAVE_TEMPLATE = 'migration-intake-form.csv'
 FILE_CSV_INIT_WAVE_TEMPLATE = 'migration-intake-form-init.csv'
@@ -24,6 +25,9 @@ ENV_VAR_AWS_SECRET_KEY_NAMES = ['MF_AWS_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_K
 ENV_VAR_AWS_REGION_NAMES = ['MF_AWS_REGION', 'AWS_REGION']
 ENV_VAR_ENDPOINT_CONFIG_FILE = ['MF_ENDPOINT_CONFIG_FILE']
 ENV_VAR_DEFAULTS_CONFIG_FILE = ['MF_DEFAULTS_CONFIG_FILE']
+
+DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE = os.path.join(PATH_CONFIG, 'endpoints.yml')
+DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE = os.path.join(PATH_CONFIG, 'defaults.yml')
 
 
 class DefaultsLoader:
@@ -79,7 +83,7 @@ class EnvironmentVariableFetcher:
     """ Fetch environment variables """
 
     @staticmethod
-    def fetch(self, env_var_names, env_var_description, default=False, sensitive=False):
+    def fetch(self, env_var_names, env_var_description='Env variable', default=False, sensitive=False):
         for env_var_name in env_var_names:
             logging.debug(self.__class__.__name__ + ': Trying to fetch ' + env_var_name + ' environment variable.')
 
