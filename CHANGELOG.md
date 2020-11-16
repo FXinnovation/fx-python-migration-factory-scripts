@@ -1,3 +1,12 @@
+## 5.0.0
+
+* feat: (library) Makes Utils class methods static
+* feat: (library) Makes EnvironmentVariableFetcher fetch class methods static
+* feat: (library) Allow EnvironmentVariableFetcher fetch to return default value
+* refactor: (library) sets default constants for config files
+* feat: (library) adds MigrationFactoryAuthenticator class to login to Migration Factory
+* feat: adds endpoints.yml as the new main endpoint file, making endpoints.json deprecated
+
 ## 4.1.0
 
 * feat: (library) adds AWSServiceAccessor to get access to AWS services

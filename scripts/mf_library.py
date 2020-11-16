@@ -151,6 +151,7 @@ class MigrationFactoryAuthenticator:
 
         return self._authorization_token
 
+
 class AWSServiceAccessor:
     """ Allows access to AWS API endpoints """
 
