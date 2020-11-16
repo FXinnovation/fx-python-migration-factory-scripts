@@ -9,6 +9,7 @@ import botocore
 import mf_library
 from mf_library import AWSServiceAccessor
 from mf_library import DefaultsLoader
+from mf_library import EnvironmentVariableFetcher
 from mf_library import Utils
 
 
@@ -32,7 +33,10 @@ class TemplateSecurityGroupCreator:
         )
         parser.add_argument(
             '--config-file-defaults',
-            default=os.environ.get('MF_DEFAULTS_CONFIG_FILE', '/etc/migration_factory/defaults.yml'),
+            default=EnvironmentVariableFetcher.fetch(
+                mf_library.ENV_VAR_DEFAULTS_CONFIG_FILE,
+                default=mf_library.DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE
+            ),
             help='Configuration file containing default IDs'
         )
         environment_arg = parser.add_argument('--environment', default='prod', help='Environment of the wave')
