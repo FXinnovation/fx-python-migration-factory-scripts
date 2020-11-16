@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import getpass
+import json
 import logging
 import os
 import re
@@ -8,6 +9,7 @@ import sys
 from pathlib import Path
 
 import boto3
+import requests
 import yaml
 
 PATH_HOME = os.path.join(str(Path.home()), 'migration')
@@ -25,6 +27,8 @@ ENV_VAR_AWS_SECRET_KEY_NAMES = ['MF_AWS_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_K
 ENV_VAR_AWS_REGION_NAMES = ['MF_AWS_REGION', 'AWS_REGION']
 ENV_VAR_ENDPOINT_CONFIG_FILE = ['MF_ENDPOINT_CONFIG_FILE']
 ENV_VAR_DEFAULTS_CONFIG_FILE = ['MF_DEFAULTS_CONFIG_FILE']
+ENV_VAR_MIGRATION_FACTORY_USERNAME = ['MF_USERNAME', 'MF_FACTORY_USERNAME', 'MF_MIGRATION_FACTORY_USERNAME']
+ENV_VAR_MIGRATION_FACTORY_PASSWORD = ['MF_PASSWORD', 'MF_FACTORY_PASSWORD', 'MF_MIGRATION_FACTORY_PASSWORD']
 
 DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE = os.path.join(PATH_CONFIG, 'endpoints.yml')
 DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE = os.path.join(PATH_CONFIG, 'defaults.yml')
@@ -62,8 +66,19 @@ class DefaultsLoader:
     def get(self):
         return self._defaults
 
-    def getAvailableEnvironments(self):
+    def get_available_environments(self):
         return self._available_environments
+
+
+class EndpointsLoader:
+    """ Loads endpoints configuration """
+
+    def load(self, endpoint_config_file):
+        with open(endpoint_config_file, 'r') as stream:
+            try:
+                return yaml.safe_load(stream)
+            except yaml.YAMLError as exception:
+                logging.error(exception)
 
 
 class Utils:
@@ -99,8 +114,45 @@ class EnvironmentVariableFetcher:
         return input(env_var_description + ": ")
 
 
+class MigrationFactoryAuthenticator:
+    """ Login to Migration Factory """
+
+    _username = None
+    _password = None
+    _login_api_url = None
+    _authorization_token = None
+
+    def __init__(self, login_api_url):
+        self._username = EnvironmentVariableFetcher.fetch(
+            ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Migration Factory username'
+        )
+        self._password = EnvironmentVariableFetcher.fetch(
+            ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Migration Factory password', sensitive=True
+        )
+        self._login_api_url = login_api_url
+
+    def login(self):
+        response = requests.post(
+            os.path.join(self._login_api_url, 'prod/login'),
+            data=json.dumps({'username': self._username, 'password': self._password})
+        )
+        if response.status_code == 200:
+            logging.debug(self.__class__.__name__ + ': Migration Factory Login successful')
+            self._authorization_token = str(json.loads(response.text))
+            return self._authorization_token
+        else:
+            logging.error(self.__class__.__name__ + ': Migration Factory Login failed.')
+            logging.debug(self.__class__.__name__ + ':' + str(response))
+            sys.exit(1)
+
+    def get_authorization_token(self):
+        if self._authorization_token is None:
+            return self.login()
+
+        return self._authorization_token
+
 class AWSServiceAccessor:
-    """ Login to AWS """
+    """ Allows access to AWS API endpoints """
 
     _environment_variable_fetcher = None
     _aws_access_key = ''

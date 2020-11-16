@@ -49,7 +49,7 @@ class TemplateSecurityGroupCreator:
             default_config_file=self._arguments.config_file_defaults, environment=self._arguments.environment
         )
 
-        environment_arg.choices = defaults_loader.getAvailableEnvironments()
+        environment_arg.choices = defaults_loader.get_available_environments()
 
         self._arguments = parser.parse_args()
 
