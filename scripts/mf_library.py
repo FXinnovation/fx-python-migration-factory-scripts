@@ -22,6 +22,8 @@ DIRECTORY_POST_LAUNCH = 'post-launch'
 ENV_VAR_AWS_ACCESS_KEY_NAMES = ['MF_AWS_ACCESS_KEY_ID', 'AWS_ACCESS_KEY_ID', 'AWS_ACCESS_KEY']
 ENV_VAR_AWS_SECRET_KEY_NAMES = ['MF_AWS_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY', 'AWS_SECRET_KEY']
 ENV_VAR_AWS_REGION_NAMES = ['MF_AWS_REGION', 'AWS_REGION']
+ENV_VAR_ENDPOINT_CONFIG_FILE = ['MF_ENDPOINT_CONFIG_FILE']
+ENV_VAR_DEFAULTS_CONFIG_FILE = ['MF_DEFAULTS_CONFIG_FILE']
 
 
 class DefaultsLoader:
@@ -84,8 +86,11 @@ class EnvironmentVariableFetcher:
             if env_var_name in os.environ:
                 return os.getenv(env_var_name)
 
-        if sensitive is True:
+        if sensitive is True and default is False:
             return getpass.getpass(env_var_description + ": ")
+
+        if default is not False:
+            return default
 
         return input(env_var_description + ": ")
 
