@@ -1,3 +1,7 @@
+## 5.1.0
+
+* feat: adds some post install scripts for Windows machines
+
 ## 5.0.0
 
 * feat: (library) Makes Utils class methods static
