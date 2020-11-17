@@ -1,2 +1,2 @@
 cd %~dp0
-powershell -file windows-vmware-tools-uninstall.ps1
+powershell -file windows-install-ssm-agent.ps1
