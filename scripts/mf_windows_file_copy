@@ -117,7 +117,7 @@ def main(arguments):
             Domain_Password = getpass.getpass("Windows User Password: ")
       else:
             Domain_Password = os.getenv('MF_WINDOWS_PASSWORD')
-    dest_path = "c:\\Program Files (x86)\\CloudEndure\\post_launch"
+    dest_path = "C:\\Program Files (x86)\\CloudEndure\\post_launch"
     for server in Servers:
         command1 = "Invoke-Command -ComputerName " + server + " -ScriptBlock {if (!(Test-path \"" + dest_path + "\")) {New-Item -Path \"" + dest_path + "\"  -ItemType directory}}"
         command2 = "Copy-Item \""+ args.Source  +"/*\" \"" + dest_path + "\" -ToSession (New-PSSession -ComputerName '"+ server  +"')"

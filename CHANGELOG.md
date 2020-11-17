@@ -1,6 +1,7 @@
 ## 5.1.0
 
 * feat: adds some post install scripts for Windows machines
+* fix: fixes windows file copy on old Windows
 
 ## 5.0.0
 
