@@ -74,12 +74,25 @@ class DefaultsLoader:
 class EndpointsLoader:
     """ Loads endpoints configuration """
 
-    def load(self, endpoint_config_file):
-        with open(endpoint_config_file, 'r') as stream:
+    _endpoints = None
+    _endpoint_config_file = None
+
+    def __init__(self, endpoint_config_file):
+        self._endpoint_config_file = endpoint_config_file
+
+    def load(self):
+        with open(self._endpoint_config_file, 'r') as stream:
             try:
-                return yaml.safe_load(stream)
+                self._endpoints = yaml.safe_load(stream)
+                return self._endpoints
             except yaml.YAMLError as exception:
                 logging.error(exception)
+
+    def get(self):
+        if self._endpoints is None:
+            self.load()
+
+        return self._endpoints
 
 
 class Utils:
