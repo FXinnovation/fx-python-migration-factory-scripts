@@ -1,3 +1,9 @@
+## 5.2.0
+
+* feat: Add `mf_launch_target` script to launch cutover and test targets using CLI
+* fix: install script to use python3 command to install tools
+* doc: update to integrate previous changes (missing pre-requisite library)
+
 ## 5.1.0
 
 * feat: adds some post install scripts for Windows machines
