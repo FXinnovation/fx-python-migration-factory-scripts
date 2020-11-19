@@ -78,6 +78,9 @@ class WavePreparator:
     def prepare(self):
         logging.debug(self._arguments)
 
+        self._create_cloud_endure_project()
+        # self._create_migration_factory_project()
+
         print('### Create folder structure…', end=' ')
         if not pathlib.Path(os.path.join(self._path_wave, mf.DIRECTORY_POST_LAUNCH)).exists():
             os.makedirs(os.path.join(self._path_wave, mf.DIRECTORY_POST_LAUNCH), exist_ok=True)
@@ -140,6 +143,123 @@ class WavePreparator:
             return default
 
         return self._defaults[key]
+
+    def _create_migration_factory_project(self):
+        print('### Create Migration Factory Project…', end=' ')
+
+        app_schema = self._migration_factory_requester.get(
+            url=self._endpoints[MigrationFactoryRequester.KEY_ADMIN_API_URL],
+            uri='/prod/admin/schema/app'
+        )
+
+        logging.debug(self.__class__.__name__ + ':app_schema:' + str(app_schema))
+
+        attribute_description = None
+        attribute_type = None
+
+        for app in app_schema['attributes']:
+            if app['name'] == 'cloudendure_projectname':
+                attribute_description = app['description']
+                attribute_type = app['type']
+                break
+
+        data = {
+            "event": "PUT",
+            "name": "cloudendure_projectname",
+            "update": {
+                "name": "cloudendure_projectname",
+                "description": attribute_description,
+                "type": attribute_type,
+                "listvalue": ','.join('TEST_SHOULD_BE_PROJECTS')
+            }
+        }
+
+        logging.debug(self.__class__.__name__ + ':data:' + str(data))
+
+        response = self._migration_factory_requester.put(
+            url=self._endpoints[MigrationFactoryRequester.KEY_ADMIN_API_URL],
+            uri='/prod/admin/schema/app',
+            data=data
+        )
+        logging.debug(self.__class__.__name__ + ':response:' + str(response))
+
+        if response.status_code == 200:
+            logging.debug(
+                self.__class__.__name__ + ':migration_factory_project:Successfully updated Migration Factory projects')
+        else:
+            logging.error(
+                self.__class__.__name__ + ':migration_factory_project:Error when updating Migration Factory projects')
+            sys.exit(1)
+
+        print('✔ Done')
+
+    def _create_cloud_endure_project(self):
+        print('### Create CloudEndure project…', end=' ')
+
+        project_data = {
+            'name': self._arguments['wave-name'],
+            'type': 'MIGRATION',
+            'licensesIDs': [self._cloud_endure_requester.get_migration_license()],
+            'targetCloudId': self._cloud_endure_requester.get_aws_cloud_id(),
+            'sourceRegion': self._cloud_endure_requester.get_on_prem_region_id()
+        }
+        project_id = json.loads(self._cloud_endure_requester.post(uri='/projects', data=project_data).content)['id']
+
+        credentials_data = {
+            'publicKey': EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_ACCESS_KEY_NAMES),
+            'privateKey': base64.b64encode(
+                EnvironmentVariableFetcher.fetch(
+                    mf.ENV_VAR_AWS_SECRET_KEY_NAMES, sensitive=True
+                ).encode('utf-8')).decode('utf-8'),
+            'cloudId': self._cloud_endure_requester.get_aws_cloud_id()
+        }
+        cloud_credentials_id = json.loads(
+            self._cloud_endure_requester.post(uri='/cloudCredentials', data=credentials_data).content
+        )['id']
+
+        data = {
+            'cloudCredentialsIDs': [cloud_credentials_id]
+        }
+        self._cloud_endure_requester.patch(uri='/projects/{}'.format(project_id), data=data)
+
+        region_id = self._cloud_endure_requester.get_aws_region_id(
+            cloud_credentials_id, EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_REGION_NAMES)
+        )
+
+        project_replication_config = {
+            'volumeEncryptionKey': '',
+            'volumeEncryptionAllowed': True,
+            'bandwidthThrottling': self._defaults['replication_bandwidth_throttling'],
+            'disablePublicIp': self._defaults['replication_disable_public'],
+            'replicationServerType': self._defaults['replication_instance_type'],
+            'useLowCostDisks': False,
+            'useDedicatedServer': False,
+            'usePrivateIp': self._defaults['replication_disable_public'],
+            'replicatorSecurityGroupIDs': [],
+            'proxyUrl': '',
+            'storageLocationId': '',
+            'objectStorageLocation': '',
+            'archivingEnabled': False,
+            'replicationTags': [{'key': 'CloudEndureProject', 'value': self._arguments['wave_name']}],
+            'subnetId': self._get_default('replication_subnet_id'),
+            'subnetHostProject': '',
+            'cloudCredentials': cloud_credentials_id,
+            'region': region_id,
+            'converterType': self._defaults['replication_converter_instance_type'],
+        }
+
+        replication_configuration_id = json.loads(self._cloud_endure_requester.post(
+            uri='/projects/{}/replicationConfigurations'.format(project_id),
+            data=project_replication_config
+        ).content)['id']
+
+        data = {
+            'replicationConfiguration': replication_configuration_id
+        }
+
+        self._cloud_endure_requester.patch(uri='/projects/{}'.format(project_id), data=data)
+
+        print('✔ Done')
 
 
 if __name__ == '__main__':
