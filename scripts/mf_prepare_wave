@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 
 import argparse
+import base64
+import json
 import logging
 import os
 import pathlib
+import sys
 from pathlib import Path
 from shutil import copy2
 
-import mf_library
-from mf_library import DefaultsLoader
-from mf_library import Utils
-from mf_library import EnvironmentVariableFetcher
+import mf
+from mf.cloud_endure import CloudEndureRequester
+from mf.config_loaders import DefaultsLoader
+from mf.config_loaders import EndpointsLoader
+from mf.migration_factory import MigrationFactoryRequester
+from mf.utils import EnvironmentVariableFetcher
+from mf.utils import Utils
 from mf_security_group_template import TemplateSecurityGroupCreator
 
 
@@ -19,6 +25,9 @@ class WavePreparator:
 
     _arguments = []
     _defaults = {}
+    _endpoints = {}
+    _migration_factory_requester = None
+    _cloud_endure_requester = None
     _environments = []
     _path_wave = ''
 
@@ -29,16 +38,16 @@ class WavePreparator:
         parser.add_argument(
             '--config-file-defaults',
             default=EnvironmentVariableFetcher.fetch(
-                mf_library.ENV_VAR_DEFAULTS_CONFIG_FILE,
-                default=mf_library.DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE
+                mf.ENV_VAR_DEFAULTS_CONFIG_FILE,
+                default=mf.DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE
             ),
             help='Configuration file containing default IDs'
         )
         parser.add_argument(
             '--config-file-endpoints',
             default=EnvironmentVariableFetcher.fetch(
-                mf_library.ENV_VAR_ENDPOINT_CONFIG_FILE,
-                default=mf_library.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+                mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+                default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
             ),
             help='Configuration file containing the Migration Factory endpoint URLs'
         )
@@ -47,7 +56,7 @@ class WavePreparator:
 
         self._arguments = parser.parse_args()
 
-        mf_library.setup_logging(self._arguments.v)
+        mf.utils.setup_logging(self._arguments.v)
         defaults_loader = DefaultsLoader()
         self._defaults = defaults_loader.load(
             default_config_file=self._arguments.config_file_defaults,
@@ -59,23 +68,29 @@ class WavePreparator:
         self._arguments = parser.parse_args()
 
         Utils.check_is_serializable_as_path(self._arguments.wave_name)
-        self._path_wave = os.path.join(mf_library.PATH_HOME, self._arguments.wave_name)
+        self._path_wave = os.path.join(mf.PATH_HOME, self._arguments.wave_name)
+        self._endpoints = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints).load()
+        self._migration_factory_requester = MigrationFactoryRequester(
+            self._endpoints[MigrationFactoryRequester.KEY_LOGIN_API_URL]
+        )
+        self._cloud_endure_requester = CloudEndureRequester()
 
     def prepare(self):
         logging.debug(self._arguments)
 
         print('### Create folder structure…', end=' ')
-        if not pathlib.Path(os.path.join(self._path_wave, mf_library.DIRECTORY_POST_LAUNCH)).exists():
-            os.makedirs(os.path.join(self._path_wave, mf_library.DIRECTORY_POST_LAUNCH), exist_ok=True)
+        if not pathlib.Path(os.path.join(self._path_wave, mf.DIRECTORY_POST_LAUNCH)).exists():
+            os.makedirs(os.path.join(self._path_wave, mf.DIRECTORY_POST_LAUNCH), exist_ok=True)
             print('✔ Done')
         else:
             print('✔ Already Done')
 
         print('### Copy .csv templates…', end=' ')
-        if not pathlib.Path(os.path.join(self._path_wave, mf_library.FILE_CSV_WAVE_TEMPLATE)).exists() or not pathlib.Path(
-                os.path.join(self._path_wave, mf_library.FILE_CSV_INIT_WAVE_TEMPLATE)).exists():
-            copy2(os.path.join(mf_library.PATH_TEMPLATE, mf_library.FILE_CSV_WAVE_TEMPLATE), self._path_wave)
-            copy2(os.path.join(mf_library.PATH_TEMPLATE, mf_library.FILE_CSV_INIT_WAVE_TEMPLATE), self._path_wave)
+        if not pathlib.Path(
+            os.path.join(self._path_wave, mf.FILE_CSV_WAVE_TEMPLATE)
+        ).exists() or not pathlib.Path(os.path.join(self._path_wave, mf.FILE_CSV_INIT_WAVE_TEMPLATE)).exists():
+            copy2(os.path.join(mf.PATH_TEMPLATE, mf.FILE_CSV_WAVE_TEMPLATE), self._path_wave)
+            copy2(os.path.join(mf.PATH_TEMPLATE, mf.FILE_CSV_INIT_WAVE_TEMPLATE), self._path_wave)
             print('✔ Done')
         else:
             print('✔ Already Done')
@@ -86,7 +101,7 @@ class WavePreparator:
 
         print('### Pre-fill .csv templates…', end=' ')
 
-        with open(os.path.join(self._path_wave, mf_library.FILE_CSV_WAVE_TEMPLATE), 'a') as file_object:
+        with open(os.path.join(self._path_wave, mf.FILE_CSV_WAVE_TEMPLATE), 'a') as file_object:
             file_object.write(','.join([
                 self._arguments.wave_name,
                 'SET_APP_NAME_VALUE',
@@ -100,12 +115,12 @@ class WavePreparator:
                 self._arguments.environment,
                 self._get_default('target_subnet_id', 'SET_TARGET_SUBNET_ID'),
                 ';'.join(list(
-                    x for x in (self._get_default('target_security_group_ids', []) + [sg_template_copy]) if x != None
+                    x for x in (self._get_default('target_security_group_ids', []) + [sg_template_copy]) if x is None
                 )),
                 self._get_default('test_subnet_id', 'SET_TEST_SUBNET_ID'),
                 ';'.join(list(
                     x for x in (self._get_default('test_security_group_ids', []) + [sg_template_copy_testing]) if
-                    x != None
+                    x is None
                 )),
                 self._get_default('instance_type', 'SET_INSTANCE_TYPE'),
                 self._get_default('tenancy', 'Shared'),
@@ -114,10 +129,13 @@ class WavePreparator:
         print('✔ Done')
 
         print('### Add marker…', end=' ')
-        Path(os.path.join(self._path_wave, mf_library.FILE_DONE_MARKER)).touch()
+        Path(os.path.join(self._path_wave, mf.FILE_DONE_MARKER)).touch()
         print('✔ Done')
 
-    def _get_default(self, key, default=''):
+    def _get_default(self, key, default=None):
+        if default is None:
+            default = ''
+
         if key not in self._defaults.keys() or self._defaults[key] is None:
             return default
 

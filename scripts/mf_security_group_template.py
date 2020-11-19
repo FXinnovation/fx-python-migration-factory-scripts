@@ -4,13 +4,13 @@ import argparse
 import logging
 import os
 
-import botocore
+from botocore.exceptions import ClientError
 
-import mf_library
-from mf_library import AWSServiceAccessor
-from mf_library import DefaultsLoader
-from mf_library import EnvironmentVariableFetcher
-from mf_library import Utils
+import mf
+from mf.aws import AWSServiceAccessor
+from mf.config_loaders import DefaultsLoader
+from mf.utils import EnvironmentVariableFetcher
+from mf.utils import Utils
 
 
 class TemplateSecurityGroupCreator:
@@ -34,8 +34,8 @@ class TemplateSecurityGroupCreator:
         parser.add_argument(
             '--config-file-defaults',
             default=EnvironmentVariableFetcher.fetch(
-                mf_library.ENV_VAR_DEFAULTS_CONFIG_FILE,
-                default=mf_library.DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE
+                mf.ENV_VAR_DEFAULTS_CONFIG_FILE,
+                default=mf.DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE
             ),
             help='Configuration file containing default IDs'
         )
@@ -43,10 +43,11 @@ class TemplateSecurityGroupCreator:
 
         self._arguments = parser.parse_args()
 
-        mf_library.setup_logging(self._arguments.v)
+        mf.utils.setup_logging(self._arguments.v)
         defaults_loader = DefaultsLoader()
         self._defaults = defaults_loader.load(
-            default_config_file=self._arguments.config_file_defaults, environment=self._arguments.environment
+            default_config_file=self._arguments.config_file_defaults,
+            environment=self._arguments.environment
         )
 
         environment_arg.choices = defaults_loader.get_available_environments()
@@ -54,7 +55,7 @@ class TemplateSecurityGroupCreator:
         self._arguments = parser.parse_args()
 
         Utils.check_is_serializable_as_path(self._arguments.wave_name)
-        self._path_wave = os.path.join(mf_library.PATH_HOME, self._arguments.wave_name)
+        self._path_wave = os.path.join(mf.PATH_HOME, self._arguments.wave_name)
 
         self._aws_service_accessor = AWSServiceAccessor()
 
@@ -91,7 +92,7 @@ class TemplateSecurityGroupCreator:
             print('✔ Done')
 
             logging.debug(self.__class__.__name__ + ':' + str(sg_create_response))
-        except botocore.exceptions.ClientError as error:
+        except ClientError as error:
             if error.response['Error']['Code'] == 'InvalidGroup.Duplicate':
                 print('✔ Already Done')
 
@@ -115,7 +116,7 @@ class TemplateSecurityGroupCreator:
 
             print('✔ Done')
             logging.debug(self.__class__.__name__ + ':' + str(sg_authorize_response))
-        except botocore.exceptions.ClientError as error:
+        except ClientError as error:
             if error.response['Error']['Code'] == 'InvalidPermission.Duplicate':
                 print('✔ Already Done')
             else:
