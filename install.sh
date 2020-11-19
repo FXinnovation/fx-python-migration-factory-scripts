@@ -71,7 +71,7 @@ install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/endpo
 sudo mkdir -p "$TEMPLATES_PATH"
 sudo cp config/*.csv "$TEMPLATES_PATH"
 
-sh ./tools/create_server_attributes
+python3 ./tools/create_server_attributes
 
 if [ "$INSTALL_CRON" = true ] ; then
     if [ $(crontab -l | grep -q "$DIR/$0" && echo 0 || echo 1) -eq 1 ] ; then
