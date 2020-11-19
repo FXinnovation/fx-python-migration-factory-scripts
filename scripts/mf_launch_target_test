@@ -3,6 +3,9 @@
 import argparse
 import logging
 import os
+import json
+import sys
+import requests
 
 import mf_library
 from mf_library import Utils
@@ -10,116 +13,121 @@ from mf_library import EnvironmentVariableFetcher
 
 
 class LaunchTargetInstances:
-     """ Launch target instances """
+    """ Launch target instances """
 
-     _arguments = []
-     _environment_variable_fetcher = None
-     _mf_login_username = ''
-     _mf_login_password = ''
-     _ce_user_api_token = ''
+    _arguments = []
+    _environment_variable_fetcher = None
+    _mf_login_username = ''
+    _mf_login_password = ''
+    _ce_user_api_token = ''
 
     def __init__(self):
-         parser = argparse.ArgumentParser()
-         parser.add_argument('-v', action='store_true', help='Enable debug outputs')
-         parser.add_argument('--wave-id', required=True, help='ID of the wave to prepare')
-         parser.add_argument('--dry-run', action='store_true', help='Run in dry-run mode')
-         parser.add_argument('--cloudendure-project-name', required=True, help='Name of the CloudEndure project')
-         parser.add_argument('--cutover', action='store_true', help='Perform a cutover. WARNING !! This can affect your production !')
-         parser.add_argument(
-             '--endpoint-config-file',
-             default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', '/etc/migration_factory/endpoints.json'),
-             help='The endpoint config file. This can also be set as environment variable “MF_ENDPOINT_CONFIG_FILE”'
-         )
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-v', action='store_true', help='Enable debug outputs')
+        parser.add_argument('--wave-id', required=True, help='ID of the wave to prepare')
+        parser.add_argument('--dry-run', action='store_true', help='Run in dry-run mode')
+        parser.add_argument('--cloudendure-project-name', required=True, help='Name of the CloudEndure project')
+        parser.add_argument('--cutover', action='store_true', help='Perform a cutover. WARNING !! This can affect your production !')
+        parser.add_argument('--relaunch', action='store_true', help='Relaunch the target even if it was already launch')
+        parser.add_argument(
+            '--endpoint-config-file',
+            default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', '/etc/migration_factory/endpoints.json'),
+            help='The endpoint config file. This can also be set as environment variable “MF_ENDPOINT_CONFIG_FILE”'
+        )
 
-         self._arguments = parser.parse_args()
+        self._arguments = parser.parse_args()
 
-         mf_library.setup_logging(self._arguments.v)
-         
-         self._environment_variable_fetcher = EnvironmentVariableFetcher()
-         self._mf_login_username = self._environment_variable_fetcher.fetch(
-             ['MF_USERNAME'], 'Factory username'
-         )
-         self._mf_login_password = self._environment_variable_fetcher.fetch(
-             ['MF_PASSWORD'], 'Factory password', sensitive=True
-         )
-         self._ce_user_api_token = self._environment_variable_fetcher.fetch(
-             ['MF_CE_API_TOKEN'], 'CE API token', sensitive=True
-         )
+        mf_library.setup_logging(self._arguments.v)
+        
+        self._environment_variable_fetcher = EnvironmentVariableFetcher()
+        self._mf_login_username = self._environment_variable_fetcher.fetch(
+            ['MF_USERNAME'], 'Factory username'
+        )
+        self._mf_login_password = self._environment_variable_fetcher.fetch(
+            ['MF_PASSWORD'], 'Factory password', sensitive=True
+        )
+        self._ce_user_api_token = self._environment_variable_fetcher.fetch(
+            ['MF_CE_API_TOKEN'], 'CE API token', sensitive=True
+        )
 
-    def is_cutover(self)
-         return self._arguments['cutover']
+    def is_cutover(self):
+        return self._arguments.cutover
 
     def launch_test(self):
-         if not self._arguments['dry-run']:
-            logging.debug(self._launch(dry_run=True, for_testing=True)
+        if not self._arguments.dry_run:
+           logging.debug(self._launch(dry_run=True, for_testing=True))
 
-         return self._launch(dry_run=self._arguments['dry-run'], for_testing=True)
+        return self._launch(self._arguments.dry_run, True, relaunch=self._arguments.relaunch)
 
     def launch_cutover(self):
-         if not self._arguments['dry-run']:
-            logging.debug(self._launch(dry_run=True, for_testing=False)
+        if not self._arguments.dry_run:
+           logging.debug(self._launch(dry_run=True, for_testing=False))
 
-         return self._launch(dry_run=self._arguments['dry-run'], for_testing=False)
+        return self._launch(dry_run=self._arguments.dry_run, for_testing=False, relaunch=self._arguments.relaunch)
 
-    def _launch(self, dry_run=True, for_testing=False):
-         # This is a legacy code, will be migrated once MF library will be updated
+    def _launch(self, dry_run=True, for_testing=False, relaunch=False):
+        # This is a legacy code, will be migrated once MF library will be updated
 
-         with open(self._arguments['endpoint-config-file']) as json_file:
-             endpoints = json.load(json_file)
+        with open(self._arguments.endpoint_config_file) as json_file:
+            endpoints = json.load(json_file)
 
-         LoginHOST = endpoints['LoginApiUrl']
-         UserHOST = endpoints['UserApiUrl']
+        LoginHOST = endpoints['LoginApiUrl']
+        UserHOST = endpoints['UserApiUrl']
+        ToolsHOST = endpoints['ToolsApiUrl']
 
-         request_data = {
-             "userapitoken": self._ce_user_api_token,
-             "dryrun": "yes" if dry_run else "no",
-             "projectname": self._arguments['cloudendure-project-name'],
-             "launchtype": "cutover" if not for_testing else "test",
-             "waveid": self._arguments['wave-id']
-         }
+        request_data = {
+            "userapitoken": self._ce_user_api_token,
+            "projectname": self._arguments.cloudendure_project_name,
+            "launchtype": "cutover" if not for_testing else "test",
+            "waveid": self._arguments.wave_id
+        }
 
-         try: 
-             login_data = {
-                 "username": self._mf_login_username,
-                 "password": self._mf_login_password
-             }
+        if dry_run:
+            request_data["dryrun"] = "Yes"
 
-             r = requests.post(LoginHOST + '/prod/login',
-                           data=json.dumps(login_data))
-             raise Exception(
-                 'ERROR: Incorrect username of password'
-             )
+        if relaunch and not dry_run:
+            request_data["relaunch"] = True
 
-             if r.status_code == 200:
-                 logging.debug("Migration Factory : You have successfully logged in")
-                 token = str(json.loads(r.text))
-                 auth = {"Authorization": token}
-                 login.debug("Migration factory token: " + token)
+        try: 
+            login_data = {
+                "username": self._mf_login_username,
+                "password": self._mf_login_password
+            }
 
-             r = requests.post(UserHOST + '/prod/cloudendure', headers=auth, data=json.dumps(request_data))
+            
+            r = requests.post(LoginHOST + '/prod/login',
+                          data=json.dumps(login_data))
+            if r.status_code != 200:
+                raise Exception(
+                    'ERROR: Incorrect username of password'
+                )
 
-             if r.status_code != 200:
-                 raise Exception(
-                     'ERROR: launch failed: ' + r.status_code + ': ' + r.text
-                 )
+            logging.debug("Migration Factory : You have successfully logged in")
+            token = str(json.loads(r.text))
+            auth = {"Authorization": token}
+            logging.debug("Migration factory token: " + token)
 
-             if r.text != "" and r.text != "":
-                 raise Exception(
-                     'ERROR: launch failed: ' + r.status_code + ': ' + r.text
-                 )
+            r = requests.post(ToolsHOST + '/prod/cloudendure', headers=auth, data=json.dumps(request_data))
 
-             logging.info('Dry run' if dry_run else 'Launch' + ' was successfully sent to CloudEndure')
+            if r.status_code != 200:
+                raise Exception(
+                    'ERROR: launch failed: ' + str(r.status_code) + ': ' + r.text
+                )
 
-          except:
-              logging.error('Error: ' + sys.exc_info()[0])
-              raise
+            logging.info(r.text)
+
+            return
+
+        except:
+            logging.error("Error: " + str(sys.exc_info()))
+            raise
 
 
 if __name__ == '__main__':
     launch_target_instances = LaunchTargetInstances()
     
     if launch_target_instances.is_cutover():
-        launch_target_instances.launch_cutovert()
-        return
+        launch_target_instances.launch_cutover()
+        sys.exit(0)
 
     launch_target_instances.launch_test()
