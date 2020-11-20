@@ -36,7 +36,14 @@ def setup_logging(logging, verbose=False):
     print('~~~~~~~~ setting ' + str(logging_level))
     print('~~~~~~~~ setting ???? ' + str(logging.DEBUG))
     logging.basicConfig(stream=sys.stderr, level=logging_level)
-    logging.getLogger('root').setLevel(logging_level)
+
+    logger = logging.getLogger('root')
     logging.getLogger('root').setStream(sys.stderr)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging_level)
+    formatter = logging.Formatter("## %(asctime)s : %(name)s : %(levelname)s : %(message)s")
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
     print(logging.getLogger('root'))
 
