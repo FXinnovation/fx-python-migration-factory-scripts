@@ -49,6 +49,7 @@ def setup_logging(verbose=False):
     else:
         logging_level = logging.INFO
 
+    print('~~~~~~~~ setting '+str(logging_level))
     logging.basicConfig(stream=sys.stderr, level=logging_level)
 
 

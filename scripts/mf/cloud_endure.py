@@ -55,6 +55,7 @@ class CloudEndureSession:
         return self._session
 
     def _login_request(self):
+        print(os.path.join(self.CLOUDENDURE_ENDPOINT_HOST, self._api_endpoint.format('login')))
         response = self._session.post(
             url=os.path.join(self.CLOUDENDURE_ENDPOINT_HOST, self._api_endpoint.format('login')),
             data=json.dumps({'userApiToken': self._api_token})
