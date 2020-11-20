@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from pathlib import Path
 
 PATH_HOME = os.path.join(str(Path.home()), 'migration')
