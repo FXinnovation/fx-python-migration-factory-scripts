@@ -1,3 +1,7 @@
+## 5.3.0
+
+* fix: wrong EnvironmentFetcher signature
+
 ## 5.2.0
 
 * feat: Add `mf_launch_target` script to launch cutover and test targets using CLI
