@@ -43,7 +43,9 @@ class DefaultValues(MutableMapping):
             default = ''
 
         if key not in self._store.keys() or self._store[key] is None:
-            logging.getLogger('root').debug(self.__class__.__name__ + ':Key “' + key + '” not found. Return default:“' + default + '”')
+            logging.getLogger('root').debug(
+                self.__class__.__name__ + ':Key “' + key + '” not found. Return default:“' + str(default) + '”'
+            )
             return default
 
         return self._store[key]
