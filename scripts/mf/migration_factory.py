@@ -69,7 +69,7 @@ class MigrationFactoryRequester:
         self._show_debug_log(url, uri, headers)
 
         return requests.get(
-            os.path.join(url, uri),
+            url + uri,
             self._migration_factory_authenticator.populate_headers_with_authorization(headers)
         )
 
@@ -77,7 +77,7 @@ class MigrationFactoryRequester:
         self._show_debug_log(url, uri, headers, data)
 
         return requests.put(
-            os.path.join(url, uri),
+            url + uri,
             self._migration_factory_authenticator.populate_headers_with_authorization(headers),
             data=json.dumps(data)
         )
@@ -86,7 +86,7 @@ class MigrationFactoryRequester:
         self._show_debug_log(url, uri, headers, data)
 
         return requests.post(
-            os.path.join(url, uri),
+            url + uri,
             self._migration_factory_authenticator.populate_headers_with_authorization(headers),
             data=json.dumps(data)
         )
