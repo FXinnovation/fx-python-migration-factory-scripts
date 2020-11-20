@@ -13,10 +13,13 @@ else
     $Link =  "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/windows_386/AmazonSSMAgentSetup.exe"
 }
 #Use the webclient api and disable the proxy to download the file
+if (!(test-path "c:\temp")) {
+	mkdir c:\temp
+}
 $WebClient = New-Object System.Net.WebClient
 $WebClient.proxy=$null
-$WebClient.DownloadFile("$Link","$env:USERPROFILE\Desktop\SSMAgent_latest.exe");
+$WebClient.DownloadFile("$Link","c:\temp\SSMAgent_latest.exe");
 
-Start-Process -FilePath $env:USERPROFILE\Desktop\SSMAgent_latest.exe -ArgumentList "/S" -wait -passthru
+Start-Process -FilePath "c:\temp\SSMAgent_latest.exe" -ArgumentList "/S" -wait -passthru
 
-rm -Force $env:USERPROFILE\Desktop\SSMAgent_latest.exe
+rm -Force "c:\temp\SSMAgent_latest.exe"
