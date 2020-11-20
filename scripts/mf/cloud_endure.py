@@ -17,7 +17,7 @@ class CloudEndureSession:
     CLOUDENDURE_ENDPOINT_URI = '/api/latest/{}'
 
     _api_token = None
-    _api_endpoint = None
+    _api_endpoint_uri = None
     _session_token = None
     _session = None
 
@@ -32,7 +32,7 @@ class CloudEndureSession:
     def login(self):
         self._session = requests.Session()
         self._session.headers.update({'Content-type': 'application/json', 'Accept': 'text/plain'})
-        self._api_endpoint = self.CLOUDENDURE_ENDPOINT_URI
+        self._api_endpoint_uri = self.CLOUDENDURE_ENDPOINT_URI
         response = self._login_request()
 
         if response.status_code not in [200, 307]:
@@ -42,7 +42,7 @@ class CloudEndureSession:
         if response.history:
             # Legacy: retry with different endpoint - remove if possible 2
             logging.warning(self.__class__.__name__ + ': Try second endpoint for login. Please investigate.')
-            self._api_endpoint = '/' + '/'.join(response.url.split('/')[3:-1]) + '/{}'
+            self._api_endpoint_uri = '/' + '/'.join(response.url.split('/')[3:-1]) + '/{}'
             response = self._login_request()
 
         if response.status_code != 200:
@@ -55,7 +55,7 @@ class CloudEndureSession:
 
     def _login_request(self):
         response = self._session.post(
-            url=self.CLOUDENDURE_ENDPOINT_HOST + self._api_endpoint.format('login'),
+            url=self.CLOUDENDURE_ENDPOINT_HOST + self._api_endpoint_uri.format('login'),
             data=json.dumps({'userApiToken': self._api_token})
         )
         logging.debug(self.__class__.__name__ + ':' + str(response))
@@ -63,10 +63,10 @@ class CloudEndureSession:
         return response
 
     def get_api_endpoint(self):
-        if self._api_endpoint is None:
+        if self._api_endpoint_uri is None:
             self.login()
 
-        return self._api_endpoint
+        return self.CLOUDENDURE_ENDPOINT_HOST + self._api_endpoint_uri
 
     def get_session_token(self):
         if self._session_token is None:
@@ -113,27 +113,27 @@ class CloudEndureRequester:
         self._cloud_endure_session = CloudEndureSession()
 
     def get_aws_cloud_id(self):
-        response = self.get('/clouds')
+        response = self.get('clouds')
 
         for clouds_item in json.loads(response.content)['items']:
             if clouds_item['name'] == 'AWS':
                 return clouds_item['id']
 
     def get_migration_license(self):
-        response = self.get('/licenses')
+        response = self.get('licenses')
 
         for license_item in json.loads(response.content)['items']:
             if license_item['type'] == 'MIGRATION':
                 return license_item['id']
 
     def get_on_prem_region_id(self):
-        response = self.get('/cloudCredentials/00000000-0000-0000-0000-000000000000/regions')
+        response = self.get('cloudCredentials/00000000-0000-0000-0000-000000000000/regions')
 
         for region_items in json.loads(response.content)['items']:
             return region_items['id']
 
     def get_aws_region_id(self, cloud_credentials_id, aws_region):
-        response = self.get('/cloudCredentials/{}/regions'.format(cloud_credentials_id))
+        response = self.get('cloudCredentials/{}/regions'.format(cloud_credentials_id))
         for region in json.loads(response.content)['items']:
             if region['name'] == self.REGIONS[aws_region]:
                 return region['id']

@@ -50,6 +50,7 @@ def setup_logging(verbose=False):
         logging_level = logging.INFO
 
     print('~~~~~~~~ setting '+str(logging_level))
+    print('~~~~~~~~ setting ???? '+str(logging.DEBUG))
     logging.basicConfig(stream=sys.stderr, level=logging_level)
 
 
