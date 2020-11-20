@@ -43,16 +43,5 @@ class EnvironmentVariableFetcher:
         return input(env_var_description + ": ")
 
 
-def setup_logging(verbose=False):
-    if verbose is True:
-        logging_level = logging.DEBUG
-    else:
-        logging_level = logging.INFO
-
-    print('~~~~~~~~ setting '+str(logging_level))
-    print('~~~~~~~~ setting ???? '+str(logging.DEBUG))
-    logging.basicConfig(stream=sys.stderr, level=logging_level)
-
-
 if __name__ == '__main__':
     print("This file is a library file. It cannot be called directly.")

@@ -148,6 +148,7 @@ class CloudEndureRequester:
 
         if response.status_code != 200:
             logging.error(self.__class__.__name__ + ': CloudEndure API call GET “' + uri + '” failed.')
+            logging.error(self.__class__.__name__ + ':' + str(response))
             sys.exit(30)
 
         return response

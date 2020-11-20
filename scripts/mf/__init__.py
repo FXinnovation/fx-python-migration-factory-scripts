@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -24,3 +25,14 @@ DIRECTORY_POST_LAUNCH = 'post-launch'
 
 DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE = os.path.join(PATH_CONFIG, 'endpoints.yml')
 DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE = os.path.join(PATH_CONFIG, 'defaults.yml')
+
+
+def setup_logging(verbose=False):
+    if verbose is True:
+        logging_level = logging.DEBUG
+    else:
+        logging_level = logging.INFO
+
+    print('~~~~~~~~ setting ' + str(logging_level))
+    print('~~~~~~~~ setting ???? ' + str(logging.DEBUG))
+    logging.basicConfig(stream=sys.stderr, level=logging_level)
