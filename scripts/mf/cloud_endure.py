@@ -140,15 +140,21 @@ class CloudEndureRequester:
             if region['name'] == self.REGIONS[aws_region]:
                 return region['id']
 
-        pass
+    def is_project_existing(self, project_name):
+        response = self.get('projects')
+        for project in json.loads(response.content)['items']:
+            if project['name'] == self.REGIONS[aws_region]:
+                return True
+
+        return False
 
     def get(self, uri):
         response = self._cloud_endure_session.get_session().get(
             url=self._cloud_endure_session.get_api_endpoint().format(uri)
         )
 
-        logging.getLogger('root').debug(self.__class__.__name__ + ': “' + uri + '” : ' + str(response.content))
-        logging.getLogger('root').info(self.__class__.__name__ + ': “' + uri + '” : ' + str(response.status_code))
+        logging.getLogger('root').debug(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.content))
+        logging.getLogger('root').info(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.status_code))
 
         if response.status_code != 200:
             logging.getLogger('root').error(
@@ -163,8 +169,8 @@ class CloudEndureRequester:
             data=json.dumps(data)
         )
 
-        logging.getLogger('root').debug(self.__class__.__name__ + ': “' + uri + '” : ' + str(response.content))
-        logging.getLogger('root').info(self.__class__.__name__ + ': “' + uri + '” : ' + str(response.status_code))
+        logging.getLogger('root').debug(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.content))
+        logging.getLogger('root').info(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.status_code))
 
         if response.status_code != 201:
             logging.getLogger('root').error(
@@ -180,8 +186,8 @@ class CloudEndureRequester:
             url=self._cloud_endure_session.get_api_endpoint().format(uri),
             data=json.dumps(data)
         )
-        logging.getLogger('root').debug(self.__class__.__name__ + ': “' + uri + '” : ' + str(response.content))
-        logging.getLogger('root').info(self.__class__.__name__ + ': “' + uri + '” : ' + str(response.status_code))
+        logging.getLogger('root').debug(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.content))
+        logging.getLogger('root').info(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.status_code))
 
         if response.status_code != 200:
             logging.getLogger('root').error(

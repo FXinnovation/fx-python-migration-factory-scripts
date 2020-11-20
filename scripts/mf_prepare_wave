@@ -188,6 +188,10 @@ class WavePreparator:
     def _create_cloud_endure_project(self):
         print('### Create CloudEndure project…', end=' ')
 
+        if self._cloud_endure_requester.is_project_existing(self._arguments.wave_name) is True:
+            print('✔ Already Done')
+            return
+
         project_data = {
             'name': self._arguments.wave_name,
             'type': 'MIGRATION',
