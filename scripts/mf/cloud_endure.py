@@ -41,7 +41,8 @@ class CloudEndureSession:
 
         if response.history:
             # Legacy: retry with different endpoint - remove if possible 2
-            logging.getLogger('root').warning(self.__class__.__name__ + ': Try second endpoint for login. Please investigate.')
+            logging.getLogger('root').warning(
+                self.__class__.__name__ + ': Try second endpoint for login. Please investigate.')
             self._api_endpoint_uri = '/' + '/'.join(response.url.split('/')[3:-1]) + '/{}'
             response = self._login_request()
 
@@ -145,10 +146,13 @@ class CloudEndureRequester:
         response = self._cloud_endure_session.get_session().get(
             url=self._cloud_endure_session.get_api_endpoint().format(uri)
         )
-        logging.getLogger('root').debug(self.__class__.__name__ + ':' + str(response))
+
+        logging.getLogger('root').debug(self.__class__.__name__ + ': “' + uri + '” : ' + str(response.content))
+        logging.getLogger('root').info(self.__class__.__name__ + ': “' + uri + '” : ' + str(response.status_code))
 
         if response.status_code != 200:
-            logging.getLogger('root').error(self.__class__.__name__ + ': CloudEndure API call GET “' + uri + '” failed.')
+            logging.getLogger('root').error(
+                self.__class__.__name__ + ': CloudEndure API call GET “' + uri + '” failed.')
             sys.exit(30)
 
         return response
@@ -158,7 +162,9 @@ class CloudEndureRequester:
             url=self._cloud_endure_session.get_api_endpoint().format(uri),
             data=json.dumps(data)
         )
-        logging.getLogger('root').info(self.__class__.__name__ + ': ' + uri+' : ' + response.status_code)
+
+        logging.getLogger('root').debug(self.__class__.__name__ + ': “' + uri + '” : ' + str(response.content))
+        logging.getLogger('root').info(self.__class__.__name__ + ': “' + uri + '” : ' + str(response.status_code))
 
         if response.status_code != 201:
             logging.getLogger('root').error(
@@ -174,7 +180,8 @@ class CloudEndureRequester:
             url=self._cloud_endure_session.get_api_endpoint().format(uri),
             data=json.dumps(data)
         )
-        logging.getLogger('root').debug(self.__class__.__name__ + ':' + str(response))
+        logging.getLogger('root').debug(self.__class__.__name__ + ': “' + uri + '” : ' + str(response.content))
+        logging.getLogger('root').info(self.__class__.__name__ + ': “' + uri + '” : ' + str(response.status_code))
 
         if response.status_code != 200:
             logging.getLogger('root').error(

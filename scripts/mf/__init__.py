@@ -42,6 +42,3 @@ def setup_logging(logging, info=False, debug=False):
     formatter = logging.Formatter("## [%(levelname)s]: %(message)s")
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
-
-    print(logging.getLogger('root'))
-
