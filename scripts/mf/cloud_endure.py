@@ -59,7 +59,7 @@ class CloudEndureSession:
             url=self.CLOUDENDURE_ENDPOINT_HOST + self._api_endpoint_uri.format('login'),
             data=json.dumps({'userApiToken': self._api_token})
         )
-        logging.debug(self.__class__.__name__ + ':' + str(response))
+        logging.getLogger('root').debug(self.__class__.__name__ + ':' + str(response))
 
         return response
 
