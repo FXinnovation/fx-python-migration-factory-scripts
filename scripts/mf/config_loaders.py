@@ -2,6 +2,7 @@
 
 import logging
 import os
+from collections.abc import MutableMapping
 
 import yaml
 
@@ -10,6 +11,42 @@ from .utils import Utils
 
 DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE = os.path.join(PATH_CONFIG, 'endpoints.yml')
 DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE = os.path.join(PATH_CONFIG, 'defaults.yml')
+
+
+class DefaultValues(MutableMapping):
+    """ Stores default values in memory """
+
+    def __init__(self, *args, **kwargs):
+        self._store = dict()
+        self.update(dict(*args, **kwargs))
+
+    def __getitem__(self, key):
+        return self.get(key)
+
+    def __setitem__(self, key, value):
+        self._store[key] = value
+
+    def __delitem__(self, key):
+        del self._store[key]
+
+    def __iter__(self):
+        return iter(self._store)
+
+    def __len__(self):
+        return len(self._store)
+
+    def __str__(self):
+        return str(self._store)
+
+    def get(self, key, default=None):
+        if default is None:
+            default = ''
+
+        if key not in self._store.keys() or self._store[key] is None:
+            logging.debug(self.__class__.__name__ + ':Key “' + key + '” not found. Return default:“' + default + '”')
+            return default
+
+        return self._store[key]
 
 
 class DefaultsLoader:
@@ -28,9 +65,9 @@ class DefaultsLoader:
                         'Environment “' + environment + '” does not exists in “' + default_config_file + '”.'
                     )
 
-                self._defaults = all_defaults[environment]
+                self._defaults = DefaultValues(all_defaults[environment])
 
-                logging.debug("Defaults:" + str(self._defaults))
+                logging.debug(self.__class__.__name__ + ':Defaults:' + str(self._defaults))
 
                 for environment, defaults in all_defaults.items():
                     Utils.check_is_serializable_as_path(string_to_test=environment)

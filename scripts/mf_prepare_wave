@@ -38,7 +38,7 @@ class WavePreparator:
         parser.add_argument(
             '--config-file-defaults',
             default=EnvironmentVariableFetcher.fetch(
-                mf.ENV_VAR_DEFAULTS_CONFIG_FILE,
+                env_var_names=mf.ENV_VAR_DEFAULTS_CONFIG_FILE,
                 default=mf.DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE
             ),
             help='Configuration file containing default IDs'
@@ -46,7 +46,7 @@ class WavePreparator:
         parser.add_argument(
             '--config-file-endpoints',
             default=EnvironmentVariableFetcher.fetch(
-                mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+                env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
                 default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
             ),
             help='Configuration file containing the Migration Factory endpoint URLs'
@@ -109,40 +109,31 @@ class WavePreparator:
                 self._arguments.wave_name,
                 'SET_APP_NAME_VALUE',
                 self._arguments.wave_name,
-                str(self._get_default('account_id', 'SET_ACCOUNT_ID')),
+                str(self._defaults.get('account_id', 'SET_ACCOUNT_ID')),
                 'SET_SERVERNAME',
-                self._get_default('server_os', 'SET_SERVEROS'),
+                self._defaults.get('server_os', 'SET_SERVEROS'),
                 'SET_SERVEROS_VERSION',
                 'SET_SERVER_FQDN',
                 'app',
                 self._arguments.environment,
-                self._get_default('target_subnet_id', 'SET_TARGET_SUBNET_ID'),
+                self._defaults.get('target_subnet_id', 'SET_TARGET_SUBNET_ID'),
                 ';'.join(list(
-                    x for x in (self._get_default('target_security_group_ids', []) + [sg_template_copy]) if x is None
+                    x for x in (self._defaults.get('target_security_group_ids', []) + [sg_template_copy]) if x is None
                 )),
-                self._get_default('test_subnet_id', 'SET_TEST_SUBNET_ID'),
+                self._defaults.get('test_subnet_id', 'SET_TEST_SUBNET_ID'),
                 ';'.join(list(
-                    x for x in (self._get_default('test_security_group_ids', []) + [sg_template_copy_testing]) if
+                    x for x in (self._defaults.get('test_security_group_ids', []) + [sg_template_copy_testing]) if
                     x is None
                 )),
-                self._get_default('instance_type', 'SET_INSTANCE_TYPE'),
-                self._get_default('tenancy', 'Shared'),
-                self._get_default('iam_role', 'SET_IAM_ROLE'),
+                self._defaults.get('instance_type', 'SET_INSTANCE_TYPE'),
+                self._defaults.get('tenancy', 'Shared'),
+                self._defaults.get('iam_role', 'SET_IAM_ROLE'),
             ]))
         print('✔ Done')
 
         print('### Add marker…', end=' ')
         Path(os.path.join(self._path_wave, mf.FILE_DONE_MARKER)).touch()
         print('✔ Done')
-
-    def _get_default(self, key, default=None):
-        if default is None:
-            default = ''
-
-        if key not in self._defaults.keys() or self._defaults[key] is None:
-            return default
-
-        return self._defaults[key]
 
     def _create_migration_factory_project(self):
         print('### Create Migration Factory Project…', end=' ')
@@ -229,23 +220,23 @@ class WavePreparator:
         project_replication_config = {
             'volumeEncryptionKey': '',
             'volumeEncryptionAllowed': True,
-            'bandwidthThrottling': self._defaults['replication_bandwidth_throttling'],
-            'disablePublicIp': self._defaults['replication_disable_public'],
-            'replicationServerType': self._defaults['replication_instance_type'],
+            'bandwidthThrottling': self._defaults.get('replication_bandwidth_throttling', 0),
+            'disablePublicIp': self._defaults.get('replication_disable_public', True),
+            'replicationServerType': self._defaults.get('replication_instance_type', 'm5.large'),
             'useLowCostDisks': False,
             'useDedicatedServer': False,
-            'usePrivateIp': self._defaults['replication_disable_public'],
+            'usePrivateIp':  self._defaults.get('replication_disable_public', True),
             'replicatorSecurityGroupIDs': [],
             'proxyUrl': '',
             'storageLocationId': '',
             'objectStorageLocation': '',
             'archivingEnabled': False,
             'replicationTags': [{'key': 'CloudEndureProject', 'value': self._arguments['wave_name']}],
-            'subnetId': self._get_default('replication_subnet_id'),
+            'subnetId': self._defaults.get('replication_subnet_id'),
             'subnetHostProject': '',
             'cloudCredentials': cloud_credentials_id,
             'region': region_id,
-            'converterType': self._defaults['replication_converter_instance_type'],
+            'converterType': self._defaults.get('replication_converter_instance_type', 'm5.large'),
         }
 
         replication_configuration_id = json.loads(self._cloud_endure_requester.post(
