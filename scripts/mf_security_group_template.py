@@ -25,6 +25,7 @@ class TemplateSecurityGroupCreator:
     def __init__(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable debug outputs')
+        parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
         parser.add_argument('--wave-name', required=True, help='Name of the wave to prepare')
         parser.add_argument(
             '--wave-sg-prefix',
@@ -43,7 +44,7 @@ class TemplateSecurityGroupCreator:
 
         self._arguments = parser.parse_args()
 
-        mf.setup_logging(logging, self._arguments.v)
+        mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
         defaults_loader = DefaultsLoader()
         self._defaults = defaults_loader.load(
             default_config_file=self._arguments.config_file_defaults,

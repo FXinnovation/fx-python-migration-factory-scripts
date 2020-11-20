@@ -27,11 +27,13 @@ DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE = os.path.join(PATH_CONFIG, 'endpoints.yml'
 DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE = os.path.join(PATH_CONFIG, 'defaults.yml')
 
 
-def setup_logging(logging, verbose=False):
-    if verbose is True:
+def setup_logging(logging, info=False, debug=False):
+    if debug is True:
         logging_level = logging.DEBUG
-    else:
+    elif info is True:
         logging_level = logging.INFO
+    else:
+        logging_level = logging.WARNING
 
     logger = logging.getLogger('root')
     logger.setLevel(logging_level)
