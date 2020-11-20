@@ -71,7 +71,7 @@ class TemplateSecurityGroupCreator:
 
     def _create(self, for_testing=False):
         if not self.template_security_group_id_default_exists():
-            logging.debug('No security group template. Skipping security group copy.')
+            logging.getLogger('root').debug('No security group template. Skipping security group copy.')
             return None
 
         template_security_group = self._aws_service_accessor.get_ec2().describe_security_groups(GroupIds=[
@@ -91,7 +91,7 @@ class TemplateSecurityGroupCreator:
             )
             print('✔ Done')
 
-            logging.debug(self.__class__.__name__ + ':' + str(sg_create_response))
+            logging.getLogger('root').debug(self.__class__.__name__ + ':' + str(sg_create_response))
         except ClientError as error:
             if error.response['Error']['Code'] == 'InvalidGroup.Duplicate':
                 print('✔ Already Done')
@@ -115,7 +115,7 @@ class TemplateSecurityGroupCreator:
             )
 
             print('✔ Done')
-            logging.debug(self.__class__.__name__ + ':' + str(sg_authorize_response))
+            logging.getLogger('root').debug(self.__class__.__name__ + ':' + str(sg_authorize_response))
         except ClientError as error:
             if error.response['Error']['Code'] == 'InvalidPermission.Duplicate':
                 print('✔ Already Done')

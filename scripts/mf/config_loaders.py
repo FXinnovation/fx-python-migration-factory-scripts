@@ -43,7 +43,7 @@ class DefaultValues(MutableMapping):
             default = ''
 
         if key not in self._store.keys() or self._store[key] is None:
-            logging.debug(self.__class__.__name__ + ':Key “' + key + '” not found. Return default:“' + default + '”')
+            logging.getLogger('root').debug(self.__class__.__name__ + ':Key “' + key + '” not found. Return default:“' + default + '”')
             return default
 
         return self._store[key]
@@ -67,7 +67,7 @@ class DefaultsLoader:
 
                 self._defaults = DefaultValues(all_defaults[environment])
 
-                logging.debug(self.__class__.__name__ + ':Defaults:' + str(self._defaults))
+                logging.getLogger('root').debug(self.__class__.__name__ + ':Defaults:' + str(self._defaults))
 
                 for environment, defaults in all_defaults.items():
                     Utils.check_is_serializable_as_path(string_to_test=environment)
@@ -76,7 +76,7 @@ class DefaultsLoader:
                 return self.get()
 
             except yaml.YAMLError as exception:
-                logging.error(exception)
+                logging.getLogger('root').error(exception)
 
     def get(self):
         return self._defaults
@@ -100,7 +100,7 @@ class EndpointsLoader:
                 self._endpoints = yaml.safe_load(stream)
                 return self._endpoints
             except yaml.YAMLError as exception:
-                logging.error(exception)
+                logging.getLogger('root').error(exception)
 
     def get(self):
         if self._endpoints is None:

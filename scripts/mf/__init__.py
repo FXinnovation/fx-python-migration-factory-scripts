@@ -33,15 +33,11 @@ def setup_logging(logging, verbose=False):
     else:
         logging_level = logging.INFO
 
-    print('~~~~~~~~ setting ' + str(logging_level))
-    print('~~~~~~~~ setting ???? ' + str(logging.DEBUG))
-    logging.basicConfig(stream=sys.stderr, level=logging_level)
-
-    logger = logging.getLogger('root')
-    logging.getLogger('root').setLevel(logging_level)
+    logger = logging.getLogger('root').getLogger('root')
+    logger.setLevel(logging_level)
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging_level)
-    formatter = logging.Formatter("## %(asctime)s : %(name)s : %(levelname)s : %(message)s")
+    formatter = logging.Formatter("## [%(levelname)s]: %(message)s")
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
 

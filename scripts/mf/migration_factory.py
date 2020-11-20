@@ -35,12 +35,12 @@ class MigrationFactoryAuthenticator:
             data=json.dumps({'username': self._username, 'password': self._password})
         )
         if response.status_code == 200:
-            logging.debug(self.__class__.__name__ + ': Migration Factory Login successful')
+            logging.getLogger('root').debug(self.__class__.__name__ + ': Migration Factory Login successful')
             self._authorization_token = str(json.loads(response.text))
             return self._authorization_token
         else:
-            logging.error(self.__class__.__name__ + ': Migration Factory Login failed.')
-            logging.debug(self.__class__.__name__ + ':' + str(response))
+            logging.getLogger('root').error(self.__class__.__name__ + ': Migration Factory Login failed.')
+            logging.getLogger('root').debug(self.__class__.__name__ + ':' + str(response))
             sys.exit(1)
 
     def get_authorization_token(self):
@@ -92,9 +92,9 @@ class MigrationFactoryRequester:
         )
 
     def _show_debug_log(self, url, uri, headers=None, data=None):
-        logging.debug(self.__class__.__name__ + ':url:' + os.path.join(url, uri))
-        logging.debug(self.__class__.__name__ + ':headers:' + str(headers))
-        logging.debug(self.__class__.__name__ + ':data:' + str(data))
+        logging.getLogger('root').debug(self.__class__.__name__ + ':url:' + os.path.join(url, uri))
+        logging.getLogger('root').debug(self.__class__.__name__ + ':headers:' + str(headers))
+        logging.getLogger('root').debug(self.__class__.__name__ + ':data:' + str(data))
 
 
 if __name__ == '__main__':

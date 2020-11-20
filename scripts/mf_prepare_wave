@@ -76,7 +76,7 @@ class WavePreparator:
         self._cloud_endure_requester = CloudEndureRequester()
 
     def prepare(self):
-        logging.debug(self._arguments)
+        logging.getLogger('root').debug(self._arguments)
 
         self._create_cloud_endure_project()
         # self._create_migration_factory_project()
@@ -143,7 +143,7 @@ class WavePreparator:
             uri='/prod/admin/schema/app'
         )
 
-        logging.debug(self.__class__.__name__ + ':app_schema:' + str(app_schema))
+        logging.getLogger('root').debug(self.__class__.__name__ + ':app_schema:' + str(app_schema))
 
         attribute_description = None
         attribute_type = None
@@ -165,20 +165,20 @@ class WavePreparator:
             }
         }
 
-        logging.debug(self.__class__.__name__ + ':data:' + str(data))
+        logging.getLogger('root').debug(self.__class__.__name__ + ':data:' + str(data))
 
         response = self._migration_factory_requester.put(
             url=self._endpoints[MigrationFactoryRequester.KEY_ADMIN_API_URL],
             uri='/prod/admin/schema/app',
             data=data
         )
-        logging.debug(self.__class__.__name__ + ':response:' + str(response))
+        logging.getLogger('root').debug(self.__class__.__name__ + ':response:' + str(response))
 
         if response.status_code == 200:
-            logging.debug(
+            logging.getLogger('root').debug(
                 self.__class__.__name__ + ':migration_factory_project:Successfully updated Migration Factory projects')
         else:
-            logging.error(
+            logging.getLogger('root').error(
                 self.__class__.__name__ + ':migration_factory_project:Error when updating Migration Factory projects')
             sys.exit(1)
 

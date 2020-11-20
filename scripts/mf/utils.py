@@ -14,7 +14,7 @@ class Utils:
     def check_is_serializable_as_path(string_to_test):
         is_serializable_as_path = re.search("^[a-zA-Z0-9_ -]+$", string_to_test)
         if not is_serializable_as_path:
-            logging.warning(
+            logging.getLogger('root').warning(
                 'The string “' + string_to_test +
                 '” will need to be serialized for a path or a filename.'
                 ' It might not be suitable because it contains special characters.'
@@ -29,7 +29,7 @@ class EnvironmentVariableFetcher:
     @staticmethod
     def fetch(env_var_names, env_var_description='Env variable', default=False, sensitive=False):
         for env_var_name in env_var_names:
-            logging.debug('EnvironmentVariableFetcher: Trying to fetch ' + env_var_name + ' environment variable.')
+            logging.getLogger('root').debug('EnvironmentVariableFetcher: Trying to fetch ' + env_var_name + ' environment variable.')
 
             if env_var_name in os.environ:
                 return os.getenv(env_var_name)
