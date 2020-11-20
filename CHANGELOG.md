@@ -1,3 +1,10 @@
+## 5.5.0
+
+* feat: (library) Simplifies endpoint loader
+* feat: (library) Reorganizes mf_library file into an actual python module
+* feat: adds CE project creation in the `mf_prepare_wave` script
+* feat: move local `_get_defaults` to the config object and improve it
+
 ## 5.4.0
 
 * feat: adds Windows install AWS cli script
