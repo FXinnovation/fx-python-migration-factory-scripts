@@ -43,7 +43,7 @@ class TemplateSecurityGroupCreator:
 
         self._arguments = parser.parse_args()
 
-        mf.setup_logging(self._arguments.v)
+        mf.setup_logging(logging, self._arguments.v)
         defaults_loader = DefaultsLoader()
         self._defaults = defaults_loader.load(
             default_config_file=self._arguments.config_file_defaults,
