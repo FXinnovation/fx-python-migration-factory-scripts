@@ -36,3 +36,6 @@ def setup_logging(logging, verbose=False):
     print('~~~~~~~~ setting ' + str(logging_level))
     print('~~~~~~~~ setting ???? ' + str(logging.DEBUG))
     logging.basicConfig(stream=sys.stderr, level=logging_level)
+    logging.getLogger('root').basicConfig(stream=sys.stderr, level=logging_level)
+    print(logging.getLogger('root'))
+
