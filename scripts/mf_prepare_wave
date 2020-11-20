@@ -290,3 +290,64 @@ class WavePreparator:
 if __name__ == '__main__':
     wave_preparator = WavePreparator()
     wave_preparator.prepare()
+
+    # create a region dictionary
+
+# def PutCloudEndureProject(projects, token):
+#     migration_factory_requester.get(AdminHOST, '/prod/admin/schema/app')
+#
+#     apps = json.loads(requests.get(AdminHOST, headers={"Authorization": token}).text)
+#
+#     attribute_description = None
+#     attribute_type = None
+#
+#     for app in apps['attributes']:
+#         if app['name'] == 'cloudendure_projectname':
+#             attribute_description = app['description']
+#             attribute_type = app['type']
+#             break
+#
+#     assert attribute_type
+#     assert attribute_description
+#
+#     data = {
+#         "event": "PUT",
+#         "name": "cloudendure_projectname",
+#         "update": {
+#             "name": "cloudendure_projectname",
+#             "description": attribute_description,
+#             "type": attribute_type,
+#             "listvalue": ','.join(projects)
+#         }
+#     }
+#     r = requests.put(AdminHOST + '/prod/admin/schema/app', headers=auth, data=json.dumps(data))
+#     if r.status_code == 200:
+#         print("Cloudendure project are updated in the migration factory")
+#     else:
+#         print("Cloud endure project update failed: " + r.text + ".......")
+#
+# except:
+# print("ERROR: Getting server list failed....")
+# sys.exit(6)
+#
+#
+# def main():
+
+#
+#             # attach configuration to the project
+
+#
+
+#             resp = session.get(url=HOST + endpoint.format('/projects'))
+#
+#             if rep.status_code != 200:
+#                 print('Failed to get cloud endure project'.format(rep.status_code))
+#             else:
+#                 cloudendure_projects = []
+#                 for project in json.loads(resp.content)['items']:
+#                     cloudendure_projects.append(project['name'])
+#
+#                 PutCloudEndureProject(cloudendure_projects, token)
+#
+#
+# return 0
