@@ -33,7 +33,7 @@ def setup_logging(logging, verbose=False):
     else:
         logging_level = logging.INFO
 
-    logger = logging.getLogger('root').getLogger('root')
+    logger = logging.getLogger('root')
     logger.setLevel(logging_level)
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging_level)
