@@ -27,18 +27,20 @@ class EnvironmentVariableFetcher:
     """ Fetch environment variables """
 
     @staticmethod
-    def fetch(env_var_names, env_var_description='Env variable', default=False, sensitive=False):
+    def fetch(env_var_names, env_var_description='Env variable', default=None, sensitive=False):
         for env_var_name in env_var_names:
-            logging.getLogger('root').debug('EnvironmentVariableFetcher: Trying to fetch ' + env_var_name + ' environment variable.')
+            logging.getLogger('root').debug(
+                'EnvironmentVariableFetcher: Trying to fetch ' + env_var_name + ' environment variable.'
+            )
 
             if env_var_name in os.environ:
                 return os.getenv(env_var_name)
 
-        if sensitive is True and default is False:
-            return getpass.getpass(env_var_description + ": ")
-
-        if default is not False:
+        if default is not None:
             return default
+
+        if sensitive is True:
+            return getpass.getpass(env_var_description + ": ")
 
         return input(env_var_description + ": ")
 
