@@ -79,9 +79,30 @@ class WavePreparator:
     def prepare(self):
         logging.getLogger('root').debug(self._arguments)
 
+        self._check_marker()
+
         self._create_cloud_endure_project()
         # self._create_migration_factory_project()
+        self._create_folder_structure()
+        self._copy_csv_templates()
 
+        template_sg_creator = TemplateSecurityGroupCreator()
+        sg_template_copy_id = template_sg_creator.create()
+        sg_template_copy_testing_id = template_sg_creator.create_for_testing()
+
+        self._prefill_csv_tempates(sg_template_copy_id, sg_template_copy_testing_id)
+        self._add_marker()
+
+    def _check_marker(self):
+        if Path(os.path.join(self._path_wave, mf.FILE_MARKER_PREPARE_DONE)).exists():
+            print('✔ Already Done')
+
+    def _add_marker(self):
+        print('### Add marker…', end=' ')
+        Path(os.path.join(self._path_wave, mf.FILE_MARKER_PREPARE_DONE)).touch()
+        print('✔ Done')
+
+    def _create_folder_structure(self):
         print('### Create folder structure…', end=' ')
         if not pathlib.Path(os.path.join(self._path_wave, mf.DIRECTORY_POST_LAUNCH)).exists():
             os.makedirs(os.path.join(self._path_wave, mf.DIRECTORY_POST_LAUNCH), exist_ok=True)
@@ -89,20 +110,15 @@ class WavePreparator:
         else:
             print('✔ Already Done')
 
+    def _copy_csv_templates(self):
         print('### Copy .csv templates…', end=' ')
-        if not pathlib.Path(
-            os.path.join(self._path_wave, mf.FILE_CSV_WAVE_TEMPLATE)
-        ).exists() or not pathlib.Path(os.path.join(self._path_wave, mf.FILE_CSV_INIT_WAVE_TEMPLATE)).exists():
+        if not pathlib.Path(os.path.join(self._path_wave, mf.FILE_CSV_WAVE_TEMPLATE)).exists():
             copy2(os.path.join(mf.PATH_TEMPLATE, mf.FILE_CSV_WAVE_TEMPLATE), self._path_wave)
-            copy2(os.path.join(mf.PATH_TEMPLATE, mf.FILE_CSV_INIT_WAVE_TEMPLATE), self._path_wave)
             print('✔ Done')
         else:
             print('✔ Already Done')
 
-        template_sg_creator = TemplateSecurityGroupCreator()
-        sg_template_copy = template_sg_creator.create()
-        sg_template_copy_testing = template_sg_creator.create_for_testing()
-
+    def _prefill_csv_tempates(self, sg_template_copy_id, sg_template_copy_testing_id):
         print('### Pre-fill .csv templates…', end=' ')
 
         with open(os.path.join(self._path_wave, mf.FILE_CSV_WAVE_TEMPLATE), 'a') as file_object:
@@ -119,21 +135,18 @@ class WavePreparator:
                 self._arguments.environment,
                 self._defaults.get('target_subnet_id', 'SET_TARGET_SUBNET_ID'),
                 ';'.join(list(
-                    x for x in (self._defaults.get('target_security_group_ids', []) + [sg_template_copy]) if x is None
+                    x for x in (self._defaults.get('target_security_group_ids', []) + [sg_template_copy_id]) if
+                    x is None
                 )),
                 self._defaults.get('test_subnet_id', 'SET_TEST_SUBNET_ID'),
                 ';'.join(list(
-                    x for x in (self._defaults.get('test_security_group_ids', []) + [sg_template_copy_testing]) if
+                    x for x in (self._defaults.get('test_security_group_ids', []) + [sg_template_copy_testing_id]) if
                     x is None
                 )),
                 self._defaults.get('instance_type', 'SET_INSTANCE_TYPE'),
                 self._defaults.get('tenancy', 'Shared'),
                 self._defaults.get('iam_role', 'SET_IAM_ROLE'),
             ]))
-        print('✔ Done')
-
-        print('### Add marker…', end=' ')
-        Path(os.path.join(self._path_wave, mf.FILE_DONE_MARKER)).touch()
         print('✔ Done')
 
     def _create_migration_factory_project(self):
@@ -230,7 +243,7 @@ class WavePreparator:
             'replicationServerType': self._defaults.get('replication_instance_type', 'm5.large'),
             'useLowCostDisks': False,
             'useDedicatedServer': False,
-            'usePrivateIp':  self._defaults.get('replication_disable_public', True),
+            'usePrivateIp': self._defaults.get('replication_disable_public', True),
             'replicatorSecurityGroupIDs': [],
             'proxyUrl': '',
             'storageLocationId': '',
