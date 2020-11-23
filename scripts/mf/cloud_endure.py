@@ -154,8 +154,8 @@ class CloudEndureRequester:
             url=self._cloud_endure_session.get_api_endpoint().format(uri)
         )
 
-        logging.getLogger('root').debug(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.content))
-        logging.getLogger('root').info(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.status_code))
+        logging.getLogger('root').debug(self.__class__.__name__ + ': GET “/' + uri + '” : ' + str(response.content))
+        logging.getLogger('root').info(self.__class__.__name__ + ': GET “/' + uri + '” : ' + str(response.status_code))
 
         if response.status_code != 200:
             logging.getLogger('root').error(
@@ -176,8 +176,8 @@ class CloudEndureRequester:
             data=json.dumps(data)
         )
 
-        logging.getLogger('root').debug(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.content))
-        logging.getLogger('root').info(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.status_code))
+        logging.getLogger('root').debug(self.__class__.__name__ + ': POST “/' + uri + '” : ' + str(response.content))
+        logging.getLogger('root').info(self.__class__.__name__ + ': POST “/' + uri + '” : ' + str(response.status_code))
 
         if response.status_code != 201:
             print(type(str(response.content)))
@@ -195,8 +195,8 @@ class CloudEndureRequester:
             url=self._cloud_endure_session.get_api_endpoint().format(uri),
             data=json.dumps(data)
         )
-        logging.getLogger('root').debug(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.content))
-        logging.getLogger('root').info(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.status_code))
+        logging.getLogger('root').debug(self.__class__.__name__ + ': PATCH “/' + uri + '” : ' + str(response.content))
+        logging.getLogger('root').info(self.__class__.__name__ + ': PATCH “/' + uri + '” : ' + str(response.status_code))
 
         if response.status_code != 200:
             logging.getLogger('root').error(

@@ -96,6 +96,7 @@ class WavePreparator:
     def _check_marker(self):
         if Path(os.path.join(self._path_wave, mf.FILE_MARKER_PREPARE_DONE)).exists():
             print('✔ Already Done')
+            exit(0)
 
     def _add_marker(self):
         print('### Add marker…', end=' ')
