@@ -144,6 +144,7 @@ class CloudEndureRequester:
         response = self.get('projects')
         for project in json.loads(response.content)['items']:
             if project['name'] == project_name:
+                logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str(project))
                 return project
 
         return False
