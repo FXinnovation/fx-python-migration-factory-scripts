@@ -54,6 +54,10 @@ class Requester:
         if url is None:
             url = ''
 
+        logging.getLogger('root').debug("%s: Using “%s” as requests instance for %s “%S”".format(
+            cls.__class__.__name__, verb.upper(), type(request_instance), url, uri
+        ))
+
         response = getattr(request_instance, verb.lower())(
             url=url + uri,
             headers=headers,
