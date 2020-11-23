@@ -79,8 +79,6 @@ class WavePreparator:
     def prepare(self):
         logging.getLogger('root').debug(self._arguments)
 
-        self._cloud_endure_requester.get_all_project_names()
-
         self._check_marker()
 
         self._create_cloud_endure_project()
@@ -171,6 +169,10 @@ class WavePreparator:
                 attribute_type = app['type']
                 break
 
+        project_names = self._cloud_endure_requester.get_all_project_names()
+        if self._arguments.wave_name not in project_names:
+            project_names.append(self._arguments.wave_name)
+
         data = {
             "event": "PUT",
             "name": "cloudendure_projectname",
@@ -178,26 +180,15 @@ class WavePreparator:
                 "name": "cloudendure_projectname",
                 "description": attribute_description,
                 "type": attribute_type,
-                "listvalue": ','.join()
+                "listvalue": ','.join(project_names)
             }
         }
 
-        logging.getLogger('root').debug(self.__class__.__name__ + ':data:' + str(data))
-
-        response = self._migration_factory_requester.put(
+        self._migration_factory_requester.put(
             url=self._endpoints[MigrationFactoryRequester.KEY_ADMIN_API_URL],
             uri='/prod/admin/schema/app',
             data=data
         )
-        logging.getLogger('root').debug(self.__class__.__name__ + ':response:' + str(response))
-
-        if response.status_code == 200:
-            logging.getLogger('root').info(
-                self.__class__.__name__ + ':migration_factory_project:Successfully updated Migration Factory projects')
-        else:
-            logging.getLogger('root').info(
-                self.__class__.__name__ + ':migration_factory_project:Error when updating Migration Factory projects')
-            sys.exit(1)
 
         print('✔ Done')
 
@@ -290,64 +281,3 @@ class WavePreparator:
 if __name__ == '__main__':
     wave_preparator = WavePreparator()
     wave_preparator.prepare()
-
-    # create a region dictionary
-
-# def PutCloudEndureProject(projects, token):
-#     migration_factory_requester.get(AdminHOST, '/prod/admin/schema/app')
-#
-#     apps = json.loads(requests.get(AdminHOST, headers={"Authorization": token}).text)
-#
-#     attribute_description = None
-#     attribute_type = None
-#
-#     for app in apps['attributes']:
-#         if app['name'] == 'cloudendure_projectname':
-#             attribute_description = app['description']
-#             attribute_type = app['type']
-#             break
-#
-#     assert attribute_type
-#     assert attribute_description
-#
-#     data = {
-#         "event": "PUT",
-#         "name": "cloudendure_projectname",
-#         "update": {
-#             "name": "cloudendure_projectname",
-#             "description": attribute_description,
-#             "type": attribute_type,
-#             "listvalue": ','.join(projects)
-#         }
-#     }
-#     r = requests.put(AdminHOST + '/prod/admin/schema/app', headers=auth, data=json.dumps(data))
-#     if r.status_code == 200:
-#         print("Cloudendure project are updated in the migration factory")
-#     else:
-#         print("Cloud endure project update failed: " + r.text + ".......")
-#
-# except:
-# print("ERROR: Getting server list failed....")
-# sys.exit(6)
-#
-#
-# def main():
-
-#
-#             # attach configuration to the project
-
-#
-
-#             resp = session.get(url=HOST + endpoint.format('/projects'))
-#
-#             if rep.status_code != 200:
-#                 print('Failed to get cloud endure project'.format(rep.status_code))
-#             else:
-#                 cloudendure_projects = []
-#                 for project in json.loads(resp.content)['items']:
-#                     cloudendure_projects.append(project['name'])
-#
-#                 PutCloudEndureProject(cloudendure_projects, token)
-#
-#
-# return 0

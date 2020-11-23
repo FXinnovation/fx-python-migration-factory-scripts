@@ -142,10 +142,7 @@ class CloudEndureRequester:
     def get_all_project_names(self):
         response = self.get('projects')
 
-        print(list(map(lambda project: project['name'], response['items'])))
-
-        quit(0)
-        return False
+        return list(map(lambda project: project['name'], response['items']))
 
     def get(self, uri):
         return Requester.get(
