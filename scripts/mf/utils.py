@@ -62,6 +62,8 @@ class Requester:
             cls.__class__.__name__, type(request_instance), url, uri
         ))
 
+        print(url + uri)
+
         response = getattr(request_instance, verb.lower())(
             url=url + uri,
             headers=headers,
