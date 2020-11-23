@@ -187,7 +187,7 @@ class WavePreparator:
         self._migration_factory_requester.put(
             url=self._endpoints[MigrationFactoryRequester.KEY_ADMIN_API_URL],
             uri='/prod/admin/schema/app',
-            data=json.dump(data)
+            data=json.dumps(data)
         )
 
         print('✔ Done')
