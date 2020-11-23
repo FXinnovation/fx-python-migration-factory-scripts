@@ -199,37 +199,54 @@ class WavePreparator:
         print('✔ Done')
 
     def _create_cloud_endure_project(self):
-        print('### Create CloudEndure project…', end=' ')
+        print('### Create CloudEndure Project…')
 
-        if self._cloud_endure_requester.is_project_existing(self._arguments.wave_name) is True:
+        print('####### Create Project…', end=' ')
+
+        project = self._cloud_endure_requester.get_project_by_name(self._arguments.wave_name)
+
+        if project is False:
+            project_data = {
+                'name': self._arguments.wave_name,
+                'type': 'MIGRATION',
+                'licensesIDs': [self._cloud_endure_requester.get_migration_license()],
+                'targetCloudId': self._cloud_endure_requester.get_aws_cloud_id(),
+                'sourceRegion': self._cloud_endure_requester.get_on_prem_region_id()
+            }
+            project = self._cloud_endure_requester.post(uri='projects', data=project_data)
+            print('✔ Done')
+        else:
             print('✔ Already Done')
-            return
 
-        project_data = {
-            'name': self._arguments.wave_name,
-            'type': 'MIGRATION',
-            'licensesIDs': [self._cloud_endure_requester.get_migration_license()],
-            'targetCloudId': self._cloud_endure_requester.get_aws_cloud_id(),
-            'sourceRegion': self._cloud_endure_requester.get_on_prem_region_id()
-        }
-        project_id = json.loads(self._cloud_endure_requester.post(uri='projects', data=project_data).content)['id']
+        print('####### Create Cloud Credentials…', end=' ')
 
-        credentials_data = {
-            'publicKey': EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_ACCESS_KEY_NAMES),
-            'privateKey': base64.b64encode(
-                EnvironmentVariableFetcher.fetch(
-                    mf.ENV_VAR_AWS_SECRET_KEY_NAMES, sensitive=True
-                ).encode('utf-8')).decode('utf-8'),
-            'cloudId': self._cloud_endure_requester.get_aws_cloud_id()
-        }
-        cloud_credentials_id = json.loads(
-            self._cloud_endure_requester.post(uri='cloudCredentials', data=credentials_data).content
-        )['id']
+        exit(0)
 
-        data = {
-            'cloudCredentialsIDs': [cloud_credentials_id]
-        }
-        self._cloud_endure_requester.patch(uri='projects/{}'.format(project_id), data=data)
+        # cloud_credentials_id = self._cloud_endure_requester.get_credentials_id_by_project_name(self._arguments.wave_name)
+
+        if project['cloudCredentialsIDs'][0] is False:
+            credentials_data = {
+                'publicKey': EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_ACCESS_KEY_NAMES),
+                'privateKey': base64.b64encode(
+                    EnvironmentVariableFetcher.fetch(
+                        mf.ENV_VAR_AWS_SECRET_KEY_NAMES, sensitive=True
+                    ).encode('utf-8')).decode('utf-8'),
+                'cloudId': self._cloud_endure_requester.get_aws_cloud_id()
+            }
+            cloud_credentials_id = json.loads(
+                self._cloud_endure_requester.post(uri='cloudCredentials', data=credentials_data).content
+            )['id']
+
+            data = {
+                'cloudCredentialsIDs': [cloud_credentials_id]
+            }
+            self._cloud_endure_requester.patch(uri='projects/{}'.format(project_id), data=data)
+            print('✔ Done')
+        else:
+            print('✔ Already Done')
+
+        exit(0)
+
 
         region_id = self._cloud_endure_requester.get_aws_region_id(
             cloud_credentials_id, EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_REGION_NAMES)

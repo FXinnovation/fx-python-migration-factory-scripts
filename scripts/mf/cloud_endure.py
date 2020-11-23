@@ -140,11 +140,11 @@ class CloudEndureRequester:
             if region['name'] == self.REGIONS[aws_region]:
                 return region['id']
 
-    def is_project_existing(self, project_name):
+    def get_project_by_name(self, project_name):
         response = self.get('projects')
         for project in json.loads(response.content)['items']:
             if project['name'] == project_name:
-                return True
+                return project
 
         return False
 
