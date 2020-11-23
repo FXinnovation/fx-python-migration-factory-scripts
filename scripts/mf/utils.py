@@ -53,8 +53,9 @@ class Requester:
             headers = {}
         if url is None:
             url = ''
+        else:
+            url = url.rstrip('/') + '/'
 
-        url = url.rstrip('/') + '/'
         uri = uri.lstrip('/')
 
         logging.getLogger('root').debug("{}: Using “{}” as requests instance for {} “{}”".format(
