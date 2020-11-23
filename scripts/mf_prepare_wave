@@ -269,10 +269,10 @@ class WavePreparator:
                 'converterType': self._defaults.get('replication_converter_instance_type', 'm5.large'),
             }
 
-            replication_configuration_id = json.loads(self._cloud_endure_requester.post(
+            replication_configuration_id = self._cloud_endure_requester.post(
                 uri='projects/{}/replicationConfigurations'.format(project['id']),
                 data=project_replication_config
-            ).content)['id']
+            )['id']
 
             data = {
                 'replicationConfiguration': replication_configuration_id
