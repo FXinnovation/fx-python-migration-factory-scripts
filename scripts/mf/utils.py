@@ -72,8 +72,14 @@ class Requester:
         ))
 
         if response.status_code not in expected_codes:
-            logging.getLogger('root').error("{}: {} “{}” “{}” (code: “{}”). Content:\n{}\n".format(
-                cls.__class__.__name__, verb.upper(), url, uri, str(response.status_code), str(response.content)
+            logging.getLogger('root').error("{}: {} “{}” “{}” (code: “{}”). Sent data:\n{}\nContent:\n{}\n".format(
+                cls.__class__.__name__,
+                verb.upper(),
+                url,
+                uri,
+                str(response.status_code),
+                str(data),
+                str(response.content)
             ))
             if exit_on_error:
                 sys.exit(50)
