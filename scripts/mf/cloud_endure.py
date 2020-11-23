@@ -117,32 +117,32 @@ class CloudEndureRequester:
     def get_aws_cloud_id(self):
         response = self.get('clouds')
 
-        for clouds_item in json.loads(response.content)['items']:
+        for clouds_item in response['items']:
             if clouds_item['name'] == 'AWS':
                 return clouds_item['id']
 
     def get_migration_license(self):
         response = self.get('licenses')
 
-        for license_item in json.loads(response.content)['items']:
+        for license_item in response['items']:
             if license_item['type'] == 'MIGRATION':
                 return license_item['id']
 
     def get_on_prem_region_id(self):
         response = self.get('cloudCredentials/00000000-0000-0000-0000-000000000000/regions')
 
-        for region_items in json.loads(response.content)['items']:
+        for region_items in response['items']:
             return region_items['id']
 
     def get_aws_region_id(self, cloud_credentials_id, aws_region):
         response = self.get('cloudCredentials/{}/regions'.format(cloud_credentials_id))
-        for region in json.loads(response.content)['items']:
+        for region in response['items']:
             if region['name'] == self.REGIONS[aws_region]:
                 return region['id']
 
     def get_project_by_name(self, project_name):
         response = self.get('projects')
-        for project in json.loads(response.content)['items']:
+        for project in response['items']:
             if project['name'] == project_name:
                 logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str(project))
                 return project
@@ -162,7 +162,7 @@ class CloudEndureRequester:
                 self.__class__.__name__ + ': CloudEndure API call GET “' + uri + '” failed.')
             sys.exit(30)
 
-        return response
+        return json.loads(response.content)
 
     def post(self, uri, data=None):
         response = self._cloud_endure_session.get_session().post(
@@ -180,7 +180,7 @@ class CloudEndureRequester:
             )
             sys.exit(40)
 
-        return response
+        return json.loads(response.content)
 
     def patch(self, uri, data=None):
         response = self._cloud_endure_session.get_session().patch(
@@ -197,7 +197,7 @@ class CloudEndureRequester:
             )
             sys.exit(50)
 
-        return response
+        return json.loads(response.content)
 
 
 if __name__ == '__main__':
