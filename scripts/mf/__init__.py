@@ -17,7 +17,6 @@ ENV_VAR_CLOUDENDURE_TOKEN = [
 ]
 
 FILE_CSV_WAVE_TEMPLATE = 'migration-intake-form.csv'
-FILE_CSV_INIT_WAVE_TEMPLATE = 'migration-intake-form-init.csv'
 FILE_MARKER_PREPARE_DONE = '.mf_prepare_done'
 
 DIRECTORY_POST_LAUNCH = 'post-launch'
