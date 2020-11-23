@@ -43,7 +43,7 @@ class Requester:
 
     @classmethod
     def patch(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
-        return Requester._do_request(request_instance, 'put', url, uri, headers, data, [200], exit_on_error)
+        return Requester._do_request(request_instance, 'patch', url, uri, headers, data, [200], exit_on_error)
 
     @classmethod
     def _do_request(cls, request_instance, verb, url, uri, headers, data, expected_codes, exit_on_error):
