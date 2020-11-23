@@ -53,8 +53,7 @@ class Requester:
             headers = {}
 
         response = getattr(request_instance, verb.lower())(
-            url=url,
-            uri=uri,
+            url=url + uri,
             headers=headers,
             data=data
         )
