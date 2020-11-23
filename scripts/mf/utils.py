@@ -31,7 +31,6 @@ class Requester:
 
     @classmethod
     def get(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
-        print(headers)
         return Requester._do_request(request_instance, 'get', url, uri, headers, data, [200], exit_on_error)
 
     @classmethod
@@ -65,6 +64,7 @@ class Requester:
 
         print(url + uri)
 
+        print(headers)
         response = getattr(request_instance, verb.lower())(
             url=url + uri,
             headers=headers,
