@@ -49,6 +49,12 @@ class MigrationFactoryAuthenticator:
         if headers is None:
             headers = {}
 
+            logging.getLogger('root').debug(
+                headers
+            )
+            logging.getLogger('root').debug(
+                self.get_authorization_token()
+            )
         return {**headers, **{"Authorization": self.get_authorization_token()}}
 
 
