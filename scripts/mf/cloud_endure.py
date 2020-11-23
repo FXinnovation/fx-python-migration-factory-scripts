@@ -187,7 +187,7 @@ class CloudEndureRequester:
                 "” failed with data: \n" +
                 data +
                 "\n\n and message: \n" +
-                response.content +
+                str(response.content) +
                 "\n."
             )
             sys.exit(40)
@@ -210,7 +210,7 @@ class CloudEndureRequester:
                 "” failed with data: \n" +
                 data +
                 "\n\n and message: \n" +
-                response.content +
+                str(response.content) +
                 "\n."
             )
             sys.exit(50)
