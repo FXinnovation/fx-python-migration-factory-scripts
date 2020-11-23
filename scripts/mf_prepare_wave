@@ -190,10 +190,10 @@ class WavePreparator:
         logging.getLogger('root').debug(self.__class__.__name__ + ':response:' + str(response))
 
         if response.status_code == 200:
-            logging.getLogger('root').debug(
+            logging.getLogger('root').info(
                 self.__class__.__name__ + ':migration_factory_project:Successfully updated Migration Factory projects')
         else:
-            logging.getLogger('root').error(
+            logging.getLogger('root').info(
                 self.__class__.__name__ + ':migration_factory_project:Error when updating Migration Factory projects')
             sys.exit(1)
 
