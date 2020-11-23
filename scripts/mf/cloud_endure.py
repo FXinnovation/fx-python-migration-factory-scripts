@@ -183,12 +183,7 @@ class CloudEndureRequester:
             logging.getLogger('root').error(
                 self.__class__.__name__ +
                 ': CloudEndure API call POST “' +
-                uri +
-                "” failed with data: \n" +
-                data +
-                "\n\n and message: \n" +
-                str(response.content) +
-                "\n."
+                uri + "” failed with data: \n" + data + "\n\n and message: \n" + str(response.content) + "\n."
             )
             sys.exit(40)
 
