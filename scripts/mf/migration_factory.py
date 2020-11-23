@@ -74,8 +74,7 @@ class MigrationFactoryRequester:
         return Requester.get(
             uri=uri,
             url=url,
-            headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
-            data=data
+            headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers)
         )
 
     def put(self, url, uri, headers=None, data=None):
