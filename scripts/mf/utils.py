@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
 import getpass
+import json
 import logging
 import os
 import re
 import sys
+
+import requests
 
 
 class Utils:
@@ -21,6 +24,56 @@ class Utils:
                 ' Use at your own risk.'
             )
         return bool(is_serializable_as_path)
+
+
+class Requester:
+    """ Decorator around requests for enhanced logging """
+
+    @classmethod
+    def get(cls, url, uri, headers=None, data=None, exit_on_error=True):
+        return Requester._do_request('get', url, uri, headers, data, [200], exit_on_error)
+
+    @classmethod
+    def post(cls, url, uri, headers=None, data=None, exit_on_error=True):
+        return Requester._do_request('post', url, uri, headers, data, [201], exit_on_error)
+
+    @classmethod
+    def put(cls, url, uri, headers=None, data=None, exit_on_error=True):
+        return Requester._do_request('put', url, uri, headers, data, [200, 201], exit_on_error)
+
+    @classmethod
+    def patch(cls, url, uri, headers=None, data=None, exit_on_error=True):
+        return Requester._do_request('put', url, uri, headers, data, [200], exit_on_error)
+
+    @classmethod
+    def _do_request(cls, verb, url, uri, headers, data, expected_codes, exit_on_error):
+        if headers is None:
+            headers = {}
+        if data is None:
+            headers = {}
+
+        response = getattr(requests, verb.lower())(
+            url=url,
+            uri=uri,
+            headers=headers,
+            data=data
+        )
+
+        logging.getLogger('root').info('%s: %s “%s” “%s” (code: “%s”)'.format(
+            cls.__class__.__name__, verb.upper(), url, uri, str(response.status_code)
+        ))
+        logging.getLogger('root').debug("%s: %s “%s” “%s” (code: “%s”). Content:\n%s\n".format(
+            cls.__class__.__name__, verb.upper(), url, uri, str(response.status_code), str(response.content)
+        ))
+
+        if response.status_code not in expected_codes:
+            logging.getLogger('root').error("%s: %s “%s” “%s” (code: “%s”). Content:\n%s\n".format(
+                cls.__class__.__name__, verb.upper(), url, uri, str(response.status_code), str(response.content)
+            ))
+            if exit_on_error:
+                sys.exit(50)
+
+        return json.loads(response.content)
 
 
 class EnvironmentVariableFetcher:
