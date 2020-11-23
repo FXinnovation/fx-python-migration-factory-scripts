@@ -66,7 +66,7 @@ class MigrationFactoryRequester:
         self._migration_factory_authenticator = MigrationFactoryAuthenticator(login_api_url)
 
     def get(self, url, uri, headers=None):
-        self._show_debug_log(url, uri, headers)
+        self._show_debug_log('GET', url, uri, headers)
 
         return requests.get(
             url + uri,
@@ -74,7 +74,7 @@ class MigrationFactoryRequester:
         )
 
     def put(self, url, uri, headers=None, data=None):
-        self._show_debug_log(url, uri, headers, data)
+        self._show_debug_log('PUT', url, uri, headers, data)
 
         return requests.put(
             url + uri,
@@ -83,7 +83,7 @@ class MigrationFactoryRequester:
         )
 
     def post(self, url, uri, headers=None, data=None):
-        self._show_debug_log(url, uri, headers, data)
+        self._show_debug_log('POST', url, uri, headers, data)
 
         return requests.post(
             url + uri,
@@ -91,11 +91,11 @@ class MigrationFactoryRequester:
             data=json.dumps(data)
         )
 
-    def _show_debug_log(self, url, uri, headers=None, data=None):
+    def _show_debug_log(self, verb, url, uri, headers=None, data=None):
+        logging.getLogger('root').info(self.__class__.__name__ + ':' + verb + ' ' + os.path.join(url, uri))
         logging.getLogger('root').debug(self.__class__.__name__ + ':url:' + os.path.join(url, uri))
         logging.getLogger('root').debug(self.__class__.__name__ + ':headers:' + str(headers))
         logging.getLogger('root').debug(self.__class__.__name__ + ':data:' + str(data))
 
-
-if __name__ == '__main__':
-    print("This file is a library file. It cannot be called directly.")
+        if __name__ == '__main__':
+            print("This file is a library file. It cannot be called directly.")

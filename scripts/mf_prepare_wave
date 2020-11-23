@@ -82,7 +82,7 @@ class WavePreparator:
         self._check_marker()
 
         self._create_cloud_endure_project()
-        # self._create_migration_factory_project()
+        self._create_migration_factory_project()
         self._create_folder_structure()
         self._copy_csv_templates()
 
