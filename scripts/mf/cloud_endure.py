@@ -180,6 +180,7 @@ class CloudEndureRequester:
         logging.getLogger('root').info(self.__class__.__name__ + ': “/' + uri + '” : ' + str(response.status_code))
 
         if response.status_code != 201:
+            print(type(str(response.content)))
             logging.getLogger('root').error(
                 self.__class__.__name__ +
                 ': CloudEndure API call POST “' +
