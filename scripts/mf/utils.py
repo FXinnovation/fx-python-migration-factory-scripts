@@ -35,7 +35,7 @@ class Requester:
 
     @classmethod
     def post(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
-        return Requester._do_request(request_instance, 'post', url, uri, headers, data, [201], exit_on_error)
+        return Requester._do_request(request_instance, 'post', url, uri, headers, data, [200, 201], exit_on_error)
 
     @classmethod
     def put(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
