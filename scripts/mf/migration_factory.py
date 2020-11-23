@@ -35,7 +35,7 @@ class MigrationFactoryAuthenticator:
             url=self._login_api_url,
             uri='prod/login',
             data=json.dumps({'username': self._username, 'password': self._password})
-        )
+        ).trim('"')
 
         return self._authorization_token
 
@@ -46,6 +46,9 @@ class MigrationFactoryAuthenticator:
         return self._authorization_token
 
     def populate_headers_with_authorization(self, headers):
+        if headers is None:
+            headers = {}
+
         return {**headers, **{"Authorization": self.get_authorization_token()}}
 
 
