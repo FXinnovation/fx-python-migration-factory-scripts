@@ -139,6 +139,14 @@ class CloudEndureRequester:
 
         return False
 
+    def get_all_project_names(self):
+        response = self.get('projects')
+
+        print(list(map(lambda project: project['name'], response['items'])))
+
+        quit(0)
+        return False
+
     def get(self, uri):
         return Requester.get(
             uri=self._cloud_endure_session.get_api_endpoint().format(uri),
