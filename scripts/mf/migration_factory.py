@@ -72,17 +72,26 @@ class MigrationFactoryRequester:
 
     def get(self, url, uri, headers=None):
         return Requester.get(
-            uri, url, self._migration_factory_authenticator.populate_headers_with_authorization(headers)
+            uri=uri,
+            url=url,
+            headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
+            data=data
         )
 
     def put(self, url, uri, headers=None, data=None):
         return Requester.put(
-            uri, url, self._migration_factory_authenticator.populate_headers_with_authorization(headers), data
+            uri=uri,
+            url=url,
+            headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
+            data=data
         )
 
     def post(self, url, uri, headers=None, data=None):
         return Requester.post(
-            uri, url, self._migration_factory_authenticator.populate_headers_with_authorization(headers), data
+            uri=uri,
+            url=url,
+            headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
+            data=data
         )
 
 
