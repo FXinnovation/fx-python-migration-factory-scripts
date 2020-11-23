@@ -35,7 +35,7 @@ class MigrationFactoryAuthenticator:
             url=self._login_api_url,
             uri='prod/login',
             data=json.dumps({'username': self._username, 'password': self._password})
-        ).trim('"')
+        ).strip('"')
 
         return self._authorization_token
 
