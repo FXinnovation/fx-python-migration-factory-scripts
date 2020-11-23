@@ -55,7 +55,7 @@ class Requester:
             url = ''
 
         logging.getLogger('root').debug("{}: Using “{}” as requests instance for {} “{}”".format(
-            cls.__class__.__name__, verb.upper(), type(request_instance), url, uri
+            cls.__class__.__name__, type(request_instance), url, uri
         ))
 
         response = getattr(request_instance, verb.lower())(
