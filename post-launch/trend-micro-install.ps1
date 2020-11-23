@@ -1,11 +1,15 @@
 
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 
-
-$filename = "GoldenAMI/Agent-Windows-Latest.zip"
-$unziploc = "c:\install\GoldenAMI\trend"
-$output = "$scriptPath\Agent-Windows-Latest.zip"
+$BasePath="c:\temp"
+$unziploc = "$BasePath\GoldenAMI\trend"
+$output = "Agent-Windows-Latest.zip"
 $software = "Trend Micro Deep Security Agent"
+
+$bucket = "cascadesinstallationsourcesrepoprod"
+$filename = "GoldenAMI/Agent-Windows-Latest.zip"
+
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
 
 $Trend = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | select-Object DisplayName, DisplayVersion | Where { $_.DisplayName -eq $software }
@@ -16,7 +20,7 @@ if ( $Trend -ne $null ) {
 
 
 mkdir $unziploc
-cd c:\install
+cd $BasePath
 
 function Expand-ZIPFile($file, $destination)
 {
@@ -28,9 +32,9 @@ function Expand-ZIPFile($file, $destination)
 	}
 }
 
+aws.exe s3 cp "s3://$bucket/$filename" "$BasePath\$output"
 
-
-Expand-ZIPFile $output $unziploc
+Expand-ZIPFile "$BasePath\$output" $unziploc
 Start-Sleep -Seconds 60
 $msiFile = dir "$unziploc\agent*"|select name -ExpandProperty name
 
@@ -45,6 +49,7 @@ If ($msiFile -Notlike "*$TrendVersion*")
 	Start-Sleep -Seconds 180
 	Invoke-Expression -Command:'cmd.exe /C "C:\Program Files\Trend Micro\Deep Security Agent\dsa_control" -a dsm://dsm-aws.cascades.com:4120'
 	cd c:\
-	remove-item -path c:\install\ -recurse -force
 	exit 3010
 }
+remove-item -recurse "$BasePath\$output"
+remove-item -recurse $unziploc
