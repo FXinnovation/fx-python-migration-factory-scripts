@@ -79,6 +79,8 @@ class WavePreparator:
     def prepare(self):
         logging.getLogger('root').debug(self._arguments)
 
+        self._cloud_endure_requester.get_all_project_names()
+
         self._check_marker()
 
         self._create_cloud_endure_project()
