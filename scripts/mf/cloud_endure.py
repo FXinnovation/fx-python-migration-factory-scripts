@@ -159,7 +159,13 @@ class CloudEndureRequester:
 
         if response.status_code != 200:
             logging.getLogger('root').error(
-                self.__class__.__name__ + ': CloudEndure API call GET “' + uri + '” failed.')
+                self.__class__.__name__ +
+                ': CloudEndure API call GET “' +
+                uri +
+                '” failed with message: “' +
+                response.content +
+                '”.'
+            )
             sys.exit(30)
 
         return json.loads(response.content)
@@ -175,8 +181,14 @@ class CloudEndureRequester:
 
         if response.status_code != 201:
             logging.getLogger('root').error(
-                self.__class__.__name__ + ': CloudEndure API call POST “' + uri + '” failed with data: “' + str(
-                    data) + '”.'
+                self.__class__.__name__ +
+                ': CloudEndure API call POST “' +
+                uri +
+                "” failed with data: \n" +
+                data +
+                "\n\n and message: \n" +
+                response.content +
+                "\n."
             )
             sys.exit(40)
 
@@ -192,8 +204,14 @@ class CloudEndureRequester:
 
         if response.status_code != 200:
             logging.getLogger('root').error(
-                self.__class__.__name__ + ': CloudEndure API call PATCH “' + uri + '” failed with data: “' + str(
-                    data) + '”.'
+                self.__class__.__name__ +
+                ': CloudEndure API call PATCH “' +
+                uri +
+                "” failed with data: \n" +
+                data +
+                "\n\n and message: \n" +
+                response.content +
+                "\n."
             )
             sys.exit(50)
 
