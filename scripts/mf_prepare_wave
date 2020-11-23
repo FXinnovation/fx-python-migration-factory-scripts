@@ -250,7 +250,7 @@ class WavePreparator:
             project_replication_config = {
                 'volumeEncryptionKey': '',
                 'volumeEncryptionAllowed': True,
-                'bandwidthThrottling': 0,
+                'bandwidthThrottling': self._defaults.get('replication_bandwidth_throttling', 0),
                 'disablePublicIp': self._defaults.get('replication_disable_public', True),
                 'replicationServerType': self._defaults.get('replication_instance_type', 'm5.large'),
                 'useLowCostDisks': False,
@@ -263,10 +263,9 @@ class WavePreparator:
                 'archivingEnabled': False,
                 'replicationTags': [{'key': 'CloudEndureProject', 'value': self._arguments.wave_name}],
                 'subnetId': self._defaults.get('replication_subnet_id'),
-                'subnetHostProject': '',
                 'cloudCredentials': cloud_credentials_id,
                 'region': region_id,
-                'converterType': self._defaults.get('replication_converter_instance_type', 'm5.xlarge'),
+                'converterType': self._defaults.get('replication_converter_instance_type', 'm5.large'),
             }
 
             replication_configuration_id = self._cloud_endure_requester.post(
