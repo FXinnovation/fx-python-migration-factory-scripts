@@ -110,10 +110,9 @@ class WavePreparator:
         print('### Create folder structure…', end=' ')
         if not pathlib.Path(os.path.join(self._path_wave, mf.DIRECTORY_POST_LAUNCH)).exists():
             os.makedirs(os.path.join(self._path_wave, mf.DIRECTORY_POST_LAUNCH), exist_ok=True)
-            logging.getLogger('root').info('{}: “{}” path create'.format(
+            logging.getLogger('root').info('{}: “{}” path created'.format(
                 self.__class__.__name__, self._path_wave, mf.DIRECTORY_POST_LAUNCH
             ))
-            logging.getLogger('root').info()
             print('✔ Done')
         else:
             print('✔ Already Done')
