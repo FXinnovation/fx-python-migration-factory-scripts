@@ -202,7 +202,7 @@ class WavePreparator:
     def _create_cloud_endure_project(self):
         print('### Create CloudEndure Project…')
 
-        print('####### Create Project…', end=' ')
+        print('## Create Project…', end=' ')
 
         project = self._cloud_endure_requester.get_project_by_name(self._arguments.wave_name)
 
@@ -219,7 +219,7 @@ class WavePreparator:
         else:
             print('✔ Already Done')
 
-        print('####### Setup Cloud Credentials…', end=' ')
+        print('## Setup Cloud Credentials…', end=' ')
         if not project['cloudCredentialsIDs']:
             credentials_data = {
                 'publicKey': EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_ACCESS_KEY_NAMES),
@@ -241,7 +241,7 @@ class WavePreparator:
             cloud_credentials_id = project['cloudCredentialsIDs'][0]
             print('✔ Already Done')
 
-        print('####### Setup Configuration…', end=' ')
+        print('## Setup Configuration…', end=' ')
 
         if 'replicationConfiguration' not in project.keys():
             region_id = self._cloud_endure_requester.get_aws_region_id(
