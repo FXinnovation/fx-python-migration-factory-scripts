@@ -218,13 +218,8 @@ class WavePreparator:
         else:
             print('✔ Already Done')
 
-        print('####### Create Cloud Credentials…', end=' ')
-
-        exit(0)
-
-        # cloud_credentials_id = self._cloud_endure_requester.get_credentials_id_by_project_name(self._arguments.wave_name)
-
-        if project['cloudCredentialsIDs'][0] is False:
+        print('####### Setup Cloud Credentials…', end=' ')
+        if not project['cloudCredentialsIDs']:
             credentials_data = {
                 'publicKey': EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_ACCESS_KEY_NAMES),
                 'privateKey': base64.b64encode(
@@ -233,59 +228,61 @@ class WavePreparator:
                     ).encode('utf-8')).decode('utf-8'),
                 'cloudId': self._cloud_endure_requester.get_aws_cloud_id()
             }
-            cloud_credentials_id = json.loads(
-                self._cloud_endure_requester.post(uri='cloudCredentials', data=credentials_data).content
-            )['id']
+            cloud_credentials = self._cloud_endure_requester.post(uri='cloudCredentials', data=credentials_data)
 
             data = {
-                'cloudCredentialsIDs': [cloud_credentials_id]
+                'cloudCredentialsIDs': [cloud_credentials['id']]
             }
-            self._cloud_endure_requester.patch(uri='projects/{}'.format(project_id), data=data)
+            self._cloud_endure_requester.patch(uri='projects/{}'.format(project['id']), data=data)
+
             print('✔ Done')
         else:
             print('✔ Already Done')
 
-        exit(0)
+        print('####### Setup Configuration…', end=' ')
 
+        if 'replicationConfiguration' not in project.keys():
 
-        region_id = self._cloud_endure_requester.get_aws_region_id(
-            cloud_credentials_id, EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_REGION_NAMES)
-        )
+            region_id = self._cloud_endure_requester.get_aws_region_id(
+                cloud_credentials['id'], EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_REGION_NAMES)
+            )
 
-        project_replication_config = {
-            'volumeEncryptionKey': '',
-            'volumeEncryptionAllowed': True,
-            'bandwidthThrottling': self._defaults.get('replication_bandwidth_throttling', 0),
-            'disablePublicIp': self._defaults.get('replication_disable_public', True),
-            'replicationServerType': self._defaults.get('replication_instance_type', 'm5.large'),
-            'useLowCostDisks': False,
-            'useDedicatedServer': False,
-            'usePrivateIp': self._defaults.get('replication_disable_public', True),
-            'replicatorSecurityGroupIDs': [],
-            'proxyUrl': '',
-            'storageLocationId': '',
-            'objectStorageLocation': '',
-            'archivingEnabled': False,
-            'replicationTags': [{'key': 'CloudEndureProject', 'value': self._arguments.wave_name}],
-            'subnetId': self._defaults.get('replication_subnet_id'),
-            'subnetHostProject': '',
-            'cloudCredentials': cloud_credentials_id,
-            'region': region_id,
-            'converterType': self._defaults.get('replication_converter_instance_type', 'm5.large'),
-        }
+            project_replication_config = {
+                'volumeEncryptionKey': '',
+                'volumeEncryptionAllowed': True,
+                'bandwidthThrottling': self._defaults.get('replication_bandwidth_throttling', 0),
+                'disablePublicIp': self._defaults.get('replication_disable_public', True),
+                'replicationServerType': self._defaults.get('replication_instance_type', 'm5.large'),
+                'useLowCostDisks': False,
+                'useDedicatedServer': False,
+                'usePrivateIp': self._defaults.get('replication_disable_public', True),
+                'replicatorSecurityGroupIDs': [],
+                'proxyUrl': '',
+                'storageLocationId': '',
+                'objectStorageLocation': '',
+                'archivingEnabled': False,
+                'replicationTags': [{'key': 'CloudEndureProject', 'value': self._arguments.wave_name}],
+                'subnetId': self._defaults.get('replication_subnet_id'),
+                'subnetHostProject': '',
+                'cloudCredentials': cloud_credentials['id'],
+                'region': region_id,
+                'converterType': self._defaults.get('replication_converter_instance_type', 'm5.large'),
+            }
 
-        replication_configuration_id = json.loads(self._cloud_endure_requester.post(
-            uri='projects/{}/replicationConfigurations'.format(project_id),
-            data=project_replication_config
-        ).content)['id']
+            replication_configuration_id = json.loads(self._cloud_endure_requester.post(
+                uri='projects/{}/replicationConfigurations'.format(project['id']),
+                data=project_replication_config
+            ).content)['id']
 
-        data = {
-            'replicationConfiguration': replication_configuration_id
-        }
+            data = {
+                'replicationConfiguration': replication_configuration_id
+            }
 
-        self._cloud_endure_requester.patch(uri='projects/{}'.format(project_id), data=data)
+            self._cloud_endure_requester.patch(uri='projects/{}'.format(project['id']), data=data)
 
-        print('✔ Done')
+            print('✔ Done')
+        else:
+            print('✔ Already Done')
 
 
 if __name__ == '__main__':
