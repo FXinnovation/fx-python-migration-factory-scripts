@@ -141,14 +141,14 @@ class CloudEndureRequester:
 
     def get(self, uri):
         return Requester.get(
-            uri=uri,
+            uri=self._cloud_endure_session.get_api_endpoint().format(uri),
             url=CloudEndureSession.CLOUDENDURE_ENDPOINT_HOST,
             request_instance=self._cloud_endure_session.get_session()
         )
 
     def post(self, uri, data=None):
         return Requester.post(
-            uri=uri,
+            uri=self._cloud_endure_session.get_api_endpoint().format(uri),
             url=CloudEndureSession.CLOUDENDURE_ENDPOINT_HOST,
             data=json.dumps(data),
             request_instance=self._cloud_endure_session.get_session()
@@ -156,7 +156,7 @@ class CloudEndureRequester:
 
     def patch(self, uri, data=None):
         return Requester.patch(
-            uri=uri,
+            uri=self._cloud_endure_session.get_api_endpoint().format(uri),
             url=CloudEndureSession.CLOUDENDURE_ENDPOINT_HOST,
             data=json.dumps(data),
             request_instance=self._cloud_endure_session.get_session()
