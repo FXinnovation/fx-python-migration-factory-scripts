@@ -31,7 +31,7 @@ class MigrationFactoryAuthenticator:
         self._login_api_url = login_api_url
 
     def login(self):
-        self._authorization_token = self.post(
+        self._authorization_token = Requester.post(
             url=self._login_api_url,
             uri='prod/login',
             data=json.dumps({'username': self._username, 'password': self._password})
