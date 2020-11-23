@@ -49,12 +49,6 @@ class MigrationFactoryAuthenticator:
         if headers is None:
             headers = {}
 
-            logging.getLogger('root').debug(
-                headers
-            )
-            logging.getLogger('root').debug(
-                self.get_authorization_token()
-            )
         return {**headers, **{"Authorization": self.get_authorization_token()}}
 
 
@@ -71,7 +65,6 @@ class MigrationFactoryRequester:
         self._migration_factory_authenticator = MigrationFactoryAuthenticator(login_api_url)
 
     def get(self, url, uri, headers=None):
-        print(self._migration_factory_authenticator.populate_headers_with_authorization(headers))
         return Requester.get(
             uri=uri,
             url=url,
