@@ -73,20 +73,31 @@ class Requester:
         logging.getLogger('root').info('{}: {} “{}” “{}” (code: “{}”)'.format(
             cls.__class__.__name__, verb.upper(), url, uri, str(response.status_code)
         ))
-        logging.getLogger('root').debug("{}: {} “{}” “{}” (code: “{}”). Response:\n{}\n".format(
-            cls.__class__.__name__, verb.upper(), url, uri, str(response.status_code), str(response.content)
-        ))
-
-        if response.status_code not in expected_codes:
-            logging.getLogger('root').error("{}: {} “{}” “{}” (code: “{}”). Sent data:\n{}\nResponse:\n{}\n".format(
+        logging.getLogger('root').debug(
+            "{}: {} “{}” “{}” (code: “{}”). Sent data:\n{}\nSent headers:\n{}\nResponse:\n{}\n".format(
                 cls.__class__.__name__,
                 verb.upper(),
                 url,
                 uri,
                 str(response.status_code),
                 str(data),
+                str(headers),
                 str(response.content)
-            ))
+            )
+        )
+
+        if response.status_code not in expected_codes:
+            logging.getLogger('root').error(
+                "{}: {} “{}” “{}” (code: “{}”). Sent data:\n{}\nResponse:\n{}\n".format(
+                    cls.__class__.__name__,
+                    verb.upper(),
+                    url,
+                    uri,
+                    str(response.status_code),
+                    str(data),
+                    str(response.content)
+                )
+            )
             if exit_on_error:
                 sys.exit(50)
 
