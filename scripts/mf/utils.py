@@ -51,9 +51,11 @@ class Requester:
             headers = {}
         if data is None:
             headers = {}
+        if url is None:
+            url = ''
 
         response = getattr(request_instance, verb.lower())(
-            url=str(url) + uri,
+            url=url + uri,
             headers=headers,
             data=data
         )
