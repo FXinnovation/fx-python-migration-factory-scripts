@@ -21,6 +21,8 @@ class MigrationFactoryAuthenticator:
     _login_api_url = None
     _authorization_token = None
 
+    URI_LOGIN = 'prod/login'
+
     def __init__(self, login_api_url):
         self._username = EnvironmentVariableFetcher.fetch(
             ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Migration Factory username'
@@ -33,7 +35,7 @@ class MigrationFactoryAuthenticator:
     def login(self):
         self._authorization_token = Requester.post(
             url=self._login_api_url,
-            uri='prod/login',
+            uri=self.URI_LOGIN,
             data=json.dumps({'username': self._username, 'password': self._password})
         ).strip('"')
 
@@ -58,6 +60,8 @@ class MigrationFactoryRequester:
     KEY_LOGIN_API_URL = 'LoginApiUrl'
     KEY_USER_API_URL = 'UserApiUrl'
     KEY_ADMIN_API_URL = 'AdminApiUrl'
+
+    URI_ADMIN_SCHEMA = '/prod/admin/schema/app'
 
     _migration_factory_authenticator = None
 

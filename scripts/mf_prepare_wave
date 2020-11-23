@@ -168,10 +168,8 @@ class WavePreparator:
 
         app_schema = self._migration_factory_requester.get(
             url=self._endpoints[MigrationFactoryRequester.KEY_ADMIN_API_URL],
-            uri='/prod/admin/schema/app'
+            uri=MigrationFactoryRequester.URI_ADMIN_SCHEMA
         )
-
-        logging.getLogger('root').debug(self.__class__.__name__ + ':app_schema:' + str(app_schema))
 
         attribute_description = None
         attribute_type = None
@@ -199,7 +197,7 @@ class WavePreparator:
 
         self._migration_factory_requester.put(
             url=self._endpoints[MigrationFactoryRequester.KEY_ADMIN_API_URL],
-            uri='/prod/admin/schema/app',
+            uri=MigrationFactoryRequester.URI_ADMIN_SCHEMA,
             data=json.dumps(data)
         )
 
