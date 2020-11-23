@@ -150,7 +150,7 @@ class CloudEndureRequester:
         return Requester.post(
             uri=uri,
             url=CloudEndureSession.CLOUDENDURE_ENDPOINT_HOST,
-            data=data,
+            data=json.dumps(data),
             request_instance=self._cloud_endure_session.get_session()
         )
 
@@ -158,7 +158,7 @@ class CloudEndureRequester:
         return Requester.patch(
             uri=uri,
             url=CloudEndureSession.CLOUDENDURE_ENDPOINT_HOST,
-            data=data,
+            data=json.dumps(data),
             request_instance=self._cloud_endure_session.get_session()
         )
 
