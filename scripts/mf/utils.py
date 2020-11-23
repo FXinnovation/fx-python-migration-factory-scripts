@@ -30,29 +30,29 @@ class Requester:
     """ Decorator around requests for enhanced logging """
 
     @classmethod
-    def get(cls, url, uri, headers=None, data=None, exit_on_error=True):
-        return Requester._do_request('get', url, uri, headers, data, [200], exit_on_error)
+    def get(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
+        return Requester._do_request(request_instance, 'get', url, uri, headers, data, [200], exit_on_error)
 
     @classmethod
-    def post(cls, url, uri, headers=None, data=None, exit_on_error=True):
-        return Requester._do_request('post', url, uri, headers, data, [201], exit_on_error)
+    def post(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
+        return Requester._do_request(request_instance, 'post', url, uri, headers, data, [201], exit_on_error)
 
     @classmethod
-    def put(cls, url, uri, headers=None, data=None, exit_on_error=True):
-        return Requester._do_request('put', url, uri, headers, data, [200, 201], exit_on_error)
+    def put(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
+        return Requester._do_request(request_instance, 'put', url, uri, headers, data, [200, 201], exit_on_error)
 
     @classmethod
-    def patch(cls, url, uri, headers=None, data=None, exit_on_error=True):
-        return Requester._do_request('put', url, uri, headers, data, [200], exit_on_error)
+    def patch(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
+        return Requester._do_request(request_instance, 'put', url, uri, headers, data, [200], exit_on_error)
 
     @classmethod
-    def _do_request(cls, verb, url, uri, headers, data, expected_codes, exit_on_error):
+    def _do_request(cls, request_instance, verb, url, uri, headers, data, expected_codes, exit_on_error):
         if headers is None:
             headers = {}
         if data is None:
             headers = {}
 
-        response = getattr(requests, verb.lower())(
+        response = getattr(request_instance, verb.lower())(
             url=url,
             uri=uri,
             headers=headers,

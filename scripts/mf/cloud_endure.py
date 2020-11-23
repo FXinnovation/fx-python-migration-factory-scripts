@@ -8,6 +8,7 @@ import requests
 
 from . import ENV_VAR_CLOUDENDURE_TOKEN
 from .utils import EnvironmentVariableFetcher
+from .utils import Requester
 
 
 class CloudEndureSession:
@@ -34,17 +35,6 @@ class CloudEndureSession:
         self._session.headers.update({'Content-type': 'application/json', 'Accept': 'text/plain'})
         self._api_endpoint_uri = self.CLOUDENDURE_ENDPOINT_URI
         response = self._login_request()
-
-        if response.status_code not in [200, 307]:
-            logging.getLogger('root').error(self.__class__.__name__ + ': CloudEndure Login failed.')
-            sys.exit(2)
-
-        if response.history:
-            # Legacy: retry with different endpoint - remove if possible 2
-            logging.getLogger('root').warning(
-                self.__class__.__name__ + ': Try second endpoint for login. Please investigate.')
-            self._api_endpoint_uri = '/' + '/'.join(response.url.split('/')[3:-1]) + '/{}'
-            response = self._login_request()
 
         if response.status_code != 200:
             logging.getLogger('root').error(self.__class__.__name__ + ': CloudEndure Login failed.')
@@ -150,63 +140,24 @@ class CloudEndureRequester:
         return False
 
     def get(self, uri):
-        response = self._cloud_endure_session.get_session().get(
-            url=self._cloud_endure_session.get_api_endpoint().format(uri)
+        return Requester.get(
+            uri=uri,
+            request_instance=self._cloud_endure_session.get_session()
         )
-
-        logging.getLogger('root').debug(self.__class__.__name__ + ': GET “/' + uri + '” : ' + str(response.content))
-        logging.getLogger('root').info(self.__class__.__name__ + ': GET “/' + uri + '” : ' + str(response.status_code))
-
-        if response.status_code != 200:
-            logging.getLogger('root').error(
-                self.__class__.__name__ +
-                ': CloudEndure API call GET “' +
-                uri +
-                '” failed with message: “' +
-                response.content +
-                '”.'
-            )
-            sys.exit(30)
-
-        return json.loads(response.content)
 
     def post(self, uri, data=None):
-        response = self._cloud_endure_session.get_session().post(
-            url=self._cloud_endure_session.get_api_endpoint().format(uri),
-            data=json.dumps(data)
+        return Requester.post(
+            uri=uri,
+            data=data,
+            request_instance=self._cloud_endure_session.get_session()
         )
-
-        logging.getLogger('root').debug(self.__class__.__name__ + ': POST “/' + uri + '” : ' + str(response.content))
-        logging.getLogger('root').info(self.__class__.__name__ + ': POST “/' + uri + '” : ' + str(response.status_code))
-
-        if response.status_code != 201:
-            print(type(str(response.content)))
-            logging.getLogger('root').error(
-                self.__class__.__name__ +
-                ': CloudEndure API call POST “' +
-                uri + "” failed with data: \n" + str(data) + "\n\n and message: \n" + str(response.content) + "\n."
-            )
-            sys.exit(40)
-
-        return json.loads(response.content)
 
     def patch(self, uri, data=None):
-        response = self._cloud_endure_session.get_session().patch(
-            url=self._cloud_endure_session.get_api_endpoint().format(uri),
-            data=json.dumps(data)
+        return Requester.patch(
+            uri=uri,
+            data=data,
+            request_instance=self._cloud_endure_session.get_session()
         )
-        logging.getLogger('root').debug(self.__class__.__name__ + ': PATCH “/' + uri + '” : ' + str(response.content))
-        logging.getLogger('root').info(self.__class__.__name__ + ': PATCH “/' + uri + '” : ' + str(response.status_code))
-
-        if response.status_code != 200:
-            logging.getLogger('root').error(
-                self.__class__.__name__ +
-                ': CloudEndure API call PATCH “' +
-                uri + "” failed with data: \n" + str(data) + "\n\n and message: \n" + str(response.content) + "\n."
-            )
-            sys.exit(50)
-
-        return json.loads(response.content)
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ import requests
 from . import ENV_VAR_MIGRATION_FACTORY_PASSWORD
 from . import ENV_VAR_MIGRATION_FACTORY_USERNAME
 from .utils import EnvironmentVariableFetcher
+from .utils import Requester
 
 
 class MigrationFactoryAuthenticator:
@@ -35,7 +36,7 @@ class MigrationFactoryAuthenticator:
             data=json.dumps({'username': self._username, 'password': self._password})
         )
         if response.status_code == 200:
-            logging.getLogger('root').debug(self.__class__.__name__ + ': Migration Factory Login successful')
+            logging.getLogger('root').info(self.__class__.__name__ + ': Migration Factory Login successful')
             self._authorization_token = str(json.loads(response.text))
             return self._authorization_token
         else:
@@ -66,36 +67,20 @@ class MigrationFactoryRequester:
         self._migration_factory_authenticator = MigrationFactoryAuthenticator(login_api_url)
 
     def get(self, url, uri, headers=None):
-        self._show_debug_log('GET', url, uri, headers)
-
-        return requests.get(
-            url + uri,
-            self._migration_factory_authenticator.populate_headers_with_authorization({})
+        return Requester.get(
+            url, uri, self._migration_factory_authenticator.populate_headers_with_authorization(headers)
         )
 
     def put(self, url, uri, headers=None, data=None):
-        self._show_debug_log('PUT', url, uri, headers, data)
-
-        return requests.put(
-            url + uri,
-            self._migration_factory_authenticator.populate_headers_with_authorization(headers),
-            data=json.dumps(data)
+        return Requester.put(
+            url, uri, self._migration_factory_authenticator.populate_headers_with_authorization(headers), data
         )
 
     def post(self, url, uri, headers=None, data=None):
-        self._show_debug_log('POST', url, uri, headers, data)
-
-        return requests.post(
-            url + uri,
-            self._migration_factory_authenticator.populate_headers_with_authorization(headers),
-            data=json.dumps(data)
+        return Requester.post(
+            url, uri, self._migration_factory_authenticator.populate_headers_with_authorization(headers), data
         )
 
-    def _show_debug_log(self, verb, url, uri, headers=None, data=None):
-        logging.getLogger('root').info(self.__class__.__name__ + ':' + verb + ' ' + os.path.join(url, uri))
-        logging.getLogger('root').debug(self.__class__.__name__ + ':url:' + os.path.join(url, uri))
-        logging.getLogger('root').debug(self.__class__.__name__ + ':headers:' + str(headers))
-        logging.getLogger('root').debug(self.__class__.__name__ + ':data:' + str(data))
 
-        if __name__ == '__main__':
-            print("This file is a library file. It cannot be called directly.")
+if __name__ == '__main__':
+    print("This file is a library file. It cannot be called directly.")
