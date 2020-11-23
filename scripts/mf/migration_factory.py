@@ -31,18 +31,13 @@ class MigrationFactoryAuthenticator:
         self._login_api_url = login_api_url
 
     def login(self):
-        response = requests.post(
-            os.path.join(self._login_api_url, 'prod/login'),
+        self._authorization_token = self.post(
+            url=self._login_api_url,
+            uri='prod/login',
             data=json.dumps({'username': self._username, 'password': self._password})
         )
-        if response.status_code == 200:
-            logging.getLogger('root').info(self.__class__.__name__ + ': Migration Factory Login successful')
-            self._authorization_token = str(json.loads(response.text))
-            return self._authorization_token
-        else:
-            logging.getLogger('root').error(self.__class__.__name__ + ': Migration Factory Login failed.')
-            logging.getLogger('root').debug(self.__class__.__name__ + ':' + str(response))
-            sys.exit(1)
+
+        return self._authorization_token
 
     def get_authorization_token(self):
         if self._authorization_token is None:

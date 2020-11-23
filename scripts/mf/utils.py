@@ -54,6 +54,9 @@ class Requester:
         if url is None:
             url = ''
 
+        url = url.rstrip('/') + '/'
+        uri = uri.lstrip('/')
+
         logging.getLogger('root').debug("{}: Using “{}” as requests instance for {} “{}”".format(
             cls.__class__.__name__, type(request_instance), url, uri
         ))
@@ -67,12 +70,12 @@ class Requester:
         logging.getLogger('root').info('{}: {} “{}” “{}” (code: “{}”)'.format(
             cls.__class__.__name__, verb.upper(), url, uri, str(response.status_code)
         ))
-        logging.getLogger('root').debug("{}: {} “{}” “{}” (code: “{}”). Content:\n{}\n".format(
+        logging.getLogger('root').debug("{}: {} “{}” “{}” (code: “{}”). Response:\n{}\n".format(
             cls.__class__.__name__, verb.upper(), url, uri, str(response.status_code), str(response.content)
         ))
 
         if response.status_code not in expected_codes:
-            logging.getLogger('root').error("{}: {} “{}” “{}” (code: “{}”). Sent data:\n{}\nContent:\n{}\n".format(
+            logging.getLogger('root').error("{}: {} “{}” “{}” (code: “{}”). Sent data:\n{}\nResponse:\n{}\n".format(
                 cls.__class__.__name__,
                 verb.upper(),
                 url,
