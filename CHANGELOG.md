@@ -1,3 +1,8 @@
+## x.y.z <TO BE RELEASED>
+
+* chore: Add pre-commit config and run it
+* chore: Add Jenkinsfile pipeline
+
 ## 5.5.0
 
 * feat: (library) Simplifies endpoint loader
