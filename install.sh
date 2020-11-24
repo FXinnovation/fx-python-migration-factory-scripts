@@ -62,6 +62,9 @@ git pull --rebase origin master
 find scripts -type f -not -iname '*pyc' -exec install '{}' '/usr/local/bin/' ';'
 sudo mkdir -p "$CONFIG_DESTINATION_PATH"
 
+mkdir -p /usr/local/bin/mf
+find scripts/mf -type f -not -iname '*pyc' -exec install '{}' '/usr/local/bin/mf/' ';'
+
 install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDPOINT_FILE"
 install_without_override "config/$DEFAULTS_FILE" "$CONFIG_DESTINATION_PATH/$DEFAULTS_FILE"
 
