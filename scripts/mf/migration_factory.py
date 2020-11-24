@@ -63,6 +63,12 @@ class MigrationFactoryRequester:
 
     URI_ADMIN_SCHEMA = '/prod/admin/schema/app'
 
+    URI_USER_SERVER_LIST = '/prod/user/servers'
+    URI_USER_APP_LIST = '/prod/user/apps'
+    URI_USER_WAVE = '/prod/user/waves/{}'
+    URI_USER_SERVER = '/prod/user/servers/{}'
+    URI_USER_APP = '/prod/user/apps/{}'
+
     _migration_factory_authenticator = None
 
     def __init__(self, login_api_url):
@@ -90,6 +96,42 @@ class MigrationFactoryRequester:
             headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
             data=data
         )
+
+    def delete(self, url, uri, headers=None, data=None):
+        return Requester.delete(
+            uri=uri,
+            url=url,
+            headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
+            data=data
+        )
+
+    def get_user_server_ids(self, user_api_url, app_id=""):
+        server_list = self.get(user_api_url, self.URI_USER_SERVER_LIST)
+
+        _server_selected_list_id = []
+
+        for server in server_list:
+            if not app_id:
+                if server["app_id"] == app_id:
+                    _server_selected_list_id.append(server["server_id"])
+            else:
+                _server_selected_list_id.append(server["server_id"])
+
+        return _server_selected_list_id
+    
+    def get_user_app_ids(self, user_api_url, wave_id=""):
+        app_list = self.get(user_api_url, self.URI_USER_SERVER_LIST)
+
+        _app_selected_list_id = []
+
+        for app in app_list:
+            if not wave_id:
+                if server["wave_id"] == wave_id:
+                    _app_selected_list_id.append(server["app_id"])
+            else:
+                _app_selected_list_id.append(server["app_id"])
+
+        return _app_selected_list_id
 
 
 if __name__ == '__main__':
