@@ -9,7 +9,6 @@ repos:
     - id: detect-private-key
     - id: check-json
     - id: check-yaml
-    - id: detect-aws-credentials
     - id: no-commit-to-branch
     - id: requirements-txt-fixer
 - repo: https://scm.dazzlingwrench.fxinnovation.com/fxinnovation-public/pre-commit-afcmf

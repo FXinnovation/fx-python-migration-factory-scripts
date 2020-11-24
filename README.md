@@ -43,6 +43,23 @@ Here are all supported environment variable:
 
 You can also use the command `source mf_setup_environment` to set all these environment variables
 
+## Versioning
+This repository follows [Semantic Versioning 2.0.0](https://semver.org/)
+
+## Git Hooks
+This repository uses [pre-commit](https://pre-commit.com/) hooks.
+
+### Usage
+
+```
+pre-commit install
+pre-commit install -t commit-msg
+```
+
+## Commit Messages
+
+This repository follows the [afcmf](https://scm.dazzlingwrench.fxinnovation.com/fxinnovation-public/pre-commit-afcmf) standard for it's commit messages.
+
 ## NOTE
 
 * This works only on Linux
