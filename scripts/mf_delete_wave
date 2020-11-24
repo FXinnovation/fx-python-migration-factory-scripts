@@ -53,7 +53,7 @@ class WaveDelete:
     def delete_mf(self):
         print('### Delete Migration Factory Project…', end=' ')
         
-        _app_ids = get_user_app_ids(
+        _app_ids = self._migration_factory_requester.get_user_app_ids(
                 user_api_url = self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
                 wave_id = self._arguments["wave-id"]
             )
