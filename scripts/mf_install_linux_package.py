@@ -211,4 +211,3 @@ def install_cloud_endure(host, username, key_pwd, using_key, install_token):
             print(output)
         print(error)
         return False
-

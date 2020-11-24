@@ -79,7 +79,7 @@ def uploading_data(data, token):
            print("Tags for server " + row['Name'] + " updated in the migration factory")
         else:
            print("ERROR: updating tags for server " + row['Name'] + " failed : " + r.text + ".......")
-                
+
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
     r = requests.post(LoginHOST + '/prod/login',

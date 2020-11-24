@@ -38,7 +38,7 @@ class LaunchTargetInstances:
         self._arguments = parser.parse_args()
 
         mf_library.setup_logging(self._arguments.v)
-        
+
         self._mf_login_username = EnvironmentVariableFetcher.fetch(self, mf_library.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
         self._mf_login_password = EnvironmentVariableFetcher.fetch(self, mf_library.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
         self._ce_user_api_token = EnvironmentVariableFetcher.fetch(self, mf_library.ENV_VAR_CLOUDENDURE_API_TOKEN, env_var_description='CE API token', sensitive=True)
@@ -81,13 +81,13 @@ class LaunchTargetInstances:
         if relaunch and not dry_run:
             request_data["relaunch"] = True
 
-        try: 
+        try:
             login_data = {
                 "username": self._mf_login_username,
                 "password": self._mf_login_password
             }
 
-            
+
             r = requests.post(LoginHOST + '/prod/login',
                           data=json.dumps(login_data))
             if r.status_code != 200:
@@ -118,7 +118,7 @@ class LaunchTargetInstances:
 
 if __name__ == '__main__':
     launch_target_instances = LaunchTargetInstances()
-    
+
     if launch_target_instances.is_cutover():
         launch_target_instances.launch_cutover()
         sys.exit(0)

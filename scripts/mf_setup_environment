@@ -37,7 +37,7 @@ set_environment_variable() {
 
   if [ ! `printenv $1` ] || [ "$FORCE" = true ]
   then
-    if [ "$3" = true ] 
+    if [ "$3" = true ]
     then
       read -s -r -p "$2: " input
     else

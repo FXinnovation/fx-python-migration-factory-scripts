@@ -32,7 +32,7 @@ if ($account -ne "") {
   $scriptblock2 = $executioncontext.invokecommand.NewScriptBlock($command)
   Invoke-Command -Session $s -ScriptBlock $scriptblock2
   write-host
-  write-host "** CloudEndure installation finished for : $machine **" 
+  write-host "** CloudEndure installation finished for : $machine **"
   write-host
   }
   else {

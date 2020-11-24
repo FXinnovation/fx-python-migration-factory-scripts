@@ -47,13 +47,13 @@ def CElogin(userapitoken, endpoint):
             print('ERROR: There is no active license configured for this CloudEndure account....')
         elif r.status_code == 429:
             print('ERROR: CloudEndure Authentication failure limit has been reached. The service will become available for additional requests after a timeout....')
-    
+
     # check if need to use a different API entry point
     if r.history:
         endpoint = '/' + '/'.join(r.url.split('/')[3:-1]) + '/{}'
         r = requests.post(HOST + endpoint.format('login'),
                       data=json.dumps(login_data), headers=headers)
-                      
+
     session['session'] = r.cookies['session']
     try:
        headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
@@ -275,7 +275,7 @@ def verify_instance_status(InstanceList, serverlist, token, access_key_id, secre
             elif updateserver.status_code != 200:
                print("Error: Update migration_status attribute failed")
                sys.exit(10)
-        
+
         if instance_not_ready:
             count = count + 1
             if count > 12:

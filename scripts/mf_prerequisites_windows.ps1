@@ -24,7 +24,7 @@ function Get-TCPPort443
     Try {
     $content=$WebClient.DownloadString("https://console.cloudendure.com")
     write-output 'TCP443:Pass'
-    } 
+    }
     catch {
         write-output 'TCP443:Fail'
     }
@@ -58,7 +58,7 @@ function Get-NETVersion
     $v40 = Test-Path "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4.0"
     $v35 = Test-Path "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v3.5"
     $Netversion = $false
-    if ($v4 -or $v40 -or $v35) 
+    if ($v4 -or $v40 -or $v35)
     {$Netversion = $true}
 
     if($Netversion){

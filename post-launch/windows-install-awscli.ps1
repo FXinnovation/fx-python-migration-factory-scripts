@@ -11,7 +11,7 @@ $AWSCliInstallFile="c:\temp\awscli2.msi"
 if (!(test-path "c:\temp")) {
 		mkdir c:\temp
 }
-	
+
 if (test-path "$AWSCliPath\aws.exe") {
 	new-item "c:\temp\aws_already_installed.lock" -type file
 } else {

@@ -39,7 +39,7 @@ def ServerList(waveid, token, UserHOST, Projectname):
     #print(servers)
     apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
     #print(apps)
-    
+
     # Get App list
     applist = []
     for app in apps:
@@ -50,7 +50,7 @@ def ServerList(waveid, token, UserHOST, Projectname):
                         applist.append(app['app_id'])
                 else:
                     applist.append(app['app_id'])
-    
+
     #print(apps)
     #print(servers)
     # Get Server List
@@ -498,7 +498,7 @@ def main(arguments):
         print("*********************************************")
         print("")
         windows_results = check_windows(Servers_Windows, args.CEServerIP, args.WindowsUser)
-   
+
     if len(Servers_Linux) > 0:
         print("")
         print("********************************************")

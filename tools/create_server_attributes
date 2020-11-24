@@ -23,9 +23,9 @@ def CreateServerAttributeIfNotExist(attribute_name, attribute_description, attri
             if app['name'] == attribute_name:
                 attribute_found = True
                 if attribute_description != app['description']:
-                    attribute_need_update = True 
+                    attribute_need_update = True
                 if attribute_type != app['type']:
-                    attribute_need_update = True 
+                    attribute_need_update = True
                 break
 
         if attribute_found and not attribute_need_update:
@@ -88,7 +88,7 @@ def AddServerAttributeToStage(stage_id, attribute_name, token):
             return 0
 
         stage["attributes"].append({"attr_type": "server", "attr_name": attribute_name})
-        
+
         r = requests.put(AdminHOST + '/prod/admin/stage/' + stage_id, headers=auth, data=json.dumps(stage))
         if r.status_code == 200:
             print(attribute_name + " server attribute is updated to the stage " + stage_id + " in the migration factory")
@@ -123,7 +123,7 @@ def main(arguments):
 
     with open(args.EndpointConfigFile) as json_file:
         endpoints = json.load(json_file)
-    
+
     global LoginHOST, UserHOST, AdminHOST
     LoginHOST = endpoints['LoginApiUrl']
     UserHOST = endpoints['UserApiUrl']

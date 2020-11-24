@@ -36,14 +36,14 @@ def ServerList(waveid, token, UserHOST):
     #print(servers)
     apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
     #print(apps)
-    
+
     # Get App list
     applist = []
     for app in apps:
         if 'wave_id' in app:
             if str(app['wave_id']) == str(waveid):
                 applist.append(app['app_id'])
-    
+
     #print(apps)
     #print(servers)
     # Get Server List

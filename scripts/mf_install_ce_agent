@@ -51,13 +51,13 @@ def CElogin(userapitoken, endpoint):
             print('ERROR: There is no active license configured for this CloudEndure account....')
         elif r.status_code == 429:
             print('ERROR: CloudEndure Authentication failure limit has been reached. The service will become available for additional requests after a timeout....')
-    
+
     # check if need to use a different API entry point
     if r.history:
         endpoint = '/' + '/'.join(r.url.split('/')[3:-1]) + '/{}'
         r = requests.post(HOST + endpoint.format('login'),
                       data=json.dumps(login_data), headers=headers)
-                      
+
     session['session'] = r.cookies['session']
     try:
        headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
@@ -121,7 +121,7 @@ def ProjectList(waveid, token, UserHOST, serverendpoint, appendpoint):
                     sys.exit(5)
     Projects = ServerList(newapps, servers, CEProjects, waveid)
     return Projects
-            
+
 def ServerList(apps, servers, CEProjects, waveid):
     servercount = 0
     Projects = CEProjects
@@ -199,7 +199,7 @@ def AgentCheck(projects, token, UserHOST):
         print("##### CE Agent install failed on the following servers #####")
         for s in failed_servers:
             print("  " + s)
-            
+
 def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -291,7 +291,7 @@ def main(arguments):
                 pass_key_first = getpass.getpass('Linux Password: ')
                 pass_key_second = getpass.getpass('Re-enter Password: ')
             pass_key = pass_key_second
-    
+
     # Pass parameters to PowerShell
     # First Parameter - $reinstall - "Yes" or "No"
     # Second Parameter - $API_token - CloudEndure Install token

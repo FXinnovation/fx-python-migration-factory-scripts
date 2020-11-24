@@ -36,14 +36,14 @@ def ServerList(waveid, token, UserHOST, serverendpoint, appendpoint):
     #print(servers)
     apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
     #print(apps)
-    
+
     # Get App list
     applist = []
     for app in apps:
         if 'wave_id' in app:
             if str(app['wave_id']) == str(waveid):
                 applist.append(app['app_id'])
-    
+
     # Get Server List
     winServerlist = []
     linuxServerlist = []
@@ -139,7 +139,7 @@ def main(arguments):
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    
+
     if 'MF_USERNAME' not in os.environ:
         username = input('Factory Username: ')
     else:

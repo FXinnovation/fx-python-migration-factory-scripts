@@ -38,13 +38,13 @@
         write-output $metaInfoObj
     }
 
- 
+
 
 
 
 
 function UninstallVmToolsFromClassesDefinition() {
-$UninstallRegKeyLocation = Get-ChildItem HKLM:\SOFTWARE\Classes\Installer\Products\ 
+$UninstallRegKeyLocation = Get-ChildItem HKLM:\SOFTWARE\Classes\Installer\Products\
 
 
 #foreach ($Index in $UninstallRegKey.Name) {
@@ -61,7 +61,7 @@ $UninstallRegKeyLocation = Get-ChildItem HKLM:\SOFTWARE\Classes\Installer\Produc
                 $UninstallRegKeyDetail
             }
         }
-    
+
     }
 
 }
@@ -90,7 +90,7 @@ function UninstallVmToolsFromAddRemoveSoftware() {
     $UninstallString
        return (UninstallPackages $UninstallString)
 
-    } else { 
+    } else {
         "Vmware Tools not found"
         return $true
     }
@@ -111,7 +111,7 @@ function UninstallVmToolsFromCacheFolder() {
         }
         if ($MSIPackageFound -eq $true) { break }
     }
-   
+
    if ($MSIPackageFound -eq $true) {
         return (UninstallPackages $VmwareFileName)
 
@@ -132,7 +132,7 @@ function UninstallPackages ($UninstallKey) {
             Write-Host "Process finished with return code: " $process.ExitCode
             if ($process.ExitCode -eq 3010 -or $process.ExitCode -eq 0) {
                 return $true
-            } else { 
+            } else {
                 return $false
 
             }

@@ -37,14 +37,14 @@ def ServerList(waveid, token, UserHOST):
     #print(servers)
     apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
     #print(apps)
-    
+
     # Get App list
     applist = []
     for app in apps:
         if 'wave_id' in app:
             if str(app['wave_id']) == str(waveid):
                 applist.append(app['app_id'])
-    
+
     # Get Server List
     serverlist = []
     for app in applist:
@@ -60,7 +60,7 @@ def ServerList(waveid, token, UserHOST):
                         else:
                             print ('server_os attribute does not exist for server: ' + server['server_name'] + ", please update this attribute")
                             sys.exit(2)
-                
+
     if len(serverlist) == 0:
         print("ERROR: Serverlist for wave: " + waveid + " is empty....")
         print("")
@@ -94,7 +94,7 @@ def main(arguments):
     print("*************************************")
     print("* Adding proxy on the source server *")
     print("*************************************")
-    
+
     for server in Servers:
         command1 = "Invoke-Command -ComputerName " + server + " -ScriptBlock {[Environment]::SetEnvironmentVariable('https_proxy', 'https://" + args.ProxyServer + "/', 'Machine')}"
         command2 = "Invoke-Command -ComputerName " + server + " -ScriptBlock {Set-ItemProperty -path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' ProxyEnable -value 1}"

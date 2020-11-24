@@ -1,6 +1,6 @@
 # python-migration-factory-scripts
 
-Linux and Windows compliant scripts for the migration factory. 
+Linux and Windows compliant scripts for the migration factory.
 
 ## Pre-requisites
 
@@ -11,7 +11,7 @@ Linux and Windows compliant scripts for the migration factory.
 
 ## Installation
 
-You need to have git and curl install on the machine. 
+You need to have git and curl install on the machine.
 
 1. Clone this repository;
 1. Move to into it;
@@ -29,7 +29,7 @@ When environment in passed as an argument of any script, it will check dynamical
 
 ## Environment variable
 
-Here are all supported environment variable: 
+Here are all supported environment variable:
 
 * `MF_USERNAME`: The username used to log on the migration factory
 * `MF_PASSWORD`: The password used to log on the migration factory
@@ -46,4 +46,4 @@ You can also use the command `source mf_setup_environment` to set all these envi
 ## NOTE
 
 * This works only on Linux
-* `0-AddProxy-Windows.py` is not working for now. 
+* `0-AddProxy-Windows.py` is not working for now.

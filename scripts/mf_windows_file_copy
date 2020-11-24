@@ -35,14 +35,14 @@ def ServerList(waveid, token, UserHOST):
     #print(servers)
     apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
     #print(apps)
-    
+
     # Get App list
     applist = []
     for app in apps:
         if 'wave_id' in app:
             if str(app['wave_id']) == str(waveid):
                 applist.append(app['app_id'])
-    
+
     # Get Server List
     serverlist = []
     for app in applist:
@@ -58,7 +58,7 @@ def ServerList(waveid, token, UserHOST):
                         else:
                             print ('server_os attribute does not exist for server: ' + server['server_name'] + ", please update this attribute")
                             sys.exit(2)
-                
+
     if len(serverlist) == 0:
         print("ERROR: Serverlist for wave: " + waveid + " is empty....")
         print("")
@@ -100,7 +100,7 @@ def main(arguments):
     else:
         password = os.getenv('MF_PASSWORD')
 
-    token = Factorylogin(username, password, LoginHOST)    
+    token = Factorylogin(username, password, LoginHOST)
 
     print("****************************")
     print("*Getting Server List*")
