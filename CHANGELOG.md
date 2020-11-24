@@ -1,3 +1,10 @@
+## 5.4.0
+
+* feat: adds Windows install AWS cli script
+* feat: adds Windows uninstall AWS cli script
+* feat: adds Windows install SSM agent script
+* feat: adds Windows uninstall VMWare tools script
+
 ## 5.3.0
 
 * fix: wrong EnvironmentFetcher signature
