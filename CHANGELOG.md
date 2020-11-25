@@ -1,3 +1,11 @@
+## 6.0.0
+
+* feat: (library) adds MessageBag to store messages to log
+* feat: (library) adds AWSValidator to validate common AWS resource names
+* feat: (import-csv) Validates most of the fields of the CSV file
+* refactor: (import-csv) changes script to use the cloud_migration_requester
+* refactor(BREAKING): changes input CSV headers fields to be all snake_case
+
 ## 5.6.0
 
 * feat: Add `mf_delete_project` script

@@ -58,6 +58,9 @@ class MigrationFactoryRequester:
     """ Allow to make requests against the Migration Factory """
 
     URI_ADMIN_SCHEMA = '/prod/admin/schema/app'
+    URI_USER_WAVES = '/prod/user/waves'
+    URI_USER_APPS = '/prod/user/apps'
+    URI_USER_SERVERS = '/prod/user/servers'
 
     URI_USER_SERVER_LIST = '/prod/user/servers'
     URI_USER_APP_LIST = '/prod/user/apps'

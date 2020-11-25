@@ -230,7 +230,9 @@ class WavePreparator:
                     ).encode('utf-8')).decode('utf-8'),
                 'cloudId': self._cloud_endure_requester.get_aws_cloud_id()
             }
-            cloud_credentials_id = self._cloud_endure_requester.post(uri='cloudCredentials', data=credentials_data)['id']
+            cloud_credentials_id = self._cloud_endure_requester.post(
+                uri='cloudCredentials', data=credentials_data
+            )['id']
 
             data = {
                 'cloudCredentialsIDs': [cloud_credentials_id]
