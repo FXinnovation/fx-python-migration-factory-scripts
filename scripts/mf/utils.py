@@ -19,7 +19,7 @@ class MessageBag:
     _type = None
 
     def __init__(self, type_of_bag):
-        if type not in self.ALLOWED_TYPES:
+        if type_of_bag not in self.ALLOWED_TYPES:
             logging.error('{}: “{}” is not a valid MessageBag type (allowed: “{}”)'.format(
                 self.__class__.__name__, type, self.ALLOWED_TYPES
             ))
