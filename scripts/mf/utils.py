@@ -10,6 +10,34 @@ import sys
 import requests
 
 
+class MessageBag:
+    """ Bag of messages """
+
+    ALLOWED_TYPES = ['error', 'warning', 'info', 'debug']
+
+    _bag = []
+    _type = None
+
+    def __init__(self, type_of_bag):
+        if type not in self.ALLOWED_TYPES:
+            logging.error('{}: “{}” is not a valid MessageBag type (allowed: “{}”)'.format(
+                self.__class__.__name__, type, self.ALLOWED_TYPES
+            ))
+            exit(1)
+
+        self._type = type_of_bag
+
+    def add(self, element):
+        self._bag.append(element)
+
+    def unload(self, logger=logging):
+        for element in self._bag:
+            getattr(logger, self._type)(element)
+
+    def is_empty(self):
+        return len(self._bag) == 0
+
+
 class Utils:
     """ Primitive type utilities """
 
