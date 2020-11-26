@@ -1,6 +1,8 @@
 # python-migration-factory-scripts
 
-Linux and Windows compliant scripts for the migration factory.
+Linux and Windows compliant scripts for [the AWS Migration Factory](https://docs.aws.amazon.com/solutions/latest/aws-cloudendure-migration-factory-solution/welcome.html).
+
+These scripts replace and add many features above [the scripts given by AWS](https://github.com/awslabs/aws-cloudendure-migration-factory-solution/blob/master/source/automation-scripts.zip) for the migration execution server.
 
 ## Pre-requisites
 

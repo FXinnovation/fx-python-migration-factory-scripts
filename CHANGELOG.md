@@ -5,6 +5,8 @@
 * feat: (import-csv) Validates most of the fields of the CSV file
 * refactor: (import-csv) changes script to use the cloud_migration_requester
 * refactor(BREAKING): changes input CSV headers fields to be all snake_case
+* doc: link to technical documentation
+* doc: better explain the intent of this repository
 
 ## 5.6.0
 
