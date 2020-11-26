@@ -97,8 +97,23 @@ class WaveDelete:
 
         print('✔ Done')
 
+    def delete_ce_project(self):
+        print('### Delete CloudEndure Project…', end=' ')
+
+        _cloud_endure_project = self._cloud_endure_requester.get_project_by_name(self._arguments.cloudendure_project_name)
+        print(_cloud_endure_project)
+        sys.Exit(2)
+
+        if not _cloud_endure_project:
+           print('✔ Already deleted')
+           return
+
+        self._cloud_endure_requester.delete(_cloud_endure_project.id)
+
+        print('✔ Done')
+
 
 if __name__ == '__main__':
     wave_deletion = WaveDelete()
     wave_deletion.delete_mf()
-    #wave_deletion.delete_ce()
+    wave_deletion.delete_ce()

@@ -47,7 +47,7 @@ class Requester:
 
     @classmethod
     def delete(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, raw_response=False):
-        return Requester._do_request(request_instance, 'delete', url, uri, headers, data, [200], exit_on_error, raw_response)
+        return Requester._do_request(request_instance, 'delete', url, uri, headers, data, [200, 204], exit_on_error, raw_response)
 
     @classmethod
     def _do_request(cls, request_instance, verb, url, uri, headers, data, expected_codes, exit_on_error, raw_response):

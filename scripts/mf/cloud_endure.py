@@ -163,6 +163,12 @@ class CloudEndureRequester:
             data=json.dumps(data),
             request_instance=self._cloud_endure_session.get_session()
         )
+    def delete(self, uri):
+        return Requester.patch(
+            uri=self._cloud_endure_session.get_api_endpoint().format(uri),
+            request_instance=self._cloud_endure_session.get_session()
+            
+        )
 
 
 if __name__ == '__main__':
