@@ -106,7 +106,7 @@ class Requester:
         if raw_response:
             return response.content
 
-        return json.loads(response.content)
+        return json.loads(response.content or 'null')
 
 
 class EnvironmentVariableFetcher:

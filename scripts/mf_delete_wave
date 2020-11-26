@@ -53,26 +53,26 @@ class WaveDelete:
 
     def delete_mf(self):
         print('### Delete Migration Factory Project…', end=' ')
-        
+
         _app_ids = self._migration_factory_requester.get_user_app_ids(
                 user_api_url = self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
                 wave_id = self._arguments.wave_id
             )
 
         logging.getLogger('root').info('{}: app id “{}” are selected for deletion)'.format(
-            WaveDelete.__class__.__name__, _app_ids
+            self.__class__.__name__, _app_ids
         ))
 
         _server_ids = []
 
         for app_id in _app_ids:
             _server_ids += self._migration_factory_requester.get_user_server_ids(
-                user_api_url = self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL], 
+                user_api_url = self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
                 app_id = app_id
             )
 
         logging.getLogger('root').info('{}: server id “{}” are selected for deletion)'.format(
-            WaveDelete.__class__.__name__, _server_ids
+            self.__class__.__name__, _server_ids
         ))
 
         for server_id in _server_ids:
@@ -101,14 +101,12 @@ class WaveDelete:
         print('### Delete CloudEndure Project…', end=' ')
 
         _cloud_endure_project = self._cloud_endure_requester.get_project_by_name(self._arguments.cloudendure_project_name)
-        print(_cloud_endure_project)
-        sys.Exit(2)
 
         if not _cloud_endure_project:
            print('✔ Already deleted')
            return
 
-        self._cloud_endure_requester.delete(_cloud_endure_project.id)
+        self._cloud_endure_requester.delete('projects/{}'.format(_cloud_endure_project["id"]))
 
         print('✔ Done')
 
@@ -116,4 +114,4 @@ class WaveDelete:
 if __name__ == '__main__':
     wave_deletion = WaveDelete()
     wave_deletion.delete_mf()
-    wave_deletion.delete_ce()
+    wave_deletion.delete_ce_project()

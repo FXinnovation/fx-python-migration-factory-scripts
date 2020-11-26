@@ -115,17 +115,22 @@ class MigrationFactoryRequester:
 
         for server in server_list:
             if app_id:
-                if server["app_id"] == app_id:
-                    _server_selected_list_id.append(server["server_id"])
+                if "app_id" in server:
+                    if server["app_id"] == app_id:
+                        _server_selected_list_id.append(server["server_id"])
+                    else:
+                        logging.getLogger('root').debug('{}: server id “{}” filtered (not in app {})'.format(
+                            self.__class__.__name__,server["server_id"], app_id
+                        ))
                 else:
-                    logging.getLogger('root').debug('{}: server id “{}” filtered (not in app {})'.format(
-                        MigrationFactoryRequester.__class__.__name__,server["server_id"], app_id
+                    logging.getLogger('root').debug('{}: server id “{}” filtered (not in an app)'.format(
+                        self.__class__.__name__, app["server_id"]
                     ))
             else:
                 _server_selected_list_id.append(server["server_id"])
 
         return _server_selected_list_id
-    
+
     def get_user_app_ids(self, user_api_url, wave_id=None):
         app_list = self.get(user_api_url, self.URI_USER_APP_LIST)
 
@@ -133,11 +138,16 @@ class MigrationFactoryRequester:
 
         for app in app_list:
             if wave_id:
-                if app["wave_id"] == wave_id:
-                    _app_selected_list_id.append(app["app_id"])
+                if "wave_id" in app:
+                    if app["wave_id"] == wave_id:
+                        _app_selected_list_id.append(app["app_id"])
+                    else:
+                        logging.getLogger('root').debug('{}: app id “{}” filtered (not in wave {})'.format(
+                            self.__class__.__name__, app["app_id"], wave_id
+                        ))
                 else:
-                    logging.getLogger('root').debug('{}: app id “{}” filtered (not in wave {})'.format(
-                        MigrationFactoryRequester.__class__.__name__, app["wave_id"], wave_id
+                    logging.getLogger('root').debug('{}: app id “{}” filtered (not in a wave)'.format(
+                        self.__class__.__name__, app["app_id"]
                     ))
             else:
                 _app_selected_list_id.append(app["app_id"])
