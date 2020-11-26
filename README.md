@@ -43,6 +43,10 @@ Here are all supported environment variable:
 
 You can also use the command `source mf_setup_environment` to set all these environment variables
 
+## Technical documentation
+
+See [this repository wiki](https://scm.dazzlingwrench.fxinnovation.com/fxinnovation-public/python-migration-factory-scripts/wiki).
+
 ## Versioning
 This repository follows [Semantic Versioning 2.0.0](https://semver.org/)
 
