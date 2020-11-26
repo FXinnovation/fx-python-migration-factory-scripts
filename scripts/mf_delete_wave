@@ -30,7 +30,8 @@ class WaveDelete:
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable info outputs')
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
-        parser.add_argument('--wave-id', required=True, help='ID of the wave to prepare')
+        parser.add_argument('--wave-id', required=True, help='ID of the wave to delete')
+        parser.add_argument('--cloudendure-project-name', required=True, help='ID of the cloud endure project to delete')
         parser.add_argument(
             '--config-file-endpoints',
             default=EnvironmentVariableFetcher.fetch(
@@ -55,32 +56,43 @@ class WaveDelete:
         
         _app_ids = self._migration_factory_requester.get_user_app_ids(
                 user_api_url = self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
-                wave_id = self._arguments["wave-id"]
+                wave_id = self._arguments.wave_id
             )
+
+        logging.getLogger('root').info('{}: app id “{}” are selected for deletion)'.format(
+            WaveDelete.__class__.__name__, _app_ids
+        ))
 
         _server_ids = []
 
-        for app_id in app_ids:
+        for app_id in _app_ids:
             _server_ids += self._migration_factory_requester.get_user_server_ids(
                 user_api_url = self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL], 
                 app_id = app_id
-        )
+            )
+
+        logging.getLogger('root').info('{}: server id “{}” are selected for deletion)'.format(
+            WaveDelete.__class__.__name__, _server_ids
+        ))
 
         for server_id in _server_ids:
             self._migration_factory_requester.delete(
                 url=self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
-                uri=format(MigrationFactoryRequester.URI_USER_SERVER, server_id),
+                uri=MigrationFactoryRequester.URI_USER_SERVER.format(server_id),
+                raw_response=True,
             )
 
         for app_id in _app_ids:
             self._migration_factory_requester.delete(
                 url=self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
-                uri=format(MigrationFactoryRequester.URI_USER_APP, app_id),
+                uri=MigrationFactoryRequester.URI_USER_APP.format(app_id),
+                raw_response=True,
             )
 
         self._migration_factory_requester.delete(
                 url=self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
-                uri=format(MigrationFactoryRequester.URI_USER_WAVE, self._arguments["wave-id"]),
+                uri=MigrationFactoryRequester.URI_USER_WAVE.format(self._arguments.wave_id),
+                raw_response=True,
             )
 
         print('✔ Done')

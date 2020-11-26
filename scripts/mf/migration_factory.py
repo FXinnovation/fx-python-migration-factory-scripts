@@ -74,35 +74,38 @@ class MigrationFactoryRequester:
     def __init__(self, login_api_url):
         self._migration_factory_authenticator = MigrationFactoryAuthenticator(login_api_url)
 
-    def get(self, url, uri, headers=None):
+    def get(self, url, uri, headers=None, raw_response=False):
         return Requester.get(
             uri=uri,
             url=url,
-            headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers)
+            headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
+            raw_response=raw_response,
         )
 
-    def put(self, url, uri, headers=None, data=None):
+    def put(self, url, uri, headers=None, data=None, raw_response=False):
         return Requester.put(
             uri=uri,
             url=url,
             headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
-            data=data
+            data=data,
+            raw_response=raw_response,
         )
 
-    def post(self, url, uri, headers=None, data=None):
+    def post(self, url, uri, headers=None, data=None, raw_response=False):
         return Requester.post(
             uri=uri,
             url=url,
             headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
-            data=data
+            data=data,
+            raw_response=raw_response,
         )
 
-    def delete(self, url, uri, headers=None, data=None):
+    def delete(self, url, uri, headers=None, raw_response=False):
         return Requester.delete(
             uri=uri,
             url=url,
             headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
-            data=data
+            raw_response=raw_response,
         )
 
     def get_user_server_ids(self, user_api_url, app_id=""):
@@ -111,25 +114,33 @@ class MigrationFactoryRequester:
         _server_selected_list_id = []
 
         for server in server_list:
-            if not app_id:
+            if app_id:
                 if server["app_id"] == app_id:
                     _server_selected_list_id.append(server["server_id"])
+                else:
+                    logging.getLogger('root').debug('{}: server id “{}” filtered (not in app {})'.format(
+                        MigrationFactoryRequester.__class__.__name__,server["server_id"], app_id
+                    ))
             else:
                 _server_selected_list_id.append(server["server_id"])
 
         return _server_selected_list_id
     
-    def get_user_app_ids(self, user_api_url, wave_id=""):
-        app_list = self.get(user_api_url, self.URI_USER_SERVER_LIST)
+    def get_user_app_ids(self, user_api_url, wave_id=None):
+        app_list = self.get(user_api_url, self.URI_USER_APP_LIST)
 
         _app_selected_list_id = []
 
         for app in app_list:
-            if not wave_id:
-                if server["wave_id"] == wave_id:
-                    _app_selected_list_id.append(server["app_id"])
+            if wave_id:
+                if app["wave_id"] == wave_id:
+                    _app_selected_list_id.append(app["app_id"])
+                else:
+                    logging.getLogger('root').debug('{}: app id “{}” filtered (not in wave {})'.format(
+                        MigrationFactoryRequester.__class__.__name__, app["wave_id"], wave_id
+                    ))
             else:
-                _app_selected_list_id.append(server["app_id"])
+                _app_selected_list_id.append(app["app_id"])
 
         return _app_selected_list_id
 

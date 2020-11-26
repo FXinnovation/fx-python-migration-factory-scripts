@@ -30,27 +30,27 @@ class Requester:
     """ Decorator around requests for enhanced logging """
 
     @classmethod
-    def get(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
-        return Requester._do_request(request_instance, 'get', url, uri, headers, data, [200], exit_on_error)
+    def get(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, raw_response=False):
+        return Requester._do_request(request_instance, 'get', url, uri, headers, data, [200], exit_on_error, raw_response)
 
     @classmethod
-    def post(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
-        return Requester._do_request(request_instance, 'post', url, uri, headers, data, [200, 201], exit_on_error)
+    def post(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, raw_response=False):
+        return Requester._do_request(request_instance, 'post', url, uri, headers, data, [200, 201], exit_on_error, raw_response)
 
     @classmethod
-    def put(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
-        return Requester._do_request(request_instance, 'put', url, uri, headers, data, [200, 201], exit_on_error)
+    def put(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, raw_response=False):
+        return Requester._do_request(request_instance, 'put', url, uri, headers, data, [200, 201], exit_on_error, raw_response)
 
     @classmethod
-    def patch(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
-        return Requester._do_request(request_instance, 'patch', url, uri, headers, data, [200], exit_on_error)
+    def patch(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, raw_response=False):
+        return Requester._do_request(request_instance, 'patch', url, uri, headers, data, [200], exit_on_error, raw_response)
 
     @classmethod
-    def delete(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True):
-        return Requester._do_request(request_instance, 'delete', url, uri, headers, data, [200], exit_on_error)
+    def delete(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, raw_response=False):
+        return Requester._do_request(request_instance, 'delete', url, uri, headers, data, [200], exit_on_error, raw_response)
 
     @classmethod
-    def _do_request(cls, request_instance, verb, url, uri, headers, data, expected_codes, exit_on_error):
+    def _do_request(cls, request_instance, verb, url, uri, headers, data, expected_codes, exit_on_error, raw_response):
         if headers is None:
             headers = {}
         if data is None:
@@ -102,6 +102,9 @@ class Requester:
             )
             if exit_on_error:
                 sys.exit(50)
+
+        if raw_response:
+            return response.content
 
         return json.loads(response.content)
 
