@@ -57,10 +57,6 @@ class MigrationFactoryAuthenticator:
 class MigrationFactoryRequester:
     """ Allow to make requests against the Migration Factory """
 
-    KEY_LOGIN_API_URL = 'LoginApiUrl'
-    KEY_USER_API_URL = 'UserApiUrl'
-    KEY_ADMIN_API_URL = 'AdminApiUrl'
-
     URI_ADMIN_SCHEMA = '/prod/admin/schema/app'
 
     URI_USER_SERVER_LIST = '/prod/user/servers'
@@ -70,46 +66,48 @@ class MigrationFactoryRequester:
     URI_USER_APP = '/prod/user/apps/{}'
 
     _migration_factory_authenticator = None
+    _endpoints_loader = None
 
-    def __init__(self, login_api_url):
-        self._migration_factory_authenticator = MigrationFactoryAuthenticator(login_api_url)
+    def __init__(self, endpoints_loader):
+        self._migration_factory_authenticator = MigrationFactoryAuthenticator(endpoints_loader.get_login_api_url())
+        self._endpoints_loader = endpoints_loader
 
-    def get(self, url, uri, headers=None, raw_response=False):
+    def get(self, url, uri, headers=None, response_type = Requester.RESPONSE_TYPE_JSON):
         return Requester.get(
             uri=uri,
             url=url,
             headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
-            raw_response=raw_response,
+            response_type=response_type,
         )
 
-    def put(self, url, uri, headers=None, data=None, raw_response=False):
+    def put(self, url, uri, headers=None, data=None, response_type = Requester.RESPONSE_TYPE_JSON):
         return Requester.put(
             uri=uri,
             url=url,
             headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
             data=data,
-            raw_response=raw_response,
+            response_type=response_type,
         )
 
-    def post(self, url, uri, headers=None, data=None, raw_response=False):
+    def post(self, url, uri, headers=None, data=None, response_type = Requester.RESPONSE_TYPE_JSON):
         return Requester.post(
             uri=uri,
             url=url,
             headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
             data=data,
-            raw_response=raw_response,
+            response_type=response_type,
         )
 
-    def delete(self, url, uri, headers=None, raw_response=False):
+    def delete(self, url, uri, headers=None, response_type = Requester.RESPONSE_TYPE_JSON):
         return Requester.delete(
             uri=uri,
             url=url,
             headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
-            raw_response=raw_response,
+            response_type = response_type,
         )
 
-    def get_user_server_ids(self, user_api_url, filter_app_id=None):
-        _server_list = self.get(user_api_url, self.URI_USER_SERVER_LIST)
+    def get_user_server_ids(self, filter_app_id=None):
+        _server_list = self.get(self._endpoints_loader.get_user_api_url(), self.URI_USER_SERVER_LIST)
 
         _server_selected_list_id = []
 
@@ -126,8 +124,8 @@ class MigrationFactoryRequester:
 
         return _server_selected_list_id
 
-    def get_user_app_ids(self, user_api_url, filter_wave_id=None):
-        _app_list = self.get(user_api_url, self.URI_USER_APP_LIST)
+    def get_user_app_ids(self, filter_wave_id=None):
+        _app_list = self.get(self._endpoints_loader.get_user_api_url(), self.URI_USER_APP_LIST)
 
         _app_selected_list_id = []
 

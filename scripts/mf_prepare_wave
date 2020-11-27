@@ -25,7 +25,7 @@ class WavePreparator:
 
     _arguments = []
     _defaults = {}
-    _endpoints = {}
+    _endpoints_loader = None
     _migration_factory_requester = None
     _cloud_endure_requester = None
     _environments = []
@@ -70,10 +70,8 @@ class WavePreparator:
 
         Utils.check_is_serializable_as_path(self._arguments.wave_name)
         self._path_wave = os.path.join(mf.PATH_HOME, self._arguments.wave_name)
-        self._endpoints = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints).load()
-        self._migration_factory_requester = MigrationFactoryRequester(
-            self._endpoints[MigrationFactoryRequester.KEY_LOGIN_API_URL]
-        )
+        self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
+        self._migration_factory_requester = MigrationFactoryRequester(self._endpoints_loader)
         self._cloud_endure_requester = CloudEndureRequester()
 
     def prepare(self):
@@ -167,7 +165,7 @@ class WavePreparator:
         print('### Create Migration Factory Project…', end=' ')
 
         app_schema = self._migration_factory_requester.get(
-            url=self._endpoints[MigrationFactoryRequester.KEY_ADMIN_API_URL],
+            url=self._endpoints_loader.get_admin_api_url(),
             uri=MigrationFactoryRequester.URI_ADMIN_SCHEMA
         )
 
@@ -196,7 +194,7 @@ class WavePreparator:
         }
 
         self._migration_factory_requester.put(
-            url=self._endpoints[MigrationFactoryRequester.KEY_ADMIN_API_URL],
+            url=self._endpoints_loader.get_admin_api_url(),
             uri=MigrationFactoryRequester.URI_ADMIN_SCHEMA,
             data=json.dumps(data)
         )

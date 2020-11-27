@@ -90,11 +90,19 @@ class DefaultsLoader:
 class EndpointsLoader:
     """ Loads endpoints configuration """
 
+    KEY_LOGIN_API_URL = 'LoginApiUrl'
+    KEY_USER_API_URL = 'UserApiUrl'
+    KEY_ADMIN_API_URL = 'AdminApiUrl'
+    KEY_TOOLS_API_URL = 'ToolsApiUrl'
+
     _endpoints = None
     _endpoint_config_file = None
 
     def __init__(self, endpoint_config_file):
         self._endpoint_config_file = endpoint_config_file
+
+    def __call__(self):
+        return self.get()
 
     def load(self):
         with open(self._endpoint_config_file, 'r') as stream:
@@ -109,6 +117,18 @@ class EndpointsLoader:
             self.load()
 
         return self._endpoints
+
+    def get_login_api_url(self):
+        return self.get()[self.KEY_LOGIN_API_URL]
+
+    def get_admin_api_url(self):
+        return self.get()[self.KEY_ADMIN_API_URL]
+
+    def get_user_api_url(self):
+        return self.get()[self.KEY_USER_API_URL]
+
+    def get_tools_api_url(self):
+        return self.get()[self.KEY_TOOLS_API_URL]
 
 
 if __name__ == '__main__':

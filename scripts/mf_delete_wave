@@ -16,6 +16,7 @@ from mf.config_loaders import EndpointsLoader
 from mf.migration_factory import MigrationFactoryRequester
 from mf.utils import EnvironmentVariableFetcher
 from mf.utils import Utils
+from mf.utils import Requester
 from mf_security_group_template import TemplateSecurityGroupCreator
 
 
@@ -23,7 +24,7 @@ class WaveDeleter:
     """ Delete Migration Factory wave """
 
     _arguments = []
-    _endpoints = {}
+    _endpoints_loader = {}
     _migration_factory_requester = None
 
     def __init__(self):
@@ -45,9 +46,9 @@ class WaveDeleter:
 
         mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
 
-        self._endpoints = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints).load()
+        self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
         self._migration_factory_requester = MigrationFactoryRequester(
-            self._endpoints[MigrationFactoryRequester.KEY_LOGIN_API_URL]
+            self._endpoints_loader
         )
         self._cloud_endure_requester = CloudEndureRequester()
 
@@ -55,7 +56,6 @@ class WaveDeleter:
         print('### Delete Migration Factory Project…', end=' ')
 
         _app_ids = self._migration_factory_requester.get_user_app_ids(
-                user_api_url = self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
                 filter_wave_id = self._arguments.wave_id
             )
 
@@ -67,7 +67,6 @@ class WaveDeleter:
 
         for app_id in _app_ids:
             _server_ids += self._migration_factory_requester.get_user_server_ids(
-                user_api_url = self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
                 filter_app_id = app_id
             )
 
@@ -77,22 +76,22 @@ class WaveDeleter:
 
         for server_id in _server_ids:
             self._migration_factory_requester.delete(
-                url=self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
+                url=self._endpoints_loader.get_user_api_url(),
                 uri=MigrationFactoryRequester.URI_USER_SERVER.format(server_id),
-                raw_response=True,
+                response_type = Requester.RESPONSE_TYPE_RAW,
             )
 
         for app_id in _app_ids:
             self._migration_factory_requester.delete(
-                url=self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
+                url=self._endpoints_loader.get_user_api_url(),
                 uri=MigrationFactoryRequester.URI_USER_APP.format(app_id),
-                raw_response=True,
+                response_type = Requester.RESPONSE_TYPE_RAW,
             )
 
         self._migration_factory_requester.delete(
-                url=self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
+                url=self._endpoints_loader.get_user_api_url(),
                 uri=MigrationFactoryRequester.URI_USER_WAVE.format(self._arguments.wave_id),
-                raw_response=True,
+                response_type = Requester.RESPONSE_TYPE_RAW,
             )
 
         print('✔ Done')

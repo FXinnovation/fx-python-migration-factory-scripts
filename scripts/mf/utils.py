@@ -29,28 +29,32 @@ class Utils:
 class Requester:
     """ Decorator around requests for enhanced logging """
 
-    @classmethod
-    def get(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, raw_response=False):
-        return Requester._do_request(request_instance, 'get', url, uri, headers, data, [200], exit_on_error, raw_response)
+    RESPONSE_TYPE_TEXT = 'text'
+    RESPONSE_TYPE_RAW = 'raw'
+    RESPONSE_TYPE_JSON = 'json'
 
     @classmethod
-    def post(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, raw_response=False):
-        return Requester._do_request(request_instance, 'post', url, uri, headers, data, [200, 201], exit_on_error, raw_response)
+    def get(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, response_type = RESPONSE_TYPE_JSON):
+        return Requester._do_request(request_instance, 'get', url, uri, headers, data, [200], exit_on_error, response_type)
 
     @classmethod
-    def put(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, raw_response=False):
-        return Requester._do_request(request_instance, 'put', url, uri, headers, data, [200, 201], exit_on_error, raw_response)
+    def post(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, response_type = RESPONSE_TYPE_JSON):
+        return Requester._do_request(request_instance, 'post', url, uri, headers, data, [200, 201], exit_on_error, response_type)
 
     @classmethod
-    def patch(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, raw_response=False):
-        return Requester._do_request(request_instance, 'patch', url, uri, headers, data, [200], exit_on_error, raw_response)
+    def put(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, response_type = RESPONSE_TYPE_JSON):
+        return Requester._do_request(request_instance, 'put', url, uri, headers, data, [200, 201], exit_on_error, response_type)
 
     @classmethod
-    def delete(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, raw_response=False):
-        return Requester._do_request(request_instance, 'delete', url, uri, headers, data, [200, 204], exit_on_error, raw_response)
+    def patch(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, response_type = RESPONSE_TYPE_JSON):
+        return Requester._do_request(request_instance, 'patch', url, uri, headers, data, [200], exit_on_error, response_type)
 
     @classmethod
-    def _do_request(cls, request_instance, verb, url, uri, headers, data, expected_codes, exit_on_error, raw_response):
+    def delete(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, response_type = RESPONSE_TYPE_JSON):
+        return Requester._do_request(request_instance, 'delete', url, uri, headers, data, [200, 204], exit_on_error, response_type)
+
+    @classmethod
+    def _do_request(cls, request_instance, verb, url, uri, headers, data, expected_codes, exit_on_error, response_type):
         if headers is None:
             headers = {}
         if data is None:
@@ -103,8 +107,11 @@ class Requester:
             if exit_on_error:
                 sys.exit(50)
 
-        if raw_response:
+        if response_type == cls.RESPONSE_TYPE_RAW:
             return response.content
+
+        if response_type == cls.RESPONSE_TYPE_TEXT:
+            return response.text
 
         return json.loads(response.content or 'null')
 
