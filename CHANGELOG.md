@@ -1,5 +1,10 @@
-## x.y.z <TO BE RELEASED>
+## 5.6.0
 
+* feat: Add `mf_delete_project` script
+* feat: Add `response_type` parameter to Request class
+* feat: Add method to return directly the MF endpoint URL
+* refactor: store endpoint loader object in `mf_prepare_wave`
+* refactor: Move endpoints constant key to EndpointLoader class
 * chore: Add pre-commit config and run it
 * chore: Add Jenkinsfile pipeline
 
