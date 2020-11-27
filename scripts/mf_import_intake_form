@@ -24,10 +24,11 @@ class IntakeFormImporter:
     ALLOWED_TENANCY = ['Shared', 'Dedicated', 'Dedicated Host']
 
     _arguments = []
-    _endpoints = {}
+    _endpoints_loader = {}
     _migration_factory_requester = None
     _path_wave = ''
     _validation_error_bag = MessageBag('error')
+    _csv_content = []
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -48,36 +49,101 @@ class IntakeFormImporter:
         mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
 
         self._path_wave = os.path.join(mf.PATH_HOME, self._arguments.wave_name)
-        self._endpoints = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints).load()
+        self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
         self._migration_factory_requester = MigrationFactoryRequester(
-            self._endpoints[MigrationFactoryRequester.KEY_LOGIN_API_URL]
+            self._endpoints_loader
         )
 
     def read_wave_csv(self):
-        return csv.DictReader(open(os.path.join(self._path_wave, mf.FILE_CSV_WAVE_TEMPLATE)))
+        print('Hey')
+        if not self._csv_content:
+            print('oh')
+            with open(os.path.join(self._path_wave, mf.FILE_CSV_WAVE_TEMPLATE), newline='') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    print(row)
+                    self._csv_content.append(row)
+            print('le nouveau son de maneau')
+
+        return self._csv_content
+
+    def get_csv_content(self):
+        return self.read_wave_csv()
 
     def import_file(self):
         wave_ids = []
         servers_data = []
 
-        all_waves = self._migration_factory_requester.get(
-            url=self._endpoints.get(self._migration_factory_requester.KEY_USER_API_URL),
+        all_existing_waves = self._migration_factory_requester.get(
+            url=self._endpoints_loader.get_user_api_url(),
             uri=self._migration_factory_requester.URI_USER_WAVES,
         )
-        all_apps = self._migration_factory_requester.get(
-            url=self._endpoints.get(self._migration_factory_requester.KEY_USER_API_URL),
-            uri=self._migration_factory_requester.URI_USER_APPS,
-        )
-        servers_raw = self.read_wave_csv()
 
-        for ok in servers_raw:
+        print(self.get_csv_content())
+
+        # for ok in servers_raw:
+        #     print(ok)
+
+        print()
+        print()
+        print()
+
+        print(all_existing_waves)
+        print()
+        print()
+
+        self._validate_server_data(self.get_csv_content())
+
+        print()
+        print()
+        print()
+        print()
+
+        for ok in self.get_csv_content():
             print(ok)
 
-        self._validate_server_data(servers_raw)
-        for ok in servers_raw:
-            print(ok)
+        for server in self.get_csv_content():
+            existing_app = self._migration_factory_requester.get(
+                url=self._endpoints_loader.get_user_api_url(),
+                uri=MigrationFactoryRequester.URI_USER_APP.format(server['app_id']),
+            )
+
+            print(existing_app)
+
+            if existing_app['app_name'] != server['app_name']:
+                logging.getLogger('root').debug('{}: app to create)'.format(
+                    self.__class__.__name__, server['app_name']
+                ))
+                continue
+
+            logging.getLogger('root').debug('{}: app already exists)'.format(
+                self.__class__.__name__, server['app_name']
+            ))
+
+            if existing_app['cloudendure_projectname'] != server['cloudendure_projectname']:
+                self._validation_error_bag.add(
+                    '{}: Given “{}” as CloudEndure project name does not match existing “{}”.'.format(
+                        self.__class__.__name__, server['cloudendure_projectname'],
+                    )
+                )
+
+            if existing_app['aws_accountid'] != server['aws_accountid']:
+                self._validation_error_bag.add(
+                    '{}: Given “{}” as AWS accountID does not match existing “{}”.'.format(
+                        self.__class__.__name__, server['aws_accountid'], existing_app['aws_accountid']
+                    )
+                )
+
+            if existing_app['wave_id'] != server['wave_id']:
+                self._validation_error_bag.add(
+                    '{}: Given “{}” as Wave ID does not match existing “”.'.format(
+                        self.__class__.__name__, server['wave_id'], existing_app['wave_id']
+                    )
+                )
+
 
         quit()
+
 
         for server_raw in servers_raw:
             wave_ids.append(str(server_raw['wave_id']).strip())
@@ -90,7 +156,6 @@ class IntakeFormImporter:
             }
 
             servers_data.append(server_data)
-
 
 
         print(list(map(lambda x: x['app_name'].strip().lower(), servers_raw)))
@@ -145,10 +210,6 @@ class IntakeFormImporter:
                 self._validate_with_regexp(
                     security_group, AWSValidator.REGEXP_SECURITY_GROUP_ID, 'a security group ID (for test)'
                 )
-
-        self._validation_error_bag.unload(logging.getLogger('root'))
-        if not self._validation_error_bag.is_empty():
-            exit(1)
 
     def _check_dict_value_consistency(self, dict_to_check, key):
         if not all(value == key for value in map(lambda x: x[key].strip(), dict_to_check)):

@@ -2,10 +2,6 @@
 
 import json
 import logging
-import os
-import sys
-
-import requests
 
 from . import ENV_VAR_MIGRATION_FACTORY_PASSWORD
 from . import ENV_VAR_MIGRATION_FACTORY_USERNAME
@@ -75,7 +71,7 @@ class MigrationFactoryRequester:
         self._migration_factory_authenticator = MigrationFactoryAuthenticator(endpoints_loader.get_login_api_url())
         self._endpoints_loader = endpoints_loader
 
-    def get(self, url, uri, headers=None, response_type = Requester.RESPONSE_TYPE_JSON):
+    def get(self, url, uri, headers=None, response_type=Requester.RESPONSE_TYPE_JSON):
         return Requester.get(
             uri=uri,
             url=url,
@@ -83,7 +79,7 @@ class MigrationFactoryRequester:
             response_type=response_type,
         )
 
-    def put(self, url, uri, headers=None, data=None, response_type = Requester.RESPONSE_TYPE_JSON):
+    def put(self, url, uri, headers=None, data=None, response_type=Requester.RESPONSE_TYPE_JSON):
         return Requester.put(
             uri=uri,
             url=url,
@@ -92,7 +88,7 @@ class MigrationFactoryRequester:
             response_type=response_type,
         )
 
-    def post(self, url, uri, headers=None, data=None, response_type = Requester.RESPONSE_TYPE_JSON):
+    def post(self, url, uri, headers=None, data=None, response_type=Requester.RESPONSE_TYPE_JSON):
         return Requester.post(
             uri=uri,
             url=url,
@@ -101,12 +97,12 @@ class MigrationFactoryRequester:
             response_type=response_type,
         )
 
-    def delete(self, url, uri, headers=None, response_type = Requester.RESPONSE_TYPE_JSON):
+    def delete(self, url, uri, headers=None, response_type=Requester.RESPONSE_TYPE_JSON):
         return Requester.delete(
             uri=uri,
             url=url,
             headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
-            response_type = response_type,
+            response_type=response_type,
         )
 
     def get_user_server_ids(self, filter_app_id=None):
