@@ -100,7 +100,7 @@ class CloudEndureRequester:
     }
 
     URI_PROJECTS = 'projects'
-    URI_PROJECT = URI_PROJECTS + '{}'
+    URI_PROJECT = URI_PROJECTS + '/{}'
 
     _cloud_endure_session = None
 
@@ -134,7 +134,7 @@ class CloudEndureRequester:
                 return region['id']
 
     def get_project_by_name(self, project_name):
-        response = self.get(URI_PROJECTS)
+        response = self.get(self.URI_PROJECTS)
         for project in response['items']:
             if project['name'] == project_name:
                 logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str(project))
@@ -143,7 +143,7 @@ class CloudEndureRequester:
         return False
 
     def get_all_project_names(self):
-        response = self.get(URI_PROJECTS)
+        response = self.get(self.URI_PROJECTS)
 
         return list(map(lambda project: project['name'], response['items']))
 

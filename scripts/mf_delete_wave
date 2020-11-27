@@ -56,7 +56,7 @@ class WaveDeleter:
 
         _app_ids = self._migration_factory_requester.get_user_app_ids(
                 user_api_url = self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
-                wave_id = self._arguments.wave_id
+                filter_wave_id = self._arguments.wave_id
             )
 
         logging.getLogger('root').info('{}: app id “{}” are selected for deletion)'.format(
@@ -68,7 +68,7 @@ class WaveDeleter:
         for app_id in _app_ids:
             _server_ids += self._migration_factory_requester.get_user_server_ids(
                 user_api_url = self._endpoints[MigrationFactoryRequester.KEY_USER_API_URL],
-                app_id = app_id
+                filter_app_id = app_id
             )
 
         logging.getLogger('root').info('{}: server id “{}” are selected for deletion)'.format(

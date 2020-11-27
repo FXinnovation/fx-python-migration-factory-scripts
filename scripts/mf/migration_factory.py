@@ -114,12 +114,12 @@ class MigrationFactoryRequester:
         _server_selected_list_id = []
 
         for server in _server_list:
-            if filter_app_id and "app_id" in server:
-                if server["app_id"] == app_id:
+            if filter_app_id:
+                if "app_id" in server and server["app_id"] == filter_app_id:
                     _server_selected_list_id.append(server["server_id"])
                 else:
                     logging.getLogger('root').debug('{}: server id “{}” filtered (not in app {})'.format(
-                        self.__class__.__name__, server["server_id"], app_id
+                        self.__class__.__name__, server["server_id"], filter_app_id
                     ))
             else:
                 _server_selected_list_id.append(server["server_id"])
@@ -132,8 +132,8 @@ class MigrationFactoryRequester:
         _app_selected_list_id = []
 
         for app in _app_list:
-            if filter_wave_id and "wave_id" in app:
-                if app["wave_id"] == filter_wave_id:
+            if filter_wave_id:
+                if "wave_id" in app and app["wave_id"] == filter_wave_id:
                     _app_selected_list_id.append(app["app_id"])
                 else:
                     logging.getLogger('root').debug('{}: app id “{}” filtered (not in wave {})'.format(
