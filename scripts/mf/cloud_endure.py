@@ -99,6 +99,9 @@ class CloudEndureRequester:
         "us-east-1": "AWS US East (Northern Virginia)",
     }
 
+    URI_PROJECTS = 'projects'
+    URI_PROJECT = URI_PROJECTS + '{}'
+
     _cloud_endure_session = None
 
     def __init__(self):
@@ -131,7 +134,7 @@ class CloudEndureRequester:
                 return region['id']
 
     def get_project_by_name(self, project_name):
-        response = self.get('projects')
+        response = self.get(URI_PROJECTS)
         for project in response['items']:
             if project['name'] == project_name:
                 logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str(project))
@@ -140,7 +143,7 @@ class CloudEndureRequester:
         return False
 
     def get_all_project_names(self):
-        response = self.get('projects')
+        response = self.get(URI_PROJECTS)
 
         return list(map(lambda project: project['name'], response['items']))
 
@@ -163,6 +166,7 @@ class CloudEndureRequester:
             data=json.dumps(data),
             request_instance=self._cloud_endure_session.get_session()
         )
+
     def delete(self, uri):
         return Requester.delete(
             uri=self._cloud_endure_session.get_api_endpoint().format(uri),

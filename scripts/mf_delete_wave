@@ -19,7 +19,7 @@ from mf.utils import Utils
 from mf_security_group_template import TemplateSecurityGroupCreator
 
 
-class WaveDelete:
+class WaveDeleter:
     """ Delete Migration Factory wave """
 
     _arguments = []
@@ -106,12 +106,12 @@ class WaveDelete:
            print('✔ Already deleted')
            return
 
-        self._cloud_endure_requester.delete('projects/{}'.format(_cloud_endure_project["id"]))
+        self._cloud_endure_requester.delete(CloudEndureRequester.URI_PROJECT.format(_cloud_endure_project["id"]))
 
         print('✔ Done')
 
 
 if __name__ == '__main__':
-    wave_deletion = WaveDelete()
+    wave_deletion = WaveDeleter()
     wave_deletion.delete_mf()
     wave_deletion.delete_ce_project()
