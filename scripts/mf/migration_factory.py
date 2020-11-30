@@ -136,6 +136,7 @@ class MigrationFactoryRequester:
         if url is None:
             url = self._guess_url(uri)
 
+        print(url)
         return Requester.get(
             uri=uri,
             url=url,
