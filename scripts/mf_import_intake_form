@@ -73,6 +73,8 @@ class IntakeFormImporter:
         wave_ids = []
         servers_data = []
 
+        print('### Validating input CSV…', end=' ')
+
         self._validate_server_data(self.get_csv_content())
 
         for server in self.get_csv_content():
@@ -80,16 +82,18 @@ class IntakeFormImporter:
 
             if existing_app:
                 existing_wave = self._migration_factory_requester.get(
-                    self._migration_factory_requester.URI_USER_WAVE.format(existing_app[CSVIntake.MF_WAVE_NAME])
+                    self._migration_factory_requester.URI_USER_WAVE.format(existing_app[CSVIntake.MF_WAVE_ID])
                 )
 
-                logging.getLogger('root').debug('{}: app already exists. Need to be updated.'.format(
+                logging.getLogger('root').info('{}: “{}” app already exists. Just need to be updated.'.format(
                     self.__class__.__name__, server[CSVIntake.APP_NAME]
                 ))
 
                 self._validate_app_with_existing(existing_app, existing_wave, server)
 
         self._validation_error_bag.unload(logging.getLogger('root'))
+
+        print('✔ Done')
 
         quit()
 

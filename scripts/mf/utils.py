@@ -31,6 +31,9 @@ class MessageBag:
         self._bag.append(element)
 
     def unload(self, logger=logging):
+        if not self.is_empty():
+            print('')
+
         for element in self._bag:
             getattr(logger, self._type)(element)
 
