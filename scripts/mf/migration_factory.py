@@ -32,7 +32,8 @@ class CSVIntake:
     TENANCY = 'tenancy'
     IAM_ROLE = 'iam_role'
 
-    MF_WAVE_NAME = 'wave_id'
+    MF_WAVE_NAME = 'wave_name'
+    MF_WAVE_ID = 'wave_id'
     MF_APP_NAME = 'app_name'
     MF_CLOUDENDURE_PROJECT_NAME = 'cloudendure_projectname'
     MF_AWS_ACCOUNT_ID = 'aws_accountid'
