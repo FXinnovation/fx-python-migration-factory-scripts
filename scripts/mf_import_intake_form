@@ -211,7 +211,7 @@ class IntakeFormImporter:
 
     def _validate_with_enum(self, value, enum, description):
         self._debug_validate(value)
-        if value not in enum or value.lower() not in enum:
+        if value not in enum and value.lower() not in enum:
             self._validation_error_bag.add('{}: Given “{}” as {} is invalid (allowed values: {}).'.format(
                 self.__class__.__name__, value, description, str(enum)
             ))
