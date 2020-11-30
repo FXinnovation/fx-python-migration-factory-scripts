@@ -9,6 +9,66 @@ from .utils import EnvironmentVariableFetcher
 from .utils import Requester
 
 
+class CSVIntake:
+    """ Data object to represent intake CSV """
+
+    WAVE_ID = 'wave_id'
+    APP_NAME = 'app_name'
+    CLOUDENDURE_PROJECT_NAME = 'cloudendure_projectname'
+    AWS_ACCOUNT_ID = 'aws_accountid'
+    SERVER_NAME = 'server_name'
+    SERVER_OS = 'server_os'
+    SERVER_OS_VERSION = 'server_os_version'
+    SERVER_FQDN = 'server_fqdn'
+    SERVER_TIER = 'server_tier'
+    SERVER_ENVIRONMENT = 'server_environment'
+    SUBNET_ID = 'subnet_id'
+    SECURITY_GROUP_ID = 'securitygroup_ids'
+    SUBNET_ID_TEST = 'subnet_id_test'
+    SECURITY_GROUP_ID_TEST = 'securitygroup_ids_test'
+    INSTANCE_TYPE = 'instance_type'
+    TENANCY = 'tenancy'
+    IAM_ROLE = 'iam_role'
+
+    MF_WAVE_ID = 'wave_id'
+    MF_APP_NAME = 'app_name'
+    MF_CLOUDENDURE_PROJECT_NAME = 'cloudendure_projectname'
+    MF_AWS_ACCOUNT_ID = 'aws_accountid'
+    MF_SERVER_NAME = 'server_name'
+    MF_SERVER_OS = 'server_os'
+    MF_SERVER_OS_VERSION = 'server_os_version'
+    MF_SERVER_FQDN = 'server_fqdn'
+    MF_SERVER_TIER = 'server_tier'
+    MF_SERVER_ENVIRONMENT = 'server_environment'
+    MF_SUBNET_ID = 'subnet_IDs'
+    MF_SECURITY_GROUP_ID = 'securitygroup_IDs'
+    MF_SUBNET_ID_TEST = 'subnet_IDs_test'
+    MF_SECURITY_GROUP_ID_TEST = 'securitygroup_IDs_test'
+    MF_INSTANCE_TYPE = 'instanceType'
+    MF_TENANCY = 'tenancy'
+    MF_IAM_ROLE = 'iamRole'
+
+    ALL_FIELDS = {
+        WAVE_ID: MF_WAVE_ID,
+        APP_NAME: MF_APP_NAME,
+        CLOUDENDURE_PROJECT_NAME: MF_CLOUDENDURE_PROJECT_NAME,
+        AWS_ACCOUNT_ID: MF_AWS_ACCOUNT_ID,
+        SERVER_NAME: MF_SERVER_NAME,
+        SERVER_OS: MF_SERVER_OS,
+        SERVER_OS_VERSION: MF_SERVER_OS_VERSION,
+        SERVER_FQDN: MF_SERVER_FQDN,
+        SERVER_TIER: MF_SERVER_TIER,
+        SERVER_ENVIRONMENT: MF_SERVER_ENVIRONMENT,
+        SUBNET_ID: MF_SUBNET_ID,
+        SECURITY_GROUP_ID: MF_SECURITY_GROUP_ID,
+        SUBNET_ID_TEST: MF_SUBNET_ID_TEST,
+        SECURITY_GROUP_ID_TEST: MF_SECURITY_GROUP_ID_TEST,
+        INSTANCE_TYPE: MF_INSTANCE_TYPE,
+        TENANCY: MF_TENANCY,
+        IAM_ROLE: MF_IAM_ROLE,
+    }
+
+
 class MigrationFactoryAuthenticator:
     """ Login to Migration Factory """
 
