@@ -79,34 +79,15 @@ class IntakeFormImporter:
             existing_app = self._migration_factory_requester.get_user_app_by_name(server[CSVIntake.APP_NAME])
 
             if existing_app:
+                existing_wave = self._migration_factory_requester.get(
+                    self._migration_factory_requester.URI_USER_WAVE.format(existing_app[CSVIntake.MF_WAVE_NAME])
+                )
+
                 logging.getLogger('root').debug('{}: app already exists. Need to be updated.'.format(
                     self.__class__.__name__, server[CSVIntake.APP_NAME]
                 ))
 
-                if existing_app[CSVIntake.MF_CLOUDENDURE_PROJECT_NAME] != server[CSVIntake.CLOUDENDURE_PROJECT_NAME]:
-                    self._validation_error_bag.add(
-                        '{}: Given “{}” as CloudEndure project name does not match existing “{}”.'.format(
-                            self.__class__.__name__,
-                            server[CSVIntake.CLOUDENDURE_PROJECT_NAME],
-                            existing_app[CSVIntake.MF_CLOUDENDURE_PROJECT_NAME]
-                        )
-                    )
-
-                if existing_app[CSVIntake.MF_AWS_ACCOUNT_ID] != server[CSVIntake.AWS_ACCOUNT_ID]:
-                    self._validation_error_bag.add(
-                        '{}: Given “{}” as AWS accountID does not match existing “{}”.'.format(
-                            self.__class__.__name__,
-                            server[CSVIntake.AWS_ACCOUNT_ID],
-                            existing_app[CSVIntake.MF_AWS_ACCOUNT_ID]
-                        )
-                    )
-
-                if existing_app[CSVIntake.MF_WAVE_NAME] != server[CSVIntake.WAVE_NAME]:
-                    self._validation_error_bag.add(
-                        '{}: Given “{}” as Wave ID does not match existing “{}”.'.format(
-                            self.__class__.__name__, server[CSVIntake.WAVE_NAME], existing_app[CSVIntake.MF_WAVE_NAME]
-                        )
-                    )
+                self._validate_app_with_existing(existing_app, existing_wave, server)
 
         self._validation_error_bag.unload(logging.getLogger('root'))
 
@@ -141,6 +122,32 @@ class IntakeFormImporter:
             uri=self._migration_factory_requester.URI_USER_APP_LIST,
             data=json.dumps(map(lambda x: x['app_name'].strip().lower(), self.get_csv_content()))
         )
+
+    def _validate_app_with_existing(self, existing_app, existing_wave, server):
+        if existing_app[CSVIntake.MF_CLOUDENDURE_PROJECT_NAME] != server[CSVIntake.CLOUDENDURE_PROJECT_NAME]:
+            self._validation_error_bag.add(
+                '{}: Given “{}” as CloudEndure project name does not match existing “{}”.'.format(
+                    self.__class__.__name__,
+                    server[CSVIntake.CLOUDENDURE_PROJECT_NAME],
+                    existing_app[CSVIntake.MF_CLOUDENDURE_PROJECT_NAME]
+                )
+            )
+
+        if existing_app[CSVIntake.MF_AWS_ACCOUNT_ID] != server[CSVIntake.AWS_ACCOUNT_ID]:
+            self._validation_error_bag.add(
+                '{}: Given “{}” as AWS accountID does not match existing “{}”.'.format(
+                    self.__class__.__name__,
+                    server[CSVIntake.AWS_ACCOUNT_ID],
+                    existing_app[CSVIntake.MF_AWS_ACCOUNT_ID]
+                )
+            )
+
+        if existing_wave[CSVIntake.MF_WAVE_NAME] != server[CSVIntake.WAVE_NAME]:
+            self._validation_error_bag.add(
+                '{}: Given “{}” as Wave name does not match existing “{}”.'.format(
+                    self.__class__.__name__, server[CSVIntake.WAVE_NAME], existing_app[CSVIntake.MF_WAVE_NAME]
+                )
+            )
 
     def _validate_server_data(self, servers):
         self._check_dict_value_duplication(servers, CSVIntake.SERVER_NAME)
