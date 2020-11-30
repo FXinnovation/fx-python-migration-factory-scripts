@@ -9,6 +9,7 @@
 * refactor(BREAKING): changes input CSV headers fields to be all snake_case
 * doc: link to technical documentation
 * doc: better explain the intent of this repository
+* fix: makes sure SG IDs are pre-filled with `mf_prepare_wave`
 
 ## 5.6.0
 

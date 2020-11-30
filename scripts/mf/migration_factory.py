@@ -191,7 +191,7 @@ class MigrationFactoryRequester:
 
         return None
 
-    def get_user_server_by_name(self, wave_name):
+    def get_user_wave_by_name(self, wave_name):
         all_waves = self.get(uri=self.URI_USER_WAVE_LIST)
 
         for wave in all_waves:

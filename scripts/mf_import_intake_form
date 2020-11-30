@@ -110,7 +110,7 @@ class IntakeFormImporter:
             }
 
             self._migration_factory_requester.post(
-                uri=self._migration_factory_requester.URI_USER_WAVE_LIST,
+                uri=MigrationFactoryRequester.URI_USER_WAVE_LIST,
                 data=json.dumps(data)
             )
 
@@ -132,7 +132,7 @@ class IntakeFormImporter:
             }
 
             self._migration_factory_requester.post(
-                uri=self._migration_factory_requester.URI_USER_APP_LIST,
+                uri=MigrationFactoryRequester.URI_USER_APP_LIST,
                 data=json.dumps(data)
             )
 
@@ -159,26 +159,24 @@ class IntakeFormImporter:
                 CSVIntake.MF_SERVER_TIER: server[CSVIntake.SERVER_TIER],
                 CSVIntake.MF_SERVER_ENVIRONMENT: server[CSVIntake.SERVER_ENVIRONMENT],
                 CSVIntake.MF_SUBNET_ID: server[CSVIntake.SUBNET_ID],
-                CSVIntake.MF_SUBNET_ID_TEST: app_to_create[CSVIntake.SUBNET_ID_TEST],
-                CSVIntake.MF_SECURITY_GROUP_ID: app_to_create[CSVIntake.SECURITY_GROUP_ID],
-                CSVIntake.MF_SECURITY_GROUP_ID_TEST: app_to_create[CSVIntake.SECURITY_GROUP_ID_TEST],
-                CSVIntake.MF_INSTANCE_TYPE: app_to_create[CSVIntake.INSTANCE_TYPE],
-                CSVIntake.MF_TENANCY: app_to_create[CSVIntake.TENANCY],
-                CSVIntake.MF_IAM_ROLE: app_to_create[CSVIntake.IAM_ROLE],
+                CSVIntake.MF_SUBNET_ID_TEST: server[CSVIntake.SUBNET_ID_TEST],
+                CSVIntake.MF_SECURITY_GROUP_ID: server[CSVIntake.SECURITY_GROUP_ID],
+                CSVIntake.MF_SECURITY_GROUP_ID_TEST: server[CSVIntake.SECURITY_GROUP_ID_TEST],
+                CSVIntake.MF_INSTANCE_TYPE: server[CSVIntake.INSTANCE_TYPE],
+                CSVIntake.MF_TENANCY: server[CSVIntake.TENANCY],
+                CSVIntake.MF_IAM_ROLE: server[CSVIntake.IAM_ROLE],
             }
 
             if existing_server:
                 print('## Update server {}…'.format(server[CSVIntake.SERVER_NAME]))
                 self._migration_factory_requester.put(
-                    uri=self._migration_factory_requester.URI_USER_SERVER.format(
-                        existing_server[CSVIntake.MF_SERVER_ID]
-                    ),
+                    uri=MigrationFactoryRequester.URI_USER_SERVER.format(existing_server[CSVIntake.MF_SERVER_ID]),
                     data=json.dumps(data)
                 )
             else:
                 print('## New server {}…'.format(server[CSVIntake.SERVER_NAME]))
                 self._migration_factory_requester.post(
-                    uri=self._migration_factory_requester.URI_USER_APP_LIST,
+                    uri=MigrationFactoryRequester.URI_USER_APP_LIST,
                     data=json.dumps(data)
                 )
 

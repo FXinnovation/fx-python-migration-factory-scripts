@@ -143,12 +143,12 @@ class WavePreparator:
                 self._defaults.get('target_subnet_id', 'SET_TARGET_SUBNET_ID'),
                 ';'.join(list(
                     x for x in (self._defaults.get('target_security_group_ids', []) + [sg_template_copy_id]) if
-                    x is None
+                    x is not None
                 )),
                 self._defaults.get('test_subnet_id', 'SET_TEST_SUBNET_ID'),
                 ';'.join(list(
                     x for x in (self._defaults.get('test_security_group_ids', []) + [sg_template_copy_testing_id]) if
-                    x is None
+                    x is not None
                 )),
                 self._defaults.get('instance_type', 'SET_INSTANCE_TYPE'),
                 self._defaults.get('tenancy', 'Shared'),
@@ -164,7 +164,6 @@ class WavePreparator:
         print('### Create Migration Factory Project…', end=' ')
 
         app_schema = self._migration_factory_requester.get(
-            url=self._endpoints_loader.get_admin_api_url(),
             uri=MigrationFactoryRequester.URI_ADMIN_SCHEMA
         )
 
@@ -193,7 +192,6 @@ class WavePreparator:
         }
 
         self._migration_factory_requester.put(
-            url=self._endpoints_loader.get_admin_api_url(),
             uri=MigrationFactoryRequester.URI_ADMIN_SCHEMA,
             data=json.dumps(data)
         )
