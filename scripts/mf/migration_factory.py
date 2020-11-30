@@ -34,10 +34,13 @@ class CSVIntake:
 
     MF_WAVE_NAME = 'wave_name'
     MF_WAVE_ID = 'wave_id'
+    MF_WAVE_DESCRIPTION = 'Description'
     MF_APP_NAME = 'app_name'
+    MF_APP_ID = 'app_id'
     MF_CLOUDENDURE_PROJECT_NAME = 'cloudendure_projectname'
     MF_AWS_ACCOUNT_ID = 'aws_accountid'
     MF_SERVER_NAME = 'server_name'
+    MF_SERVER_ID = 'server_id'
     MF_SERVER_OS = 'server_os'
     MF_SERVER_OS_VERSION = 'server_os_version'
     MF_SERVER_FQDN = 'server_fqdn'
@@ -179,12 +182,30 @@ class MigrationFactoryRequester:
             response_type=response_type,
         )
 
-    def get_user_app_by_name(self, app_name=None):
+    def get_user_app_by_name(self, app_name):
         all_apps = self.get(uri=self.URI_USER_APP_LIST)
 
         for app in all_apps:
-            if app['app_name'] == app_name:
+            if app[CSVIntake.MF_APP_NAME] == app_name:
                 return app
+
+        return None
+
+    def get_user_server_by_name(self, wave_name):
+        all_waves = self.get(uri=self.URI_USER_WAVE_LIST)
+
+        for wave in all_waves:
+            if wave[CSVIntake.MF_WAVE_NAME] == wave_name:
+                return wave
+
+        return None
+
+    def get_user_server_by_name(self, server_name):
+        all_servers = self.get(uri=self.URI_USER_SERVER_LIST)
+
+        for server in all_servers:
+            if server[CSVIntake.MF_SERVER_NAME] == server_name:
+                return server
 
         return None
 
@@ -195,14 +216,14 @@ class MigrationFactoryRequester:
 
         for server in _server_list:
             if filter_app_id:
-                if "app_id" in server and server["app_id"] == filter_app_id:
-                    _server_selected_list_id.append(server["server_id"])
+                if CSVIntake.MF_APP_ID in server and server[CSVIntake.MF_APP_ID] == filter_app_id:
+                    _server_selected_list_id.append(server[CSVIntake.MF_SERVER_ID])
                 else:
                     logging.getLogger('root').debug('{}: server id “{}” filtered (not in app {})'.format(
-                        self.__class__.__name__, server["server_id"], filter_app_id
+                        self.__class__.__name__, server[CSVIntake.MF_SERVER_ID], filter_app_id
                     ))
             else:
-                _server_selected_list_id.append(server["server_id"])
+                _server_selected_list_id.append(server[CSVIntake.MF_SERVER_ID])
 
         return _server_selected_list_id
 
@@ -213,14 +234,14 @@ class MigrationFactoryRequester:
 
         for app in _app_list:
             if filter_wave_id:
-                if "wave_id" in app and app["wave_id"] == filter_wave_id:
-                    _app_selected_list_id.append(app["app_id"])
+                if CSVIntake.MF_WAVE_ID in app and app[CSVIntake.MF_WAVE_ID] == filter_wave_id:
+                    _app_selected_list_id.append(app[CSVIntake.MF_APP_ID])
                 else:
                     logging.getLogger('root').debug('{}: app id “{}” filtered (not in wave {})'.format(
-                        self.__class__.__name__, app["app_id"], filter_wave_id
+                        self.__class__.__name__, app[CSVIntake.MF_APP_ID], filter_wave_id
                     ))
             else:
-                _app_selected_list_id.append(app["app_id"])
+                _app_selected_list_id.append(app[CSVIntake.MF_APP_ID])
 
         return _app_selected_list_id
 

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-from __future__ import print_function
-
 import argparse
 import csv
 import json
@@ -70,8 +68,8 @@ class IntakeFormImporter:
         return self.read_wave_csv()
 
     def import_file(self):
-        wave_ids = []
-        servers_data = []
+        apps_to_create = []
+        apps_with_wave_to_create = []
 
         print('### Validating input CSV…', end=' ')
 
@@ -81,51 +79,110 @@ class IntakeFormImporter:
             existing_app = self._migration_factory_requester.get_user_app_by_name(server[CSVIntake.APP_NAME])
 
             if existing_app:
-                existing_wave = self._migration_factory_requester.get(
-                    self._migration_factory_requester.URI_USER_WAVE.format(existing_app[CSVIntake.MF_WAVE_ID])
-                )
-
                 logging.getLogger('root').info('{}: “{}” app already exists. Just need to be updated.'.format(
                     self.__class__.__name__, server[CSVIntake.APP_NAME]
                 ))
 
+                existing_wave = self._migration_factory_requester.get(
+                    self._migration_factory_requester.URI_USER_WAVE.format(existing_app[CSVIntake.MF_WAVE_ID])
+                )
+
                 self._validate_app_with_existing(existing_app, existing_wave, server)
+            else:
+                apps_to_create = server
+
+                existing_wave = self._migration_factory_requester.get_user_wave_by_name(server[CSVIntake.WAVE_NAME])
+
+                if not existing_wave:
+                    apps_with_wave_to_create = server
 
         self._validation_error_bag.unload(logging.getLogger('root'))
 
         print('✔ Done')
 
-        quit()
+        print('### Create waves…')
+        for app_with_wave_to_create in apps_with_wave_to_create:
+            print('## New wave {}…'.format(app_with_wave_to_create[CSVIntake.WAVE_NAME]))
 
-        for server_raw in self.get_csv_content():
-            wave_ids.append(str(server_raw['wave_id']).strip())
-
-            server_data = {
-                'app_name': server_raw['app_name'].strip(),
-                'wave_name': server_raw['wave_id'].strip(),
-                'cloudendure_projectname': server_raw['cloudendure_projectname'].strip(),
-                'aws_accountid': server_raw['aws_accountid'].strip()
+            data = {
+                CSVIntake.MF_WAVE_NAME: app_with_wave_to_create[CSVIntake.WAVE_NAME],
+                CSVIntake.MF_WAVE_DESCRIPTION: 'Wave for {}'.format(app_with_wave_to_create[CSVIntake.WAVE_NAME])
             }
 
-            servers_data.append(server_data)
+            self._migration_factory_requester.post(
+                uri=self._migration_factory_requester.URI_USER_WAVE_LIST,
+                data=json.dumps(data)
+            )
 
-        # print(list(map(lambda x: x['app_name'].strip().lower(), servers_raw)))
-        # print(list(set(map(lambda x: x['app_name'].strip().lower(), servers_raw)) - set(
-        #     map(lambda x: x['app_name'].strip().lower(), all_apps))))
+        if len(apps_with_wave_to_create) != 0:
+            print('✔ Done')
+        else:
+            print('✔ Already Done')
 
-        exit(0)
+        print('### Create apps…')
+        for app_to_create in apps_to_create:
+            existing_wave = self._migration_factory_requester.get_user_wave_by_name(app_to_create[CSVIntake.WAVE_NAME])
+            print('## New app {}…'.format(app_to_create[CSVIntake.APP_NAME]))
 
-        self._migration_factory_requester.post(
-            url=self._migration_factory_requester.KEY_USER_API_URL,
-            uri=self._migration_factory_requester.URI_USER_WAVE_LIST,
-            data=json.dumps(self._arguments.wave_name)
-        )
+            data = {
+                CSVIntake.MF_WAVE_ID: existing_wave[CSVIntake.MF_WAVE_ID],
+                CSVIntake.MF_APP_NAME: app_to_create[CSVIntake.APP_NAME],
+                CSVIntake.MF_CLOUDENDURE_PROJECT_NAME: app_to_create[CSVIntake.CLOUDENDURE_PROJECT_NAME],
+                CSVIntake.MF_AWS_ACCOUNT_ID: app_to_create[CSVIntake.AWS_ACCOUNT_ID],
+            }
 
-        self._migration_factory_requester.post(
-            url=self._migration_factory_requester.KEY_USER_API_URL,
-            uri=self._migration_factory_requester.URI_USER_APP_LIST,
-            data=json.dumps(map(lambda x: x['app_name'].strip().lower(), self.get_csv_content()))
-        )
+            self._migration_factory_requester.post(
+                uri=self._migration_factory_requester.URI_USER_APP_LIST,
+                data=json.dumps(data)
+            )
+
+        if len(apps_to_create) != 0:
+            print('✔ Done')
+        else:
+            print('✔ Already Done')
+
+        print('### Setting server data…')
+        for server in self.get_csv_content():
+            existing_server = self._migration_factory_requester.get_user_server_by_name(
+                server[CSVIntake.SERVER_NAME]
+            )
+            existing_app = self._migration_factory_requester.get_user_app_by_name(
+                server[CSVIntake.APP_NAME]
+            )
+
+            data = {
+                CSVIntake.MF_APP_ID: existing_app[CSVIntake.MF_APP_ID],
+                CSVIntake.MF_SERVER_NAME: server[CSVIntake.SERVER_NAME],
+                CSVIntake.MF_SERVER_OS: server[CSVIntake.SERVER_OS],
+                CSVIntake.MF_SERVER_OS_VERSION: server[CSVIntake.SERVER_OS_VERSION],
+                CSVIntake.MF_SERVER_FQDN: server[CSVIntake.SERVER_FQDN],
+                CSVIntake.MF_SERVER_TIER: server[CSVIntake.SERVER_TIER],
+                CSVIntake.MF_SERVER_ENVIRONMENT: server[CSVIntake.SERVER_ENVIRONMENT],
+                CSVIntake.MF_SUBNET_ID: server[CSVIntake.SUBNET_ID],
+                CSVIntake.MF_SUBNET_ID_TEST: app_to_create[CSVIntake.SUBNET_ID_TEST],
+                CSVIntake.MF_SECURITY_GROUP_ID: app_to_create[CSVIntake.SECURITY_GROUP_ID],
+                CSVIntake.MF_SECURITY_GROUP_ID_TEST: app_to_create[CSVIntake.SECURITY_GROUP_ID_TEST],
+                CSVIntake.MF_INSTANCE_TYPE: app_to_create[CSVIntake.INSTANCE_TYPE],
+                CSVIntake.MF_TENANCY: app_to_create[CSVIntake.TENANCY],
+                CSVIntake.MF_IAM_ROLE: app_to_create[CSVIntake.IAM_ROLE],
+            }
+
+            if existing_server:
+                print('## Update server {}…'.format(server[CSVIntake.SERVER_NAME]))
+                self._migration_factory_requester.put(
+                    uri=self._migration_factory_requester.URI_USER_SERVER.format(
+                        existing_server[CSVIntake.MF_SERVER_ID]
+                    ),
+                    data=json.dumps(data)
+                )
+            else:
+                print('## New server {}…'.format(server[CSVIntake.SERVER_NAME]))
+                self._migration_factory_requester.post(
+                    uri=self._migration_factory_requester.URI_USER_APP_LIST,
+                    data=json.dumps(data)
+                )
+
+            print('✔ Done')
 
     def _validate_app_with_existing(self, existing_app, existing_wave, server):
         if existing_app[CSVIntake.MF_CLOUDENDURE_PROJECT_NAME] != server[CSVIntake.CLOUDENDURE_PROJECT_NAME]:
@@ -224,155 +281,6 @@ class IntakeFormImporter:
         logging.getLogger('root').debug('{}: Validating user input: “{}”)'.format(
             self.__class__.__name__, value
         ))
-
-
-#
-# def convert_string_to_list(row_str):
-#     row_list = []
-#     row_list = row_str.split(';')
-#     return row_list
-#
-# def uploading_data(data, token):
-#     wave_list_csv = []
-#     app_list_csv = []
-#     wave_ids = []
-#     app_list = []
-#     server_list = []
-#
-#     for row in data:
-#         if row['wave_id'].strip() not in wave_list_csv:
-#             wave_list_csv.append(str(row['wave_id']).strip())
-#
-#         app_item = {}
-#         app_item['app_name'] = row['app_name'].strip()
-#         app_item['wave_name'] = "Wave " + row['wave_id'].strip()
-#         app_item['cloudendure_projectname'] = row['cloudendure_projectname'].strip()
-#         app_item['aws_accountid'] = row['aws_accountid'].strip()
-#         app_list_csv.append(app_item)
-#
-#     # Get Unique new Wave Id, add to the list if Wave Id doesn't exist in the factory
-#     for wave_id in wave_list_csv:
-#         match = False
-#         for wave in waves:
-#             wave_name = "Wave " + wave_id
-#             if str(wave_name) == str(wave['wave_name']):
-#                 match = True
-#         if (match == False):
-#             wave_ids.append(wave_id)
-#     if len(wave_ids) is not 0:
-#         print("New Waves: ")
-#         print("")
-#         for wave in wave_ids:
-#             print("Wave " + wave)
-#         print("")
-#         # Creating new Waves in the migration factory
-#         for wave in wave_ids:
-#             wave_name = {}
-#             wave_name['wave_name'] = "Wave " + wave
-#
-#             for new_wave in new_waves:
-#                 if wave_name['wave_name'] == new_wave['wave_name']:
-#                     new_wave_id = new_wave['wave_id']
-#                     break
-#             if r.status_code == 200:
-#                 print("Wave " + wave + " (ID: " + new_wave_id + ") created in the migration factory")
-#             else:
-#                 print("Wave " + wave + " failed : " + r.text + ".......")
-#         print("")
-#         print("----------------------------------------")
-#         print("")
-#
-#     # Get Unique new App Name, add to the resource list if App Name doesn't exist in the factory
-#     for app_csv in app_list_csv:
-#         new_waves = json.loads(requests.get(UserHOST + waveendpoint, headers=auth).text)
-#         for wave in new_waves:
-#             if app_csv['wave_name'] == str(wave['wave_name']):
-#                 app_csv['wave_id'] = wave['wave_id']
-#                 del app_csv['wave_name']
-#                 break
-#         match = False
-#         for app in apps:
-#             if app_csv['app_name'].lower().strip() == app['app_name'].lower().strip():
-#                 match = True
-#                 if app_csv['wave_id'] != app['wave_id']:
-#                     print("Error: Wave_id for app " + app_csv['app_name'] + " doesn't match the Wave_id for the same app in the factory")
-#                     sys.exit(2)
-#                 if app_csv['cloudendure_projectname'] != app['cloudendure_projectname']:
-#                     print("Error: cloudendure_projectname for app " + app_csv['app_name'] + " doesn't match the cloudendure_projectname for the same app in the factory")
-#                     sys.exit(3)
-#                 if app_csv['aws_accountid'] != app['aws_accountid']:
-#                     print("Error: aws_accountid for app " + app_csv['app_name'] + " doesn't match the aws_accountid for the same app in the factory")
-#                     sys.exit(4)
-#         if (match == False):
-#             app_list.append(app_csv)
-#     if len(app_list) is not 0:
-#         print("New Apps: ")
-#         print("")
-#         for app in app_list:
-#             print(app["app_name"])
-#         print("")
-#         # Creating new Apps in the migration factory
-#         for app in app_list:
-#             r = requests.post(UserHOST + appendpoint, headers=auth, data=json.dumps(app))
-#             if r.status_code == 200:
-#                 print("App " + app['app_name'] + " created in the migration factory")
-#             else:
-#                 print("App " + app['app_name'] + " failed : " + r.text + ".......")
-#         print("")
-#         print("----------------------------------------")
-#         print("")
-#     # Get Unique server names, add to the resource list if Server Name doesn't exist in the factory
-#     newapps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
-#     for row in data:
-#         for app in newapps:
-#             if row['app_name'].lower().strip() == app['app_name'].lower().strip():
-#                row['app_id'] = app['app_id']
-#         tags = []
-#         tag = {}
-#         server_item = {}
-#         server_item['server_name'] = row['server_name'].strip()
-#         tag['key'] = 'Name'
-#         tag['value'] = row['server_name'].strip()
-#         tags.append(tag)
-#         server_item['tags'] = tags
-#         server_item['app_id'] = row['app_id'].strip()
-#         server_item['server_os'] = row['server_os'].strip()
-#         server_item['server_os_version'] = row['server_os_version'].strip()
-#         server_item['server_fqdn'] = row['server_fqdn'].strip()
-#         server_item['server_tier'] = row['server_tier'].strip()
-#         server_item['server_environment'] = row['server_environment'].strip()
-#         server_item['subnet_IDs'] = convert_string_to_list(row['subnet_IDs'].strip())
-#         server_item['securitygroup_IDs'] = convert_string_to_list(row['securitygroup_IDs'].strip())
-#         server_item['subnet_IDs_test'] = convert_string_to_list(row['subnet_IDs_test'].strip())
-#         server_item['securitygroup_IDs_test'] = convert_string_to_list(row['securitygroup_IDs_test'].strip())
-#         server_item['instanceType'] = row['instanceType'].strip()
-#         server_item['tenancy'] = row['tenancy'].strip()
-#         server_item['iamRole'] = row['iamRole'].strip()
-#         server_list.append(server_item)
-#     if len(server_list) is not 0:
-#         print("New Servers: ")
-#         print("")
-#         for server in server_list:
-#             print(server['server_name'])
-#         print("")
-#         # Creating new Apps in the migration factory
-#         for server in server_list:
-#             r = requests.post(UserHOST + serverendpoint, headers=auth, data=json.dumps(server))
-#             if r.status_code == 200:
-#                 print("Server " + server['server_name'] + " created in the migration factory")
-#             else:
-#                 print("ERROR: " + server['server_name'] + " failed : " + r.text + ".......")
-#
-#
-# print("****************************")
-# print("Intake form data loaded for processing....")
-# print("")
-#
-# print("*********************************************")
-# print("*Creating resources in the migration factory*")
-# print("*********************************************")
-#
-# r = uploading_data(data,token)
 
 
 if __name__ == '__main__':
