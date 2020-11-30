@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 
 from . import ENV_VAR_MIGRATION_FACTORY_PASSWORD
 from . import ENV_VAR_MIGRATION_FACTORY_USERNAME
@@ -131,7 +132,10 @@ class MigrationFactoryRequester:
         self._migration_factory_authenticator = MigrationFactoryAuthenticator(endpoints_loader.get_login_api_url())
         self._endpoints_loader = endpoints_loader
 
-    def get(self, url, uri, headers=None, response_type=Requester.RESPONSE_TYPE_JSON):
+    def get(self, uri, url=None, headers=None, response_type=Requester.RESPONSE_TYPE_JSON):
+        if url is None:
+            url = self._guess_url(uri)
+
         return Requester.get(
             uri=uri,
             url=url,
@@ -139,7 +143,10 @@ class MigrationFactoryRequester:
             response_type=response_type,
         )
 
-    def put(self, url, uri, headers=None, data=None, response_type=Requester.RESPONSE_TYPE_JSON):
+    def put(self, uri, url=None, headers=None, data=None, response_type=Requester.RESPONSE_TYPE_JSON):
+        if url is None:
+            url = self._guess_url(uri)
+
         return Requester.put(
             uri=uri,
             url=url,
@@ -148,7 +155,10 @@ class MigrationFactoryRequester:
             response_type=response_type,
         )
 
-    def post(self, url, uri, headers=None, data=None, response_type=Requester.RESPONSE_TYPE_JSON):
+    def post(self, uri, url=None, headers=None, data=None, response_type=Requester.RESPONSE_TYPE_JSON):
+        if url is None:
+            url = self._guess_url(uri)
+
         return Requester.post(
             uri=uri,
             url=url,
@@ -157,7 +167,10 @@ class MigrationFactoryRequester:
             response_type=response_type,
         )
 
-    def delete(self, url, uri, headers=None, response_type=Requester.RESPONSE_TYPE_JSON):
+    def delete(self, uri, url=None, headers=None, response_type=Requester.RESPONSE_TYPE_JSON):
+        if url is None:
+            url = self._guess_url(uri)
+
         return Requester.delete(
             uri=uri,
             url=url,
@@ -166,10 +179,7 @@ class MigrationFactoryRequester:
         )
 
     def get_user_app_by_name(self, app_name=None):
-        all_apps = self.get(
-            url=self._endpoints_loader.get_user_api_url(),
-            uri=self.URI_USER_APP_LIST,
-        )
+        all_apps = self.get(uri=self.URI_USER_APP_LIST)
 
         for app in all_apps:
             if app['app_name'] == app_name:
@@ -178,7 +188,7 @@ class MigrationFactoryRequester:
         return None
 
     def get_user_server_ids(self, filter_app_id=None):
-        _server_list = self.get(self._endpoints_loader.get_user_api_url(), self.URI_USER_SERVER_LIST)
+        _server_list = self.get(self.URI_USER_SERVER_LIST)
 
         _server_selected_list_id = []
 
@@ -196,7 +206,7 @@ class MigrationFactoryRequester:
         return _server_selected_list_id
 
     def get_user_app_ids(self, filter_wave_id=None):
-        _app_list = self.get(self._endpoints_loader.get_user_api_url(), self.URI_USER_APP_LIST)
+        _app_list = self.get(self.URI_USER_APP_LIST)
 
         _app_selected_list_id = []
 
@@ -212,6 +222,28 @@ class MigrationFactoryRequester:
                 _app_selected_list_id.append(app["app_id"])
 
         return _app_selected_list_id
+
+    def _guess_url(self, uri):
+        if self._has_user_uri(uri):
+            return self._endpoints_loader.get_user_api_url()
+        if self._has_admin_uri(uri):
+            return self._endpoints_loader.get_admin_api_url()
+        if self._has_login_uri(uri):
+            return self._endpoints_loader.get_login_api_url()
+
+        return self._endpoints_loader.get_tools_api_url
+
+    @classmethod
+    def _has_user_uri(cls, uri):
+        return re.match('/user/', uri)
+
+    @classmethod
+    def _has_admin_uri(cls, uri):
+        return re.match('/admin/', uri)
+
+    @classmethod
+    def _has_login_uri(cls, uri):
+        return re.match('/login', uri)
 
 
 if __name__ == '__main__':
