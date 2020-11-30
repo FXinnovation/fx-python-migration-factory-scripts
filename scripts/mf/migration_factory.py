@@ -134,9 +134,11 @@ class MigrationFactoryRequester:
 
     def get(self, uri, url=None, headers=None, response_type=Requester.RESPONSE_TYPE_JSON):
         if url is None:
+            print('URL IS NONE')
             url = self._guess_url(uri)
 
         print(url)
+
         return Requester.get(
             uri=uri,
             url=url,
