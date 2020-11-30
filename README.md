@@ -7,7 +7,7 @@ These scripts replace and add many features above [the scripts given by AWS](htt
 ## Pre-requisites
 
 1. Install python3
-1. Install python3 modules requests, paramiko, pyYaml and boto3
+1. Install python3 modules requests, requests-cache, paramiko, pyYaml and boto3
 1. Install pwsh 7
 1. Install gssntlmssp
 

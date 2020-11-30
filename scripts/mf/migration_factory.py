@@ -7,12 +7,13 @@ from . import ENV_VAR_MIGRATION_FACTORY_PASSWORD
 from . import ENV_VAR_MIGRATION_FACTORY_USERNAME
 from .utils import EnvironmentVariableFetcher
 from .utils import Requester
+import requests_cache
 
 
 class CSVIntake:
     """ Data object to represent intake CSV """
 
-    WAVE_ID = 'wave_id'
+    WAVE_NAME = 'wave_name'
     APP_NAME = 'app_name'
     CLOUDENDURE_PROJECT_NAME = 'cloudendure_projectname'
     AWS_ACCOUNT_ID = 'aws_accountid'
@@ -30,7 +31,7 @@ class CSVIntake:
     TENANCY = 'tenancy'
     IAM_ROLE = 'iam_role'
 
-    MF_WAVE_ID = 'wave_id'
+    MF_WAVE_NAME = 'wave_id'
     MF_APP_NAME = 'app_name'
     MF_CLOUDENDURE_PROJECT_NAME = 'cloudendure_projectname'
     MF_AWS_ACCOUNT_ID = 'aws_accountid'
@@ -49,7 +50,7 @@ class CSVIntake:
     MF_IAM_ROLE = 'iamRole'
 
     ALL_FIELDS = {
-        WAVE_ID: MF_WAVE_ID,
+        WAVE_NAME: MF_WAVE_NAME,
         APP_NAME: MF_APP_NAME,
         CLOUDENDURE_PROJECT_NAME: MF_CLOUDENDURE_PROJECT_NAME,
         AWS_ACCOUNT_ID: MF_AWS_ACCOUNT_ID,
@@ -87,6 +88,7 @@ class MigrationFactoryAuthenticator:
             ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Migration Factory password', sensitive=True
         )
         self._login_api_url = login_api_url
+        requests_cache.install_cache('migration_factory', backend='memory', expire_after=30)
 
     def login(self):
         self._authorization_token = Requester.post(
@@ -114,15 +116,13 @@ class MigrationFactoryRequester:
     """ Allow to make requests against the Migration Factory """
 
     URI_ADMIN_SCHEMA = '/prod/admin/schema/app'
-    URI_USER_WAVES = '/prod/user/waves'
-    URI_USER_APPS = '/prod/user/apps'
-    URI_USER_SERVERS = '/prod/user/servers'
 
     URI_USER_SERVER_LIST = '/prod/user/servers'
-    URI_USER_APP_LIST = '/prod/user/apps'
-    URI_USER_WAVE = '/prod/user/waves/{}'
     URI_USER_SERVER = '/prod/user/servers/{}'
+    URI_USER_APP_LIST = '/prod/user/apps'
     URI_USER_APP = '/prod/user/apps/{}'
+    URI_USER_WAVE = '/prod/user/waves/{}'
+    URI_USER_WAVE_LIST = '/prod/user/waves'
 
     _migration_factory_authenticator = None
     _endpoints_loader = None
@@ -164,6 +164,18 @@ class MigrationFactoryRequester:
             headers=self._migration_factory_authenticator.populate_headers_with_authorization(headers),
             response_type=response_type,
         )
+
+    def get_user_app_by_name(self, app_name=None):
+        all_apps = self.get(
+            url=self._endpoints_loader.get_user_api_url(),
+            uri=self.URI_USER_APP_LIST,
+        )
+
+        for app in all_apps:
+            if app['app_name'] == app_name:
+                return app
+
+        return None
 
     def get_user_server_ids(self, filter_app_id=None):
         _server_list = self.get(self._endpoints_loader.get_user_api_url(), self.URI_USER_SERVER_LIST)

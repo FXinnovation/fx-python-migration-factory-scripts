@@ -12,7 +12,7 @@ import re
 import mf
 from mf.aws import AWSValidator
 from mf.config_loaders import EndpointsLoader
-from mf.migration_factory import MigrationFactoryRequester
+from mf.migration_factory import MigrationFactoryRequester, CSVIntake
 from mf.utils import EnvironmentVariableFetcher, MessageBag
 
 
@@ -55,15 +55,14 @@ class IntakeFormImporter:
         )
 
     def read_wave_csv(self):
-        print('Hey')
         if not self._csv_content:
-            print('oh')
             with open(os.path.join(self._path_wave, mf.FILE_CSV_WAVE_TEMPLATE), newline='') as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
-                    print(row)
                     self._csv_content.append(row)
-            print('le nouveau son de maneau')
+                logging.getLogger('root').debug("{}: CSV content\n{}".format(
+                    self.__class__.__name__, self._csv_content
+                ))
 
         return self._csv_content
 
@@ -74,78 +73,46 @@ class IntakeFormImporter:
         wave_ids = []
         servers_data = []
 
-        all_existing_waves = self._migration_factory_requester.get(
-            url=self._endpoints_loader.get_user_api_url(),
-            uri=self._migration_factory_requester.URI_USER_WAVES,
-        )
-
-        print(self.get_csv_content())
-
-        # for ok in servers_raw:
-        #     print(ok)
-
-        print()
-        print()
-        print()
-
-        print(all_existing_waves)
-        print()
-        print()
-
         self._validate_server_data(self.get_csv_content())
 
-        print()
-        print()
-        print()
-        print()
-
-        for ok in self.get_csv_content():
-            print(ok)
-
         for server in self.get_csv_content():
-            existing_app = self._migration_factory_requester.get(
-                url=self._endpoints_loader.get_user_api_url(),
-                uri=MigrationFactoryRequester.URI_USER_APP.format(server['app_id']),
-            )
+            existing_app = self._migration_factory_requester.get_user_app_by_name(server[CSVIntake.APP_NAME])
 
-            print(existing_app)
-
-            if existing_app['app_name'] != server['app_name']:
-                logging.getLogger('root').debug('{}: app to create)'.format(
-                    self.__class__.__name__, server['app_name']
+            if existing_app:
+                logging.getLogger('root').debug('{}: app already exists. Need to be updated.'.format(
+                    self.__class__.__name__, server[CSVIntake.APP_NAME]
                 ))
-                continue
 
-            logging.getLogger('root').debug('{}: app already exists)'.format(
-                self.__class__.__name__, server['app_name']
-            ))
-
-            if existing_app['cloudendure_projectname'] != server['cloudendure_projectname']:
-                self._validation_error_bag.add(
-                    '{}: Given “{}” as CloudEndure project name does not match existing “{}”.'.format(
-                        self.__class__.__name__, server['cloudendure_projectname'],
+                if existing_app[CSVIntake.MF_CLOUDENDURE_PROJECT_NAME] != server[CSVIntake.CLOUDENDURE_PROJECT_NAME]:
+                    self._validation_error_bag.add(
+                        '{}: Given “{}” as CloudEndure project name does not match existing “{}”.'.format(
+                            self.__class__.__name__,
+                            server[CSVIntake.CLOUDENDURE_PROJECT_NAME],
+                            existing_app[CSVIntake.MF_CLOUDENDURE_PROJECT_NAME]
+                        )
                     )
-                )
 
-            if existing_app['aws_accountid'] != server['aws_accountid']:
-                self._validation_error_bag.add(
-                    '{}: Given “{}” as AWS accountID does not match existing “{}”.'.format(
-                        self.__class__.__name__, server['aws_accountid'], existing_app['aws_accountid']
+                if existing_app[CSVIntake.MF_AWS_ACCOUNT_ID] != server[CSVIntake.AWS_ACCOUNT_ID]:
+                    self._validation_error_bag.add(
+                        '{}: Given “{}” as AWS accountID does not match existing “{}”.'.format(
+                            self.__class__.__name__,
+                            server[CSVIntake.AWS_ACCOUNT_ID],
+                            existing_app[CSVIntake.MF_AWS_ACCOUNT_ID]
+                        )
                     )
-                )
 
-            if existing_app['wave_id'] != server['wave_id']:
-                self._validation_error_bag.add(
-                    '{}: Given “{}” as Wave ID does not match existing “”.'.format(
-                        self.__class__.__name__, server['wave_id'], existing_app['wave_id']
+                if existing_app[CSVIntake.MF_WAVE_NAME] != server[CSVIntake.WAVE_NAME]:
+                    self._validation_error_bag.add(
+                        '{}: Given “{}” as Wave ID does not match existing “{}”.'.format(
+                            self.__class__.__name__, server[CSVIntake.WAVE_NAME], existing_app[CSVIntake.MF_WAVE_NAME]
+                        )
                     )
-                )
 
+        self._validation_error_bag.unload(logging.getLogger('root'))
 
         quit()
 
-
-        for server_raw in servers_raw:
+        for server_raw in self.get_csv_content():
             wave_ids.append(str(server_raw['wave_id']).strip())
 
             server_data = {
@@ -157,56 +124,60 @@ class IntakeFormImporter:
 
             servers_data.append(server_data)
 
-
-        print(list(map(lambda x: x['app_name'].strip().lower(), servers_raw)))
-        print(list(set(map(lambda x: x['app_name'].strip().lower(), servers_raw)) - set(map(lambda x: x['app_name'].strip().lower(), all_apps))))
+        # print(list(map(lambda x: x['app_name'].strip().lower(), servers_raw)))
+        # print(list(set(map(lambda x: x['app_name'].strip().lower(), servers_raw)) - set(
+        #     map(lambda x: x['app_name'].strip().lower(), all_apps))))
 
         exit(0)
 
         self._migration_factory_requester.post(
             url=self._migration_factory_requester.KEY_USER_API_URL,
-            uri=self._migration_factory_requester.URI_USER_WAVES,
+            uri=self._migration_factory_requester.URI_USER_WAVE_LIST,
             data=json.dumps(self._arguments.wave_name)
         )
 
         self._migration_factory_requester.post(
             url=self._migration_factory_requester.KEY_USER_API_URL,
-            uri=self._migration_factory_requester.URI_USER_APPS,
-            data=json.dumps(map(lambda x: x['app_name'].strip().lower(), servers_raw))
+            uri=self._migration_factory_requester.URI_USER_APP_LIST,
+            data=json.dumps(map(lambda x: x['app_name'].strip().lower(), self.get_csv_content()))
         )
 
     def _validate_server_data(self, servers):
-        self._check_dict_value_duplication(servers, 'server_name')
-        self._check_dict_value_duplication(servers, 'server_fqdn')
-        self._check_dict_value_consistency(servers, 'wave_id')
-        self._check_dict_value_consistency(servers, 'cloudendure_projectname')
-        self._check_dict_value_consistency(servers, 'aws_accountid')
+        self._check_dict_value_duplication(servers, CSVIntake.SERVER_NAME)
+        self._check_dict_value_duplication(servers,  CSVIntake.SERVER_FQDN)
+        self._check_dict_value_consistency(servers, CSVIntake.WAVE_NAME)
+        self._check_dict_value_consistency(servers,  CSVIntake.CLOUDENDURE_PROJECT_NAME)
+        self._check_dict_value_consistency(servers,  CSVIntake.AWS_ACCOUNT_ID)
 
         for server_data in servers:
             self._validate_with_regexp(
-                server_data['aws_accountid'], AWSValidator.REGEXP_ACCOUNT_ID, 'an account ID name'
+                server_data[CSVIntake.AWS_ACCOUNT_ID], AWSValidator.REGEXP_ACCOUNT_ID, 'an account ID name'
             )
             self._validate_with_regexp(
-                server_data['wave_id'], AWSValidator.REGEXP_CLOUDENDURE_PROJECT_NAME, 'a wave ID'
+                server_data[CSVIntake.WAVE_NAME], AWSValidator.REGEXP_CLOUDENDURE_PROJECT_NAME, 'a wave name'
             )
             self._validate_with_regexp(
-                server_data['cloudendure_projectname'], AWSValidator.REGEXP_CLOUDENDURE_PROJECT_NAME, 'a project name'
+                server_data[CSVIntake.CLOUDENDURE_PROJECT_NAME], AWSValidator.REGEXP_CLOUDENDURE_PROJECT_NAME, 'a project name'
             )
             self._validate_with_regexp(
-                server_data['instance_type'], AWSValidator.REGEXP_INSTANCE_TYPE, 'an instance type'
+                server_data[CSVIntake.INSTANCE_TYPE], AWSValidator.REGEXP_INSTANCE_TYPE, 'an instance type'
             )
 
-            self._validate_with_regexp(server_data['subnet_id'], AWSValidator.REGEXP_SUBNET_ID, 'an AWS subnet ID')
-            self._validate_with_regexp(server_data['subnet_id_test'], AWSValidator.REGEXP_SUBNET_ID, 'an AWS subnet ID')
+            self._validate_with_regexp(
+                server_data[CSVIntake.SUBNET_ID], AWSValidator.REGEXP_SUBNET_ID, 'an AWS subnet ID'
+            )
+            self._validate_with_regexp(
+                server_data[CSVIntake.SUBNET_ID_TEST], AWSValidator.REGEXP_SUBNET_ID, 'an AWS subnet ID'
+            )
 
-            self._validate_with_enum(server_data['server_os'], self.ALLOWED_SERVER_OS, 'a server OS')
-            self._validate_with_enum(server_data['server_tier'], self.ALLOWED_SERVER_TIER, 'a server tier')
-            self._validate_with_enum(server_data['tenancy'], self.ALLOWED_TENANCY, 'a tenancy')
+            self._validate_with_enum(server_data[CSVIntake.SERVER_OS], self.ALLOWED_SERVER_OS, 'a server OS')
+            self._validate_with_enum(server_data[CSVIntake.SERVER_TIER], self.ALLOWED_SERVER_TIER, 'a server tier')
+            self._validate_with_enum(server_data[CSVIntake.TENANCY], self.ALLOWED_TENANCY, 'a tenancy')
 
-            for security_group in server_data['securitygroup_ids']:
+            for security_group in server_data[CSVIntake.SECURITY_GROUP_ID].split(';'):
                 self._validate_with_regexp(security_group, AWSValidator.REGEXP_SECURITY_GROUP_ID, 'a security group ID')
 
-            for security_group in server_data['securitygroup_ids_test']:
+            for security_group in server_data[CSVIntake.SECURITY_GROUP_ID_TEST].split(';'):
                 self._validate_with_regexp(
                     security_group, AWSValidator.REGEXP_SECURITY_GROUP_ID, 'a security group ID (for test)'
                 )
