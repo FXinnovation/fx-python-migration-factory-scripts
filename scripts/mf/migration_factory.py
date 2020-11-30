@@ -234,19 +234,19 @@ class MigrationFactoryRequester:
         if self._has_login_uri(uri):
             return self._endpoints_loader.get_login_api_url()
 
-        return self._endpoints_loader.get_tools_api_url
+        return self._endpoints_loader.get_tools_api_url()
 
     @classmethod
     def _has_user_uri(cls, uri):
-        return re.match('/user/', uri)
+        return re.match('.*/user/.*', uri)
 
     @classmethod
     def _has_admin_uri(cls, uri):
-        return re.match('/admin/', uri)
+        return re.match('.*/admin/.*', uri)
 
     @classmethod
     def _has_login_uri(cls, uri):
-        return re.match('/login', uri)
+        return re.match('.*/login.*', uri)
 
 
 if __name__ == '__main__':
