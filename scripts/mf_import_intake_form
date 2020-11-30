@@ -17,7 +17,7 @@ from mf.utils import EnvironmentVariableFetcher, MessageBag
 
 
 class IntakeFormImporter:
-    """ Import and prepare servers form wave in the Migration Factctory """
+    """ Import and prepare servers form wave in the Migration Factory """
 
     ALLOWED_SERVER_OS = ['windows', 'linux']
     ALLOWED_SERVER_TIER = ['app', 'db', 'wav']
@@ -151,10 +151,10 @@ class IntakeFormImporter:
 
     def _validate_server_data(self, servers):
         self._check_dict_value_duplication(servers, CSVIntake.SERVER_NAME)
-        self._check_dict_value_duplication(servers,  CSVIntake.SERVER_FQDN)
+        self._check_dict_value_duplication(servers, CSVIntake.SERVER_FQDN)
         self._check_dict_value_consistency(servers, CSVIntake.WAVE_NAME)
-        self._check_dict_value_consistency(servers,  CSVIntake.CLOUDENDURE_PROJECT_NAME)
-        self._check_dict_value_consistency(servers,  CSVIntake.AWS_ACCOUNT_ID)
+        self._check_dict_value_consistency(servers, CSVIntake.CLOUDENDURE_PROJECT_NAME)
+        self._check_dict_value_consistency(servers, CSVIntake.AWS_ACCOUNT_ID)
 
         for server_data in servers:
             self._validate_with_regexp(
@@ -164,7 +164,8 @@ class IntakeFormImporter:
                 server_data[CSVIntake.WAVE_NAME], AWSValidator.REGEXP_CLOUDENDURE_PROJECT_NAME, 'a wave name'
             )
             self._validate_with_regexp(
-                server_data[CSVIntake.CLOUDENDURE_PROJECT_NAME], AWSValidator.REGEXP_CLOUDENDURE_PROJECT_NAME, 'a project name'
+                server_data[CSVIntake.CLOUDENDURE_PROJECT_NAME], AWSValidator.REGEXP_CLOUDENDURE_PROJECT_NAME,
+                'a project name'
             )
             self._validate_with_regexp(
                 server_data[CSVIntake.INSTANCE_TYPE], AWSValidator.REGEXP_INSTANCE_TYPE, 'an instance type'
@@ -210,7 +211,7 @@ class IntakeFormImporter:
 
     def _validate_with_enum(self, value, enum, description):
         self._debug_validate(value)
-        if value.lower() not in enum:
+        if value not in enum or value.lower() not in enum:
             self._validation_error_bag.add('{}: Given “{}” as {} is invalid (allowed values: {}).'.format(
                 self.__class__.__name__, value, description, str(enum)
             ))
