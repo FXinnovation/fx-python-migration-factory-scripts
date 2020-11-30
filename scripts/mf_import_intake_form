@@ -190,10 +190,7 @@ class IntakeFormImporter:
                 )
 
     def _check_dict_value_consistency(self, dict_to_check, key):
-        print('Check '+key)
-
-        print(list(dict.fromkeys(map(lambda x: x[key].strip(), dict_to_check))))
-        if not all(value == key for value in map(lambda x: x[key].strip(), dict_to_check)):
+        if len(list(dict.fromkeys(map(lambda x: x[key].strip(), dict_to_check)))) != 1:
             self._validation_error_bag.add('{}: “{}” key is not consistent among all servers.'.format(
                 self.__class__.__name__, key
             ))
