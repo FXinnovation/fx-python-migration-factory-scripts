@@ -4,79 +4,325 @@ import json
 import logging
 import re
 
-from . import ENV_VAR_MIGRATION_FACTORY_PASSWORD
-from . import ENV_VAR_MIGRATION_FACTORY_USERNAME
-from .utils import EnvironmentVariableFetcher
-from .utils import Requester
 import requests_cache
 
+from mf.aws import AWSValidator
+from . import ENV_VAR_MIGRATION_FACTORY_PASSWORD
+from . import ENV_VAR_MIGRATION_FACTORY_USERNAME
+from .utils import EnvironmentVariableFetcher, MessageBag
+from .utils import Requester
 
-class CSVIntake:
-    """ Data object to represent intake CSV """
+
+class MfField:
+    """ Data object to represent Migration Factory Fields """
 
     WAVE_NAME = 'wave_name'
+    WAVE_ID = 'wave_id'
+    WAVE_DESCRIPTION = 'Description'
     APP_NAME = 'app_name'
+    APP_ID = 'app_id'
     CLOUDENDURE_PROJECT_NAME = 'cloudendure_projectname'
     AWS_ACCOUNT_ID = 'aws_accountid'
     SERVER_NAME = 'server_name'
+    SERVER_ID = 'server_id'
     SERVER_OS = 'server_os'
     SERVER_OS_VERSION = 'server_os_version'
     SERVER_FQDN = 'server_fqdn'
     SERVER_TIER = 'server_tier'
     SERVER_ENVIRONMENT = 'server_environment'
-    SUBNET_ID = 'subnet_id'
-    SECURITY_GROUP_ID = 'securitygroup_ids'
-    SUBNET_ID_TEST = 'subnet_id_test'
-    SECURITY_GROUP_ID_TEST = 'securitygroup_ids_test'
-    INSTANCE_TYPE = 'instance_type'
+    SUBNET_ID = 'subnet_IDs'
+    SECURITY_GROUP_ID = 'securitygroup_IDs'
+    SUBNET_ID_TEST = 'subnet_IDs_test'
+    SECURITY_GROUP_ID_TEST = 'securitygroup_IDs_test'
+    INSTANCE_TYPE = 'instanceType'
     TENANCY = 'tenancy'
-    IAM_ROLE = 'iam_role'
+    IAM_ROLE = 'iamRole'
 
-    MF_WAVE_NAME = 'wave_name'
-    MF_WAVE_ID = 'wave_id'
-    MF_WAVE_DESCRIPTION = 'Description'
-    MF_APP_NAME = 'app_name'
-    MF_APP_ID = 'app_id'
-    MF_CLOUDENDURE_PROJECT_NAME = 'cloudendure_projectname'
-    MF_AWS_ACCOUNT_ID = 'aws_accountid'
-    MF_SERVER_NAME = 'server_name'
-    MF_SERVER_ID = 'server_id'
-    MF_SERVER_OS = 'server_os'
-    MF_SERVER_OS_VERSION = 'server_os_version'
-    MF_SERVER_FQDN = 'server_fqdn'
-    MF_SERVER_TIER = 'server_tier'
-    MF_SERVER_ENVIRONMENT = 'server_environment'
-    MF_SUBNET_ID = 'subnet_IDs'
-    MF_SECURITY_GROUP_ID = 'securitygroup_IDs'
-    MF_SUBNET_ID_TEST = 'subnet_IDs_test'
-    MF_SECURITY_GROUP_ID_TEST = 'securitygroup_IDs_test'
-    MF_INSTANCE_TYPE = 'instanceType'
-    MF_TENANCY = 'tenancy'
-    MF_IAM_ROLE = 'iamRole'
 
-    ALL_FIELDS = {
-        WAVE_NAME: MF_WAVE_NAME,
-        APP_NAME: MF_APP_NAME,
-        CLOUDENDURE_PROJECT_NAME: MF_CLOUDENDURE_PROJECT_NAME,
-        AWS_ACCOUNT_ID: MF_AWS_ACCOUNT_ID,
-        SERVER_NAME: MF_SERVER_NAME,
-        SERVER_OS: MF_SERVER_OS,
-        SERVER_OS_VERSION: MF_SERVER_OS_VERSION,
-        SERVER_FQDN: MF_SERVER_FQDN,
-        SERVER_TIER: MF_SERVER_TIER,
-        SERVER_ENVIRONMENT: MF_SERVER_ENVIRONMENT,
-        SUBNET_ID: MF_SUBNET_ID,
-        SECURITY_GROUP_ID: MF_SECURITY_GROUP_ID,
-        SUBNET_ID_TEST: MF_SUBNET_ID_TEST,
-        SECURITY_GROUP_ID_TEST: MF_SECURITY_GROUP_ID_TEST,
-        INSTANCE_TYPE: MF_INSTANCE_TYPE,
-        TENANCY: MF_TENANCY,
-        IAM_ROLE: MF_IAM_ROLE,
+class MigrationFactoryData:
+    """ Data object representing any data in Migration Factory (superclass) """
+
+    FIELDS = {}
+    PUT_FIELDS = {}
+
+    _data = {}
+    _id = None
+
+    def __init__(self, data: dict, identifier: int = None):
+        self.fill(data, identifier)
+
+    def fill(self, data: dict, identifier: int = None):
+        for key in self.FIELDS:
+            if key not in data.keys():
+                self._data[key] = ''
+            else:
+                self._data[key] = data[key]
+
+        if identifier is not None:
+            self.set_id(identifier)
+
+    def to_dict(self, layer: dict = None):
+        self.update_data()
+
+        if layer is None:
+            layer = self.FIELDS
+
+        temp_data = {}
+        for key in layer:
+            temp_data[key] = str(self._data[key])
+
+        return temp_data
+
+    def to_post_payload(self):
+        return json.dumps(self.to_dict())
+
+    def to_put_payload(self):
+        return json.dumps(self.to_dict(self.PUT_FIELDS))
+
+    def get_id(self):
+        return self._id
+
+    def set_id(self, identifier: int):
+        self._id = identifier
+        self.update_data()
+
+    def get(self, key: str):
+        return self._data[key]
+
+    def is_filled(self):
+        return self.get_id() != '' and self.to_dict()
+
+    def update_data(self):
+        pass
+
+
+class Wave(MigrationFactoryData):
+    """ Data object representing a wave in Migration Factory """
+
+    FIELDS = {
+        MfField.WAVE_NAME,
+        MfField.WAVE_DESCRIPTION,
     }
+
+    _data = {}
+    _id = None
+
+    def __init__(self, data: dict = None, identifier: int = None):
+        if data is None:
+            data = {}
+
+        super().__init__(data=data, identifier=identifier)
+
+    def __str__(self):
+        return self._data[MfField.WAVE_ID]
+
+
+class App(MigrationFactoryData):
+    """ Data object representing a app in Migration Factory """
+
+    FIELDS = {
+        MfField.WAVE_ID,
+        MfField.APP_NAME,
+        MfField.CLOUDENDURE_PROJECT_NAME,
+        MfField.AWS_ACCOUNT_ID,
+    }
+
+    _wave = None
+    _data = {}
+    _id = None
+
+    def __init__(self, data: dict = None, identifier: int = None, wave: Wave = Wave()):
+        if data is None:
+            data = {}
+
+        super().__init__(data=data, identifier=identifier)
+        self.set_wave(wave)
+
+    def __str__(self):
+        return self._data[MfField.APP_ID]
+
+    def set_wave(self, wave: Wave):
+        self._wave = wave
+        self.update_data()
+
+    def get_wave(self):
+        return self._wave
+
+    def is_filled(self):
+        return super().is_filled() and self.get_wave().is_filled()
+
+    def update_data(self):
+        if self.get_wave() and self.get_wave().get_id():
+            self._data[MfField.WAVE_ID] = self.get_wave().get_id()
+
+
+class Server(MigrationFactoryData):
+    """ Data object representing a server in Migration Factory """
+
+    FIELDS = {
+        MfField.APP_ID,
+        MfField.SERVER_NAME,
+        MfField.SERVER_OS,
+        MfField.SERVER_OS_VERSION,
+        MfField.SERVER_FQDN,
+        MfField.SERVER_TIER,
+        MfField.SERVER_ENVIRONMENT,
+        MfField.SUBNET_ID,
+        MfField.SECURITY_GROUP_ID,
+        MfField.SUBNET_ID_TEST,
+        MfField.SECURITY_GROUP_ID_TEST,
+        MfField.INSTANCE_TYPE,
+        MfField.TENANCY,
+        MfField.IAM_ROLE,
+    }
+
+    PUT_FIELDS = {
+        MfField.SERVER_OS,
+        MfField.SERVER_OS_VERSION,
+        MfField.SERVER_FQDN,
+        MfField.SERVER_TIER,
+        MfField.SERVER_ENVIRONMENT,
+        MfField.SUBNET_ID,
+        MfField.SECURITY_GROUP_ID,
+        MfField.SUBNET_ID_TEST,
+        MfField.SECURITY_GROUP_ID_TEST,
+        MfField.INSTANCE_TYPE,
+        MfField.TENANCY,
+        MfField.IAM_ROLE,
+    }
+
+    _app = None
+    _data = {}
+    _id = None
+
+    def __init__(self, data: dict = None, identifier: int = None, app: App = App()):
+        if data is None:
+            data = {}
+
+        super().__init__(data=data, identifier=identifier)
+        self.set_app(app)
+
+    def __str__(self):
+        return self._data[MfField.SERVER_ID]
+
+    def set_app(self, app: App):
+        self._app = app
+        self.update_data()
+
+    def get_app(self):
+        return self._app
+
+    def is_filled(self):
+        return super().is_filled() and self.get_app().is_filled()
+
+    def update_data(self):
+        if self.get_app() and self.get_app().get_id():
+            self._data[MfField.APP_ID] = self.get_app().get_id()
+
+
+class MigrationFactoryDataValidator:
+    """ Allow to validate Migration Factory data objects """
+
+    ALLOWED_SERVER_OS = ['windows', 'linux']
+    ALLOWED_SERVER_TIER = ['app', 'db', 'wav']
+    ALLOWED_TENANCY = ['Shared', 'Dedicated', 'Dedicated Host']
+
+    _validation_error_bag = MessageBag(type_of_bag='error')
+
+    @classmethod
+    def validate_servers_data(cls, servers: [Server], exit_on_error: bool = True):
+        apps = list(map(lambda x: x.get_app(), servers))
+        waves = list(map(lambda x: x.get_wave(), apps))
+
+        cls._check_dict_value_duplication(servers, MfField.SERVER_NAME)
+        cls._check_dict_value_duplication(servers, MfField.SERVER_FQDN)
+        cls._check_dict_value_consistency(apps, MfField.CLOUDENDURE_PROJECT_NAME)
+        cls._check_dict_value_consistency(apps, MfField.AWS_ACCOUNT_ID)
+        cls._check_dict_value_consistency(waves, MfField.WAVE_NAME)
+
+        for server_data in servers:
+            cls._validate_with_regexp(
+                server_data.get_app().get(MfField.AWS_ACCOUNT_ID),
+                AWSValidator.REGEXP_ACCOUNT_ID,
+                'an account ID name'
+            )
+            cls._validate_with_regexp(
+                server_data.get_app().get_wave().get(MfField.WAVE_NAME),
+                AWSValidator.REGEXP_CLOUDENDURE_PROJECT_NAME,
+                'a wave name'
+            )
+            cls._validate_with_regexp(
+                server_data.get_app().get(MfField.CLOUDENDURE_PROJECT_NAME),
+                AWSValidator.REGEXP_CLOUDENDURE_PROJECT_NAME,
+                'a project name'
+            )
+            cls._validate_with_regexp(
+                server_data.get(MfField.INSTANCE_TYPE), AWSValidator.REGEXP_INSTANCE_TYPE, 'an instance type'
+            )
+
+            cls._validate_with_regexp(
+                server_data.get(MfField.SUBNET_ID), AWSValidator.REGEXP_SUBNET_ID, 'an AWS subnet ID'
+            )
+            cls._validate_with_regexp(
+                server_data.get(MfField.SUBNET_ID_TEST), AWSValidator.REGEXP_SUBNET_ID, 'an AWS subnet ID'
+            )
+
+            cls._validate_with_enum(server_data.get(MfField.SERVER_OS), cls.ALLOWED_SERVER_OS, 'a server OS')
+            cls._validate_with_enum(server_data.get(MfField.SERVER_TIER), cls.ALLOWED_SERVER_TIER, 'a server tier')
+            cls._validate_with_enum(server_data.get(MfField.TENANCY), cls.ALLOWED_TENANCY, 'a tenancy')
+
+            for security_group in server_data.get(MfField.SECURITY_GROUP_ID).split(';'):
+                cls._validate_with_regexp(security_group, AWSValidator.REGEXP_SECURITY_GROUP_ID, 'a security group ID')
+
+            for security_group in server_data.get(MfField.SECURITY_GROUP_ID_TEST).split(';'):
+                cls._validate_with_regexp(
+                    security_group, AWSValidator.REGEXP_SECURITY_GROUP_ID, 'a security group ID (for test)'
+                )
+
+        cls._validation_error_bag.unload()
+
+        if not cls._validation_error_bag.is_empty() and exit_on_error:
+            exit(1)
+
+    @classmethod
+    def _check_dict_value_consistency(cls, objects_to_check: [MigrationFactoryData], key: str):
+        if len(list(dict.fromkeys(map(lambda x: x.get(key).strip(), objects_to_check)))) != 1:
+            cls._validation_error_bag.add('{}: “{}” key is not consistent among all servers.'.format(
+                cls.__class__.__name__, key
+            ))
+
+    @classmethod
+    def _check_dict_value_duplication(cls, objects_to_check: [MigrationFactoryData], key: str):
+        if list(map(lambda x: x.get(key).strip(), objects_to_check)).count(key) > 1:
+            cls._validation_error_bag.add('{}: “{}” key is duplicated among all servers.'.format(
+                cls.__class__.__name__, key
+            ))
+
+    @classmethod
+    def _validate_with_regexp(cls, value: str, regexp: str, description: str):
+        cls._debug_validate(value)
+        if not re.match(regexp, value):
+            cls._validation_error_bag.add('{}: Given “{}” as {} is invalid (failed regex: “{}”).'.format(
+                cls.__class__.__name__, value, description, regexp
+            ))
+
+    @classmethod
+    def _validate_with_enum(cls, value, enum, description):
+        cls._debug_validate(value)
+        if value not in enum and value.lower() not in enum:
+            cls._validation_error_bag.add('{}: Given “{}” as {} is invalid (allowed values: {}).'.format(
+                cls.__class__.__name__, value, description, str(enum)
+            ))
+
+    @classmethod
+    def _debug_validate(cls, value):
+        logging.getLogger('root').debug('{}: Validating user input: “{}”)'.format(
+            cls.__class__.__name__, value
+        ))
 
 
 class MigrationFactoryAuthenticator:
-    """ Login to Migration Factory """
+    """ Allow to login to the migration Migration Factory and store authorization token """
 
     _username = None
     _password = None
@@ -186,7 +432,7 @@ class MigrationFactoryRequester:
         all_apps = self.get(uri=self.URI_USER_APP_LIST)
 
         for app in all_apps:
-            if app[CSVIntake.MF_APP_NAME] == app_name:
+            if app[MfField.APP_NAME] == app_name:
                 return app
 
         return None
@@ -195,7 +441,7 @@ class MigrationFactoryRequester:
         all_waves = self.get(uri=self.URI_USER_WAVE_LIST)
 
         for wave in all_waves:
-            if wave[CSVIntake.MF_WAVE_NAME] == wave_name:
+            if wave[MfField.WAVE_NAME] == wave_name:
                 return wave
 
         return None
@@ -204,7 +450,7 @@ class MigrationFactoryRequester:
         all_servers = self.get(uri=self.URI_USER_SERVER_LIST)
 
         for server in all_servers:
-            if server[CSVIntake.MF_SERVER_NAME] == server_name:
+            if server[MfField.SERVER_NAME] == server_name:
                 return server
 
         return None
@@ -216,14 +462,14 @@ class MigrationFactoryRequester:
 
         for server in _server_list:
             if filter_app_id:
-                if CSVIntake.MF_APP_ID in server and server[CSVIntake.MF_APP_ID] == filter_app_id:
-                    _server_selected_list_id.append(server[CSVIntake.MF_SERVER_ID])
+                if MfField.APP_ID in server and server[MfField.APP_ID] == filter_app_id:
+                    _server_selected_list_id.append(server[MfField.SERVER_ID])
                 else:
                     logging.getLogger('root').debug('{}: server id “{}” filtered (not in app {})'.format(
-                        self.__class__.__name__, server[CSVIntake.MF_SERVER_ID], filter_app_id
+                        self.__class__.__name__, server[MfField.SERVER_ID], filter_app_id
                     ))
             else:
-                _server_selected_list_id.append(server[CSVIntake.MF_SERVER_ID])
+                _server_selected_list_id.append(server[MfField.SERVER_ID])
 
         return _server_selected_list_id
 
@@ -234,14 +480,14 @@ class MigrationFactoryRequester:
 
         for app in _app_list:
             if filter_wave_id:
-                if CSVIntake.MF_WAVE_ID in app and app[CSVIntake.MF_WAVE_ID] == filter_wave_id:
-                    _app_selected_list_id.append(app[CSVIntake.MF_APP_ID])
+                if MfField.WAVE_ID in app and app[MfField.WAVE_ID] == filter_wave_id:
+                    _app_selected_list_id.append(app[MfField.APP_ID])
                 else:
                     logging.getLogger('root').debug('{}: app id “{}” filtered (not in wave {})'.format(
-                        self.__class__.__name__, app[CSVIntake.MF_APP_ID], filter_wave_id
+                        self.__class__.__name__, app[MfField.APP_ID], filter_wave_id
                     ))
             else:
-                _app_selected_list_id.append(app[CSVIntake.MF_APP_ID])
+                _app_selected_list_id.append(app[MfField.APP_ID])
 
         return _app_selected_list_id
 
