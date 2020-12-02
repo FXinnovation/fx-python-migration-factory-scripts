@@ -54,6 +54,8 @@ install_without_override() {
 
 check_arguments "$@"
 
+pip install -r requirements.txt
+
 cd "$DIR"
 git reset --hard HEAD
 git checkout master
