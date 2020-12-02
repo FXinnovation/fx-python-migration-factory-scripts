@@ -6,10 +6,7 @@ These scripts replace and add many features above [the scripts given by AWS](htt
 
 ## Pre-requisites
 
-1. Install python3
-1. Install python3 modules requests, requests-cache, paramiko, pyYaml and boto3
-1. Install pwsh 7
-1. Install gssntlmssp
+1. Install `python3`, `gssntlmssp`, `pwsh 7` with your OS package manager.
 
 ## Installation
 
@@ -18,8 +15,8 @@ You need to have git and curl install on the machine.
 1. Clone this repository;
 1. Move to into it;
 1. Run `# install.sh` (careful, needs root permissions). You can use `--cron` to force scripts installation regularly, making sure VCS and server have the same code;
-1. Modify the file `/etc/migration_factory/endpoints.json` to add URL API (This is deprecated, and will be remove soon in futur version. This is replace by endpoint.yml. For now, both are used);
-1. Modify the file `/etc/migration_factory/endpoints.yml` to add URL API;
+1. Modify the file `/etc/migration_factory/endpoints.json` to add URL APIs (This is deprecated, and will be remove soon in futur version. This is replace by `endpoint.yml`. For now, both are used);
+1. Modify the file `/etc/migration_factory/endpoints.yml` to add URL APIs;
 1. Modify the file `/etc/migration_factory/defaults.yml` to give the defaults values by environments;
 1. *optional* - Add an alias on your shell profile to run the script `mf_setup_environment` properly. `alias mf_setup_environment="source /usr/local/bin/mf_setup_environment"`
 1. Enjoy !
