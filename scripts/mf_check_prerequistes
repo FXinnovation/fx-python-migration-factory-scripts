@@ -11,6 +11,10 @@ import paramiko
 import socket
 import os
 
+import mf
+from mf.utils import EnvironmentVariableFetche
+from mf.config_loaders import EndpointsLoader
+
 PATH = os.path.dirname(os.path.abspath(__file__))
 
 serverendpoint = '/prod/user/servers'
@@ -461,14 +465,20 @@ def main(arguments):
     parser.add_argument('--CloudEndureProjectName', default="")
     parser.add_argument('--CEServerIP', required=True)
     parser.add_argument('--WindowsUser', default = os.environ.get('MF_WINDOWS_USERNAME', ''), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
-    parser.add_argument('--EndpointConfigFile', default = os.environ.get('MF_ENDPOINT_CONFIG_FILE', '/etc/migration_factory/endpoints.json'), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+    parser.add_argument(
+           '--config-file-endpoints',
+           default=EnvironmentVariableFetcher.fetch(
+               env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+               default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+           ),
+           help='Configuration file containing the Migration Factory endpoint URLs'
+       )
     args = parser.parse_args(arguments)
 
-    with open(args.EndpointConfigFile) as json_file:
-      endpoints = json.load(json_file)
+    _endpoints_loader = EndpointsLoader(endpoint_config_file=self.args.config_file_endpoints)
+    LoginHOST = _endpoints_loader.get_login_api_url()
+    UserHOST = _endpoints_loader.get_user_api_url()
 
-    LoginHOST = endpoints['LoginApiUrl']
-    UserHOST = endpoints['UserApiUrl']
     print("")
     print("****************************")
     print("*Login to Migration factory*")
