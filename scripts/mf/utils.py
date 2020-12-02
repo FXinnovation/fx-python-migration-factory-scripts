@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-
+import csv
 import getpass
 import json
 import logging
 import os
 import re
-import sys
 
 import requests
+import sys
 
 
 class MessageBag:
@@ -45,7 +45,7 @@ class Utils:
     """ Primitive type utilities """
 
     @staticmethod
-    def check_is_serializable_as_path(string_to_test):
+    def check_is_serializable_as_path(string_to_test: str):
         is_serializable_as_path = re.search("^[a-zA-Z0-9_ -]+$", string_to_test)
         if not is_serializable_as_path:
             logging.getLogger('root').warning(
@@ -56,6 +56,20 @@ class Utils:
             )
         return bool(is_serializable_as_path)
 
+    @classmethod
+    def csv_to_dicts(cls, csv_path: str):
+        content = []
+        with open(csv_path, newline='') as csv_content:
+            reader = csv.DictReader(csv_content)
+            for row in reader:
+                content.append(row)
+
+            logging.getLogger('root').debug("{}: CSV content\n{}".format(
+                cls.__class__.__name__, csv_content
+            ))
+
+        return content
+
 
 class Requester:
     """ Decorator around requests for enhanced logging """
@@ -65,24 +79,34 @@ class Requester:
     RESPONSE_TYPE_JSON = 'json'
 
     @classmethod
-    def get(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, response_type = RESPONSE_TYPE_JSON):
-        return Requester._do_request(request_instance, 'get', url, uri, headers, data, [200], exit_on_error, response_type)
+    def get(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True,
+            response_type=RESPONSE_TYPE_JSON):
+        return Requester._do_request(request_instance, 'get', url, uri, headers, data, [200], exit_on_error,
+                                     response_type)
 
     @classmethod
-    def post(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, response_type = RESPONSE_TYPE_JSON):
-        return Requester._do_request(request_instance, 'post', url, uri, headers, data, [200, 201], exit_on_error, response_type)
+    def post(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True,
+             response_type=RESPONSE_TYPE_JSON):
+        return Requester._do_request(request_instance, 'post', url, uri, headers, data, [200, 201], exit_on_error,
+                                     response_type)
 
     @classmethod
-    def put(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, response_type = RESPONSE_TYPE_JSON):
-        return Requester._do_request(request_instance, 'put', url, uri, headers, data, [200, 201], exit_on_error, response_type)
+    def put(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True,
+            response_type=RESPONSE_TYPE_JSON):
+        return Requester._do_request(request_instance, 'put', url, uri, headers, data, [200, 201], exit_on_error,
+                                     response_type)
 
     @classmethod
-    def patch(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, response_type = RESPONSE_TYPE_JSON):
-        return Requester._do_request(request_instance, 'patch', url, uri, headers, data, [200], exit_on_error, response_type)
+    def patch(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True,
+              response_type=RESPONSE_TYPE_JSON):
+        return Requester._do_request(request_instance, 'patch', url, uri, headers, data, [200], exit_on_error,
+                                     response_type)
 
     @classmethod
-    def delete(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True, response_type = RESPONSE_TYPE_JSON):
-        return Requester._do_request(request_instance, 'delete', url, uri, headers, data, [200, 204], exit_on_error, response_type)
+    def delete(cls, uri, url=None, headers=None, data=None, request_instance=requests, exit_on_error=True,
+               response_type=RESPONSE_TYPE_JSON):
+        return Requester._do_request(request_instance, 'delete', url, uri, headers, data, [200, 204], exit_on_error,
+                                     response_type)
 
     @classmethod
     def _do_request(cls, request_instance, verb, url, uri, headers, data, expected_codes, exit_on_error, response_type):

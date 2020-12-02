@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
-import csv
 import logging
 import os
 
 import mf
 from mf.config_loaders import EndpointsLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField, MigrationFactoryDataValidator, Server, Wave, App
-from mf.utils import EnvironmentVariableFetcher, MessageBag
+from mf.utils import EnvironmentVariableFetcher, MessageBag, Utils
 
 
 class IntakeFormImporter:
@@ -49,13 +48,7 @@ class IntakeFormImporter:
 
     def read_wave_csv(self):
         if not self._csv_content:
-            with open(os.path.join(self._path_wave, mf.FILE_CSV_WAVE_TEMPLATE), newline='') as csvfile:
-                reader = csv.DictReader(csvfile)
-                for row in reader:
-                    self._csv_content.append(row)
-                logging.getLogger('root').debug("{}: CSV content\n{}".format(
-                    self.__class__.__name__, self._csv_content
-                ))
+            self._csv_content = Utils.csv_to_dicts(os.path.join(self._path_wave, mf.FILE_CSV_WAVE_TEMPLATE))
 
         return self._csv_content
 
@@ -78,6 +71,7 @@ class IntakeFormImporter:
             mf_servers.append(mf_server)
 
             existing_wave = self._migration_factory_requester.get_user_wave_by_name(server[MfField.WAVE_NAME])
+            existing_app = None
 
             if existing_wave:
                 logging.getLogger('root').info('{}: “{}” wave already exists.'.format(
