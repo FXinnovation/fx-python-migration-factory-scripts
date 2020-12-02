@@ -1,3 +1,8 @@
+## 6.1.0
+
+* feat: adds requirements.txt file for pip dependencies
+* feat: install dependencies in installation script
+
 ## 6.0.0
 
 * feat: (library) adds MessageBag to store messages to log
