@@ -37,7 +37,7 @@ class TagsImporter:
                  default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
              ),
              help='Configuration file containing the Migration Factory endpoint URLs'
-         ) 
+         )
 
         self._arguments = parser.parse_args()
 
@@ -56,6 +56,7 @@ class TagsImporter:
         return self._csv_content
 
     def _verify_mandatory_field(self):
+        print('### Verify mandatory tags… ', end=' ')
         for server in self._read_tags_csv():
             for mandatory_tag in self.MANDATORY_TAGS:
                 if  mandatory_tag not in server.keys():
@@ -64,22 +65,26 @@ class TagsImporter:
                 if not server[mandatory_tag]:
                     logging.getLogger('root').error("{}:The key “{}” must be filled".format(self.__class__.__name__, mandatory_tag))
                     sys.exit(11)
+        print('✔ Done')
 
     def _verify_duplicated_entries(self):
+        print('### Verify duplicated entries… ', end=' ')
         _servers = []
-
         for server in self._read_tags_csv():
             if server[self.TAG_NAME].strip().lower() in _servers:
                 logging.getLogger('root').error("{}: The server {} is duplicated".format(self.__class__.__name__, server[self.TAG_NAME].strip().lower()))
                 sys.exit(12)
 
             _servers.append(server[self.TAG_NAME].strip().lower())
+        print('✔ Done')
 
     def _verify_servers_exists(self):
+        print('### Verify if all servers exists in migration factory… ', end=' ')
         for server in self._read_tags_csv():
             if self._migration_factory_requester.get_user_server_by_name(server[self.TAG_NAME].strip().lower()) is None:
                 logging.getLogger('root').error("{}: The server {} does not exist in migration facotory".format(self.__class__.__name__, server[self.TAG_NAME].strip().lower()))
                 sys.exit(13)
+        print('✔ Done')
 
     def _prepare(self):
         self._verify_mandatory_field()
@@ -90,6 +95,7 @@ class TagsImporter:
         self._prepare()
 
         for server_tags in self._read_tags_csv():
+            print('### Update tags on server “{}”… '.format(server_tags[self.TAG_NAME].strip().lower()), end=' ')
             server_id = self._migration_factory_requester.get_user_server_by_name(server_tags[self.TAG_NAME].strip().lower())[MfField.SERVER_ID]
             tags = []
             for server_tag in server_tags:
@@ -98,8 +104,9 @@ class TagsImporter:
                     tag["key"] = server_tag.strip()
                     tag["value"] = server_tags[server_tag].strip()
                     tags.append(tag)
-            
-            self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(server_id), json.dumps({"tags": tags}))
+
+            self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(server_id), data=json.dumps({"tags": tags}))
+            print('✔ Done')
 
 
 if __name__ == '__main__':
