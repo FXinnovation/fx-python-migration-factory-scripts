@@ -78,9 +78,7 @@ class IntakeFormImporter:
                     self.__class__.__name__, server[MfField.APP_NAME]
                 ))
 
-                print('TEST: '+str(existing_wave[MfField.WAVE_ID]))
                 wave = Wave(existing_wave, existing_wave[MfField.WAVE_ID])
-                print('TEST: '+str(wave.get_id()))
 
                 existing_app = self._migration_factory_requester.get_user_app_by_name(server[MfField.APP_NAME])
 

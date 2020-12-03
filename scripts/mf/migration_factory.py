@@ -83,7 +83,6 @@ class MigrationFactoryData:
         return self._id
 
     def set_id(self, identifier: int):
-        print("ID : "+str(identifier))
         self._id = identifier
 
     def get(self, key: str):
