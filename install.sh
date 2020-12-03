@@ -57,11 +57,9 @@ check_arguments "$@"
 pip install -r requirements.txt
 
 cd "$DIR"
-#git reset --hard HEAD
-#git checkout master
-#git pull --rebase origin master
-git reset --hard
-git pull --prune --rebase
+git reset --hard HEAD
+git checkout master
+git pull --rebase origin master
 
 find scripts -type f -not -iname '*pyc' -exec install '{}' '/usr/local/bin/' ';'
 sudo mkdir -p "$CONFIG_DESTINATION_PATH"
