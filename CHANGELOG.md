@@ -1,3 +1,8 @@
+## 6.2.0
+
+* feat: makes mf_delete_project only need wave_name
+* feat: adds delete folder structure mf_delete_project
+
 ## 6.1.1
 
 * fix: use subnet to get VPC ID for security group
