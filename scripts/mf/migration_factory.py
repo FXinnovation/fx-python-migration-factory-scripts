@@ -428,6 +428,16 @@ class MigrationFactoryRequester:
             response_type=response_type,
         )
 
+    def get_user_apps_by_wave_name(self, wave_name: str):
+        wave_id = self.get_user_wave_by_name(wave_name)[MfField.WAVE_ID]
+
+        return self.get_user_apps_by_wave_id(wave_id)
+
+    def get_user_apps_by_wave_id(self, wave_id: str):
+        all_apps = self.get(uri=self.URI_USER_APP_LIST)
+
+        return sorted(app for app in all_apps if app[MfField.WAVE_ID] == wave_id)
+
     def get_user_app_by_name(self, app_name):
         all_apps = self.get(uri=self.URI_USER_APP_LIST)
 
@@ -472,24 +482,6 @@ class MigrationFactoryRequester:
                 _server_selected_list_id.append(server[MfField.SERVER_ID])
 
         return _server_selected_list_id
-
-    def get_user_app_ids(self, filter_wave_id=None):
-        _app_list = self.get(self.URI_USER_APP_LIST)
-
-        _app_selected_list_id = []
-
-        for app in _app_list:
-            if filter_wave_id:
-                if MfField.WAVE_ID in app and app[MfField.WAVE_ID] == filter_wave_id:
-                    _app_selected_list_id.append(app[MfField.APP_ID])
-                else:
-                    logging.getLogger('root').debug('{}: app id “{}” filtered (not in wave {})'.format(
-                        self.__class__.__name__, app[MfField.APP_ID], filter_wave_id
-                    ))
-            else:
-                _app_selected_list_id.append(app[MfField.APP_ID])
-
-        return _app_selected_list_id
 
     def _guess_url(self, uri):
         if self._has_user_uri(uri):

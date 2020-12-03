@@ -2,11 +2,14 @@
 
 import argparse
 import logging
+import os
+import pathlib
+import shutil
 
 import mf
 from mf.cloud_endure import CloudEndureRequester
 from mf.config_loaders import EndpointsLoader
-from mf.migration_factory import MigrationFactoryRequester
+from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher
 from mf.utils import Requester
 
@@ -17,14 +20,13 @@ class WaveDeleter:
     _arguments = []
     _endpoints_loader = {}
     _migration_factory_requester = None
+    _path_wave = None
 
     def __init__(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable info outputs')
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
-        parser.add_argument('--wave-id', required=True, help='ID of the wave to delete')
-        parser.add_argument('--cloudendure-project-name', required=True,
-                            help='ID of the cloud endure project to delete')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
         parser.add_argument(
             '--config-file-endpoints',
             default=EnvironmentVariableFetcher.fetch(
@@ -43,13 +45,14 @@ class WaveDeleter:
             self._endpoints_loader
         )
         self._cloud_endure_requester = CloudEndureRequester()
+        self._path_wave = os.path.join(mf.PATH_HOME, self._arguments.wave_name)
 
     def delete_mf(self):
         print('### Delete Migration Factory Project…', end=' ')
 
-        _app_ids = self._migration_factory_requester.get_user_app_ids(
-            filter_wave_id=self._arguments.wave_id
-        )
+        _app_ids = map(lambda x: x[MfField.APP_ID], self._migration_factory_requester.get_user_apps_by_wave_name(
+            wave_name=self._arguments.wave_name
+        ))
 
         logging.getLogger('root').info('{}: app id “{}” are selected for deletion)'.format(
             self.__class__.__name__, _app_ids
