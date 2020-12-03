@@ -90,7 +90,7 @@ class MigrationFactoryData:
         return self._data[key]
 
     def is_filled(self):
-        return self.get_id() != '' and self.to_dict()
+        return self.get_id() is not None and self.to_dict()
 
     def update_data(self):
         pass
