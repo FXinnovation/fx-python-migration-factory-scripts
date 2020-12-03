@@ -9,7 +9,7 @@ import requests
 
 import mf
 from mf.utils import Utils
-from mf.utils import EnvironmentVariableFetche
+from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader
 
 

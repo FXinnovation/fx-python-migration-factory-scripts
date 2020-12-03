@@ -12,7 +12,7 @@ import time
 import os
 
 import mf
-from mf.utils import EnvironmentVariableFetche
+from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader
 
 HOST = 'https://console.cloudendure.com'
@@ -313,7 +313,7 @@ def main(arguments):
     args = parser.parse_args(arguments)
 
     global LoginHOST, UserHOST
-    _endpoints_loader = EndpointsLoader(endpoint_config_file=self.args.config_file_endpoints)
+    _endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
     LoginHOST = _endpoints_loader.get_login_api_url()
     UserHOST = _endpoints_loader.get_user_api_url()
 
