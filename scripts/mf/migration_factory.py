@@ -37,6 +37,7 @@ class MfField:
     INSTANCE_TYPE = 'instanceType'
     TENANCY = 'tenancy'
     IAM_ROLE = 'iamRole'
+    TAGS = 'tags'
 
 
 class MigrationFactoryData:
@@ -52,9 +53,15 @@ class MigrationFactoryData:
         self.fill(data, identifier)
 
     def fill(self, data: dict, identifier: int = None):
-        for key in self.FIELDS:
+        for key, value_type in self.FIELDS.items():
             if key not in data.keys():
-                self._data[key] = ''
+                self._data[key] = self._get_empty_default(value_type)
+                continue
+
+            if value_type is str:
+                self._data[key] = data[key].strip()
+            if value_type is list:
+                self._data[key] = data[key].split(';')
             else:
                 self._data[key] = data[key]
 
@@ -69,22 +76,15 @@ class MigrationFactoryData:
 
         temp_data = {}
         for key in layer:
-            temp_data[key] = str(self._data[key])
+            temp_data[key] = self._data[key]
 
         return temp_data
 
     def to_post_payload(self):
-        # this is because ";" is not accepted in MF as a separator.
-        # It should definitly be handled server side and not client side, explaining why this is so ugly.
-        transformd_dict = map(lambda x: x.replace(' ', '-'), self.to_dict())
-        return json.dumps(transformd_dict)
+        return json.dumps(self.to_dict())
 
     def to_put_payload(self):
-        # this is because ";" is not accepted in MF as a separator.
-        # It should definitly be handled server side and not client side, explaining why this is so ugly.
-        transformd_dict = map(lambda x: x.replace(' ', '-'), self.to_dict(self.PUT_FIELDS))
-
-        return json.dumps(transformd_dict)
+        return json.dumps(self.to_dict(self.PUT_FIELDS))
 
     def get_id(self):
         return self._id
@@ -101,13 +101,24 @@ class MigrationFactoryData:
     def update_data(self):
         pass
 
+    @classmethod
+    def _get_empty_default(cls, value_type):
+        if value_type is str:
+            return ''
+        if value_type is list:
+            return []
+        if value_type is dict:
+            return {}
+        if value_type is int:
+            return None
+
 
 class Wave(MigrationFactoryData):
     """ Data object representing a wave in Migration Factory """
 
     FIELDS = {
-        MfField.WAVE_NAME,
-        MfField.WAVE_DESCRIPTION,
+        MfField.WAVE_NAME: str,
+        MfField.WAVE_DESCRIPTION: str,
     }
 
     _data = {}
@@ -127,10 +138,10 @@ class App(MigrationFactoryData):
     """ Data object representing a app in Migration Factory """
 
     FIELDS = {
-        MfField.WAVE_ID,
-        MfField.APP_NAME,
-        MfField.CLOUDENDURE_PROJECT_NAME,
-        MfField.AWS_ACCOUNT_ID,
+        MfField.WAVE_ID: int,
+        MfField.APP_NAME: str,
+        MfField.CLOUDENDURE_PROJECT_NAME: str,
+        MfField.AWS_ACCOUNT_ID: str,
     }
 
     _wave = None
@@ -166,35 +177,37 @@ class Server(MigrationFactoryData):
     """ Data object representing a server in Migration Factory """
 
     FIELDS = {
-        MfField.APP_ID,
-        MfField.SERVER_NAME,
-        MfField.SERVER_OS,
-        MfField.SERVER_OS_VERSION,
-        MfField.SERVER_FQDN,
-        MfField.SERVER_TIER,
-        MfField.SERVER_ENVIRONMENT,
-        MfField.SUBNET_ID,
-        MfField.SECURITY_GROUP_ID,
-        MfField.SUBNET_ID_TEST,
-        MfField.SECURITY_GROUP_ID_TEST,
-        MfField.INSTANCE_TYPE,
-        MfField.TENANCY,
-        MfField.IAM_ROLE,
-    }
+        MfField.APP_ID: int,
+        MfField.SERVER_NAME: str,
+        MfField.SERVER_OS: str,
+        MfField.SERVER_OS_VERSION: str,
+        MfField.SERVER_FQDN: str,
+        MfField.SERVER_TIER: str,
+        MfField.SERVER_ENVIRONMENT: str,
+        MfField.SUBNET_ID: list,
+        MfField.SECURITY_GROUP_ID: list,
+        MfField.SUBNET_ID_TEST: list,
+        MfField.SECURITY_GROUP_ID_TEST: list,
+        MfField.INSTANCE_TYPE: str,
+        MfField.TENANCY: str,
+        MfField.IAM_ROLE: str,
+        MfField.TAGS: dict,
+     }
 
     PUT_FIELDS = {
-        MfField.SERVER_OS,
-        MfField.SERVER_OS_VERSION,
-        MfField.SERVER_FQDN,
-        MfField.SERVER_TIER,
-        MfField.SERVER_ENVIRONMENT,
-        MfField.SUBNET_ID,
-        MfField.SECURITY_GROUP_ID,
-        MfField.SUBNET_ID_TEST,
-        MfField.SECURITY_GROUP_ID_TEST,
-        MfField.INSTANCE_TYPE,
-        MfField.TENANCY,
-        MfField.IAM_ROLE,
+        MfField.SERVER_OS: str,
+        MfField.SERVER_OS_VERSION: str,
+        MfField.SERVER_FQDN: str,
+        MfField.SERVER_TIER: str,
+        MfField.SERVER_ENVIRONMENT: str,
+        MfField.SUBNET_ID: list,
+        MfField.SECURITY_GROUP_ID: list,
+        MfField.SUBNET_ID_TEST: list,
+        MfField.SECURITY_GROUP_ID_TEST: list,
+        MfField.INSTANCE_TYPE: str,
+        MfField.TENANCY: str,
+        MfField.IAM_ROLE: str,
+        MfField.TAGS: dict,
     }
 
     _app = None
@@ -246,41 +259,44 @@ class MigrationFactoryDataValidator:
         cls._check_dict_value_consistency(apps, MfField.AWS_ACCOUNT_ID)
         cls._check_dict_value_consistency(waves, MfField.WAVE_NAME)
 
-        for server_data in servers:
+        for server in servers:
             cls._validate_with_regexp(
-                server_data.get_app().get(MfField.AWS_ACCOUNT_ID),
+                server.get_app().get(MfField.AWS_ACCOUNT_ID),
                 AWSValidator.REGEXP_ACCOUNT_ID,
                 'an account ID name'
             )
             cls._validate_with_regexp(
-                server_data.get_app().get_wave().get(MfField.WAVE_NAME),
+                server.get_app().get_wave().get(MfField.WAVE_NAME),
                 AWSValidator.REGEXP_CLOUDENDURE_PROJECT_NAME,
                 'a wave name'
             )
             cls._validate_with_regexp(
-                server_data.get_app().get(MfField.CLOUDENDURE_PROJECT_NAME),
+                server.get_app().get(MfField.CLOUDENDURE_PROJECT_NAME),
                 AWSValidator.REGEXP_CLOUDENDURE_PROJECT_NAME,
                 'a project name'
             )
             cls._validate_with_regexp(
-                server_data.get(MfField.INSTANCE_TYPE), AWSValidator.REGEXP_INSTANCE_TYPE, 'an instance type'
+                server.get(MfField.INSTANCE_TYPE), AWSValidator.REGEXP_INSTANCE_TYPE, 'an instance type'
             )
 
-            cls._validate_with_regexp(
-                server_data.get(MfField.SUBNET_ID), AWSValidator.REGEXP_SUBNET_ID, 'an AWS subnet ID'
-            )
-            cls._validate_with_regexp(
-                server_data.get(MfField.SUBNET_ID_TEST), AWSValidator.REGEXP_SUBNET_ID, 'an AWS subnet ID'
-            )
+            for subnet_id in server.get(MfField.SUBNET_ID):
+                cls._validate_with_regexp(
+                    subnet_id, AWSValidator.REGEXP_SUBNET_ID, 'an AWS subnet ID'
+                )
+            for subnet_id in server.get(MfField.SUBNET_ID_TEST):
+                cls._validate_with_regexp(
+                    subnet_id, AWSValidator.REGEXP_SUBNET_ID, 'an AWS subnet ID (for test)'
+                )
 
-            cls._validate_with_enum(server_data.get(MfField.SERVER_OS), cls.ALLOWED_SERVER_OS, 'a server OS')
-            cls._validate_with_enum(server_data.get(MfField.SERVER_TIER), cls.ALLOWED_SERVER_TIER, 'a server tier')
-            cls._validate_with_enum(server_data.get(MfField.TENANCY), cls.ALLOWED_TENANCY, 'a tenancy')
+            cls._validate_with_enum(server.get(MfField.SERVER_OS), cls.ALLOWED_SERVER_OS, 'a server OS')
+            cls._validate_with_enum(server.get(MfField.SERVER_TIER), cls.ALLOWED_SERVER_TIER, 'a server tier')
+            cls._validate_with_enum(server.get(MfField.TENANCY), cls.ALLOWED_TENANCY, 'a tenancy')
 
-            for security_group in server_data.get(MfField.SECURITY_GROUP_ID).split(';'):
+            print(server.get(MfField.SECURITY_GROUP_ID))
+            for security_group in server.get(MfField.SECURITY_GROUP_ID):
                 cls._validate_with_regexp(security_group, AWSValidator.REGEXP_SECURITY_GROUP_ID, 'a security group ID')
 
-            for security_group in server_data.get(MfField.SECURITY_GROUP_ID_TEST).split(';'):
+            for security_group in server.get(MfField.SECURITY_GROUP_ID_TEST):
                 cls._validate_with_regexp(
                     security_group, AWSValidator.REGEXP_SECURITY_GROUP_ID, 'a security group ID (for test)'
                 )

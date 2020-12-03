@@ -61,6 +61,7 @@ class IntakeFormImporter:
         print('### Validating input CSV…', end=' ')
 
         for server in self.get_csv_content():
+            server['tags'] = [{'key': 'Name', 'value': server[MfField.SERVER_NAME].strip()}]
             mf_server = Server(
                 data=server,
                 app=App(
