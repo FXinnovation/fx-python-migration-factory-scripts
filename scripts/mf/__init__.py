@@ -17,6 +17,7 @@ ENV_VAR_CLOUDENDURE_TOKEN = [
 ]
 
 FILE_CSV_WAVE_TEMPLATE = 'migration-intake-form.csv'
+FILE_CSV_TAG = 'migration-tags.csv'
 FILE_MARKER_PREPARE_DONE = '.mf_prepare_done'
 
 DIRECTORY_POST_LAUNCH = 'post-launch'
