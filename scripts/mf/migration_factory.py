@@ -74,10 +74,17 @@ class MigrationFactoryData:
         return temp_data
 
     def to_post_payload(self):
-        return json.dumps(self.to_dict())
+        # this is because ";" is not accepted in MF as a separator.
+        # It should definitly be handled server side and not client side, explaining why this is so ugly.
+        transformd_dict = map(lambda x: x.replace(' ', '-'), self.to_dict())
+        return json.dumps(transformd_dict)
 
     def to_put_payload(self):
-        return json.dumps(self.to_dict(self.PUT_FIELDS))
+        # this is because ";" is not accepted in MF as a separator.
+        # It should definitly be handled server side and not client side, explaining why this is so ugly.
+        transformd_dict = map(lambda x: x.replace(' ', '-'), self.to_dict(self.PUT_FIELDS))
+
+        return json.dumps(transformd_dict)
 
     def get_id(self):
         return self._id
