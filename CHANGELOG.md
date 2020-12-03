@@ -1,3 +1,8 @@
+## 6.3.0
+
+* refactor: remove endpoints.json and use EndpointLoader class
+* doc: remove deprecated notice on endpoints.json
+
 ## 6.2.0
 
 * feat: makes mf_delete_project only need wave_name
