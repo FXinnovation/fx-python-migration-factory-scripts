@@ -83,14 +83,14 @@ class MigrationFactoryData:
         return self._id
 
     def set_id(self, identifier: int):
+        print("ID : "+str(identifier))
         self._id = identifier
-        self.update_data()
 
     def get(self, key: str):
         return self._data[key]
 
     def is_filled(self):
-        return self.get_id() is not None and self.to_dict()
+        return self.get_id() is not None
 
     def update_data(self):
         pass

@@ -78,19 +78,38 @@ class IntakeFormImporter:
                     self.__class__.__name__, server[MfField.APP_NAME]
                 ))
 
+                print('TEST: '+str(existing_wave[MfField.WAVE_ID]))
                 wave = Wave(existing_wave, existing_wave[MfField.WAVE_ID])
+                print('TEST: '+str(wave.get_id()))
 
                 existing_app = self._migration_factory_requester.get_user_app_by_name(server[MfField.APP_NAME])
+
+                mf_server.get_app().set_wave(wave)
 
                 if existing_app:
                     logging.getLogger('root').info('{}: “{}” app already exists.'.format(
                         self.__class__.__name__, server[MfField.APP_NAME]
                     ))
                     mf_server.get_app().fill(existing_app, existing_app[MfField.APP_ID])
-                    mf_server.get_app().set_wave(wave)
 
             self._validate_app_with_existing(existing_app, mf_server.get_app())
             self._validate_wave_with_existing(existing_wave, mf_server.get_app().get_wave())
+
+            logging.getLogger('root').debug("{}: Server input:\n{}\n".format(
+                self.__class__.__name__, mf_server.to_dict()
+            ))
+
+            logging.getLogger('root').debug("{}: App input {}:\n{}\n".format(
+                self.__class__.__name__,
+                mf_server.get_app().get_id(),
+                mf_server.get_app().to_dict()
+            ))
+
+            logging.getLogger('root').debug("{}: Wave input {}:\n{}\n".format(
+                self.__class__.__name__,
+                mf_server.get_app().get_wave().get_id(),
+                mf_server.get_app().get_wave().to_dict()
+            ))
 
         self._migration_factory_data_validator.validate_servers_data(mf_servers)
 
@@ -107,20 +126,24 @@ class IntakeFormImporter:
             if mf_server.get_app().get_wave().is_filled():
                 continue
 
-            if mf_server.get(MfField.WAVE_NAME) in created_waves.keys():
+            if mf_server.get_app().get_wave().get(MfField.WAVE_NAME) in created_waves.keys():
                 mf_server.get_app().set_wave(created_waves[mf_server.get(MfField.WAVE_NAME)])
                 continue
 
             wave = Wave({
-                MfField.WAVE_NAME: mf_server.get(MfField.WAVE_NAME),
-                MfField.WAVE_DESCRIPTION: 'Wave for {}'.format(mf_server.get(MfField.WAVE_NAME))
+                MfField.WAVE_NAME: mf_server.get_app().get_wave().get(MfField.WAVE_NAME),
+                MfField.WAVE_DESCRIPTION: 'Wave for {}'.format(mf_server.get_app().get_wave().get(MfField.WAVE_NAME))
             })
 
-            print('## New wave {}…'.format(wave.get(MfField.WAVE_NAME)))
+            print('## New wave {}…'.format(mf_server.get_app().get_wave().get(MfField.WAVE_NAME)))
 
-            new_wave = self._migration_factory_requester.post(
+            self._migration_factory_requester.post(
                 uri=MigrationFactoryRequester.URI_USER_WAVE_LIST,
                 data=wave.to_post_payload()
+            )
+
+            new_wave = self._migration_factory_requester.get_user_wave_by_name(
+                mf_server.get_app().get_wave().get(MfField.WAVE_NAME)
             )
 
             wave.set_id(new_wave[MfField.WAVE_ID])
@@ -136,16 +159,17 @@ class IntakeFormImporter:
             if mf_server.get_app().is_filled():
                 continue
 
-            if mf_server.get(MfField.APP_NAME) in created_apps.keys():
+            if mf_server.get_app().get(MfField.APP_NAME) in created_apps.keys():
                 mf_server.set_app(created_apps[mf_server.get(MfField.APP_NAME)])
                 continue
 
-            print('## New app {}…'.format(mf_server.get(MfField.APP_NAME)))
+            print('## New app {}…'.format(mf_server.get_app().get(MfField.APP_NAME)))
 
             new_app = self._migration_factory_requester.post(
                 uri=MigrationFactoryRequester.URI_USER_APP_LIST,
                 data=mf_server.get_app().to_post_payload()
             )
+
             mf_server.get_app().set_id(new_app[MfField.APP_ID])
 
             created_apps[mf_server.get(MfField.APP_NAME)] = mf_server.get_app()
