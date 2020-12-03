@@ -3,15 +3,21 @@
 import argparse
 import logging
 import os
+import sys
+import json
 
 import mf
 from mf.config_loaders import DefaultsLoader, EndpointsLoader
-from mf.migration_factory import MigrationFactoryRequester
+from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher, MessageBag, Utils
 
 
 class TagsImporter:
     """Import tags to MF"""
+
+    TAG_NAME = "Name"
+
+    MANDATORY_TAGS = [TAG_NAME]
 
     _arguments = []
     _endpoints_loader = None
@@ -43,78 +49,59 @@ class TagsImporter:
 
         logging.getLogger('root').debug(self._arguments)
 
-    def read_tags_csv(self):
+    def _read_tags_csv(self):
         if not self._csv_content:
             self._csv_content = Utils.csv_to_dicts(os.path.join(self._path_wave, mf.FILE_CSV_TAG))
 
         return self._csv_content
 
+    def _verify_mandatory_field(self):
+        for server in self._read_tags_csv():
+            for mandatory_tag in self.MANDATORY_TAGS:
+                if  mandatory_tag not in server.keys():
+                    logging.getLogger('root').error("{}: The key “{}” is mandatory".format(self.__class__.__name__, mandatory_tag))
+                    sys.exit(10)
+                if not server[mandatory_tag]:
+                    logging.getLogger('root').error("{}:The key “{}” must be filled".format(self.__class__.__name__, mandatory_tag))
+                    sys.exit(11)
+
+    def _verify_duplicated_entries(self):
+        _servers = []
+
+        for server in self._read_tags_csv():
+            if server[self.TAG_NAME].strip().lower() in _servers:
+                logging.getLogger('root').error("{}: The server {} is duplicated".format(self.__class__.__name__, server[self.TAG_NAME].strip().lower()))
+                sys.exit(12)
+
+            _servers.append(server[self.TAG_NAME].strip().lower())
+
+    def _verify_servers_exists(self):
+        for server in self._read_tags_csv():
+            if self._migration_factory_requester.get_user_server_by_name(server[self.TAG_NAME].strip().lower()) is None:
+                logging.getLogger('root').error("{}: The server {} does not exist in migration facotory".format(self.__class__.__name__, server[self.TAG_NAME].strip().lower()))
+                sys.exit(13)
+
+    def _prepare(self):
+        self._verify_mandatory_field()
+        self._verify_duplicated_entries()
+        self._verify_servers_exists()
+
+    def update_servers_tags(self):
+        self._prepare()
+
+        for server_tags in self._read_tags_csv():
+            server_id = self._migration_factory_requester.get_user_server_by_name(server_tags[self.TAG_NAME].strip().lower())[MfField.SERVER_ID]
+            tags = []
+            for server_tag in server_tags:
+                if server_tags[server_tag].strip() != '':
+                    tag = {}
+                    tag["key"] = server_tag.strip()
+                    tag["value"] = server_tags[server_tag].strip()
+                    tags.append(tag)
+            
+            self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(server_id), json.dumps({"tags": tags}))
+
+
 if __name__ == '__main__':
     tags_importer = TagsImporter()
-    print(tags_importer.read_tags_csv())
-
-
-#serverendpoint = '/prod/user/servers'
-#def data_validation(data, servers):
-#    # Validate if Name column exist
-#    keys = data[0].keys()
-#    if "Name" not in keys:
-#        print ("ERROR: 'Name' column is mandatory")
-#        sys.exit(3)
-#    # check if none value exist
-#    for row in data:
-#        for key in keys:
-#            if key not in row:
-#               print("ERROR: "+ key + " tag value is missing for server " + row['Name'])
-#               sys.exit(4)
-#            if row[key] == None:
-#               print("ERROR: "+ key + " tag value is missing for server " + row['Name'])
-#               sys.exit(6)
-#            if row[key] == row[key].strip() == "":
-#               print("ERROR: "+ key + " tag for server " + row['Name'] + " is empty")
-#               sys.exit(7)
-#    # Validate duplicate server names in csv file
-#    server_list = []
-#    for row in data:
-#        if row['Name'].strip().lower() not in server_list:
-#            server_list.append(str(row['Name']).strip().lower())
-#        else:
-#            print("ERROR: Duplicated Server Name: " + row['Name'])
-#            sys.exit(2)
-#    # Check if server exist in the migration factory
-#    for server in server_list:
-#        match = False
-#        for s in servers:
-#            if (server.lower() == s['server_name'].lower()):
-#                match = True
-#        if (match == False):
-#            print("ERROR: Server " + server + " doesn't exist in the migration factory")
-#            sys.exit(1)
-#
-#
-#def uploading_data(data, token):
-#    keys = data[0].keys()
-#    auth = {"Authorization": token}
-#    servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
-#    data_validation(data, servers)
-#    for row in data:
-#        update_server_tags = {}
-#        tags = []
-#        server_id = ""
-#        for server in servers:
-#            if row['Name'].strip().lower() == server['server_name'].strip().lower():
-#                server_id = server["server_id"]
-#                for key in keys:
-#                    tag = {}
-#                    tag['key'] = key
-#                    tag['value'] = row[key].strip()
-#                    tags.append(tag)
-#        update_server_tags['tags'] = tags
-#        r = requests.put(UserHOST + serverendpoint + '/' + server_id, headers=auth, data=json.dumps(update_server_tags))
-#        if r.status_code == 200:
-#           print("Tags for server " + row['Name'] + " updated in the migration factory")
-#        else:
-#           print("ERROR: updating tags for server " + row['Name'] + " failed : " + r.text + ".......")
-#
-#    data = get_reader(args.Intakeform)
-#    r = uploading_data(data,token)
+    tags_importer.update_servers_tags()
