@@ -3,6 +3,7 @@
 * feat: makes mf_delete_project only need wave_name
 * feat: adds delete folder structure mf_delete_project
 * fix: fixes import CSV scripts (wave and app creation skipped)
+* fix: fixes import CSV scripts wrong blueprint
 
 ## 6.1.1
 
