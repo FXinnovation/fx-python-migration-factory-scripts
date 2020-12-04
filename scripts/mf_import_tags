@@ -78,18 +78,9 @@ class TagsImporter:
             _servers.append(server[self.TAG_NAME].strip().lower())
         print('✔ Done')
 
-    def _verify_servers_exists(self):
-        print('### Verify if all servers exists in migration factory… ', end=' ')
-        for server in self._read_tags_csv():
-            if self._migration_factory_requester.get_user_server_by_name(server[self.TAG_NAME].strip().lower()) is None:
-                logging.getLogger('root').error("{}: The server {} does not exist in migration facotory".format(self.__class__.__name__, server[self.TAG_NAME].strip().lower()))
-                sys.exit(13)
-        print('✔ Done')
-
     def _prepare(self):
         self._verify_mandatory_field()
         self._verify_duplicated_entries()
-        self._verify_servers_exists()
 
     def update_servers_tags(self):
         self._prepare()
