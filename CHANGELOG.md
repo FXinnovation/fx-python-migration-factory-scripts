@@ -2,7 +2,7 @@
 
 * feat: (prepare-wave) Generate CSV skeleton for tags
 * refactor: (import-tgs) Improved import tags
-* fix: Use `pip3` in install script
+* fix: Use `pip` module in install script
 * doc: Update config example files
 
 ## 6.4.0
