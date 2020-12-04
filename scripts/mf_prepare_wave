@@ -11,8 +11,7 @@ from shutil import copy2
 
 import mf
 from mf.cloud_endure import CloudEndureRequester
-from mf.config_loaders import DefaultsLoader
-from mf.config_loaders import EndpointsLoader
+from mf.config_loaders import EndpointsLoader, DefaultValues, DefaultsLoader
 from mf.migration_factory import MigrationFactoryRequester
 from mf.utils import EnvironmentVariableFetcher
 from mf.utils import Utils
@@ -88,6 +87,7 @@ class WavePreparator:
         sg_template_copy_testing_id = template_sg_creator.create_for_testing()
 
         self._prefill_csv_tempates(sg_template_copy_id, sg_template_copy_testing_id)
+        self._generate_and_prefill_csv_tags()
         self._add_marker()
 
     def _check_marker(self):
@@ -158,6 +158,31 @@ class WavePreparator:
             logging.getLogger('root').info('{}: “{}” file updated'.format(
                 self.__class__.__name__, os.path.join(self._path_wave, mf.FILE_CSV_WAVE_TEMPLATE)
             ))
+        print('✔ Done')
+
+    def _generate_and_prefill_csv_tags(self):
+        print('### Generate .csv tags…', end=' ')
+
+        default_tags = DefaultValues(self._defaults.get('tags', {}))
+
+        if not default_tags:
+            logging.getLogger('root').info('{}: no default tags, skipping.'.format(
+                self.__class__.__name__, os.path.join(self._path_wave, mf.FILE_CSV_WAVE_TEMPLATE)
+            ))
+            return
+
+        default_values = []
+        for default_tag in default_tags:
+            default_values.append(default_tags.get(default_tag.strip(), 'SET_' + default_tag.strip().upper()))
+
+        with open(os.path.join(self._path_wave, mf.FILE_CSV_TAG), 'a') as file_object:
+            file_object.write(','.join(default_tags.keys()) + '\n')
+            file_object.write(','.join(default_values))
+
+        logging.getLogger('root').info('{}: “{}” file updated'.format(
+                self.__class__.__name__, os.path.join(self._path_wave, mf.FILE_CSV_TAG)
+            ))
+
         print('✔ Done')
 
     def _create_migration_factory_project(self):
