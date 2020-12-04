@@ -1,3 +1,7 @@
+## 6.4.0
+
+* feat: Add uninstall script for cloudamize
+
 ## 6.3.0
 
 * refactor: remove endpoints.json and use EndpointLoader class
