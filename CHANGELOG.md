@@ -1,3 +1,7 @@
+## 6.1.1
+
+* fix: use subnet to get VPC ID for security group
+
 ## 6.1.0
 
 * feat: adds requirements.txt file for pip dependencies
