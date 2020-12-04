@@ -34,3 +34,7 @@ environment:
 #  tenancy: Shared
   # Server type: windows or linux
 #  server_os: windows
+  # Tags: Default tags to be add to migration-tags.csv
+#  tags:
+#    Name:
+#    Criticity: critical  
