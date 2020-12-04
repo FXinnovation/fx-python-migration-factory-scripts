@@ -45,13 +45,13 @@ class TemplateSecurityGroupCreator:
         self._arguments = parser.parse_args()
 
         mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
-        _defaults_loader = DefaultsLoader()
-        _defaults_loader.load(
+        self._defaults_loader = DefaultsLoader()
+        self._defaults_loader.load(
             default_config_file=self._arguments.config_file_defaults,
             environment=self._arguments.environment
         )
 
-        environment_arg.choices = defaults_loader.get_available_environments()
+        environment_arg.choices = self._defaults_loader.get_available_environments()
 
         self._arguments = parser.parse_args()
 
@@ -81,12 +81,12 @@ class TemplateSecurityGroupCreator:
                 return None
 
         template_security_group = self._aws_service_accessor.get_ec2().describe_security_groups(GroupIds=[
-            self._defaults_loader.get['template_security_group_id']
+            self._defaults_loader.get()['template_security_group_id']
         ])['SecurityGroups'][0]
 
         vpc_id = self._aws_service_accessor.get_ec2().describe_subnets(SubnetIds=[
-             self._defaults_loader.get['test_subnet_id'] if for_testing else self._defaults_loader.get['target_subnet_id']
-        ])['VpcId']
+             self._defaults_loader.get()['test_subnet_id'] if for_testing else self._defaults_loader.get()['target_subnet_id']
+        ])['Subnets'][0]['VpcId']
 
         print('### Create template Security Group copy' + (' (testing)' if for_testing else '') + '…', end=' ')
 
