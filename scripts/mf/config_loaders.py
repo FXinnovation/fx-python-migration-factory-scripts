@@ -86,6 +86,10 @@ class DefaultsLoader:
     def get_available_environments(self):
         return self._available_environments
 
+    def key_exists_and_not_empty(self, key: str):
+        return key in self._defaults.keys() and \
+               self._defaults[key] is not ''
+
 
 class EndpointsLoader:
     """ Loads endpoints configuration """
