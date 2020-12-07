@@ -86,8 +86,8 @@ class TagsImporter:
         self._prepare()
 
         for server_tags in self._read_tags_csv():
-            print('### Update tags on server “{}”… '.format(server_tags[self.TAG_NAME].strip().lower()), end=' ')
-            server_id = self._migration_factory_requester.get_user_server_by_name(server_tags[self.TAG_NAME].strip().lower())[MfField.SERVER_ID]
+            print('### Update tags on server “{}”… '.format(server_tags[self.TAG_NAME].strip()), end=' ')
+            server_id = self._migration_factory_requester.get_user_server_by_name(server_tags[self.TAG_NAME].strip())[MfField.SERVER_ID]
             tags = []
             for server_tag in server_tags:
                 if server_tags[server_tag].strip() != '':
