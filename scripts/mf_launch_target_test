@@ -8,6 +8,7 @@ import sys
 import requests
 
 import mf
+from mf import ENV_VAR_MIGRATION_FACTORY_USERNAME, ENV_VAR_MIGRATION_FACTORY_PASSWORD, ENV_VAR_CLOUDENDURE_TOKEN
 from mf.utils import Utils
 from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader
@@ -45,9 +46,9 @@ class LaunchTargetInstances:
 
         mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
 
-        self._mf_login_username = EnvironmentVariableFetcher.fetch(self, mf_library.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
-        self._mf_login_password = EnvironmentVariableFetcher.fetch(self, mf_library.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
-        self._ce_user_api_token = EnvironmentVariableFetcher.fetch(self, mf_library.ENV_VAR_CLOUDENDURE_API_TOKEN, env_var_description='CE API token', sensitive=True)
+        self._mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
+        self._mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
+        self._ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
 
         self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
 
@@ -109,6 +110,7 @@ class LaunchTargetInstances:
                 )
 
             logging.info(r.text)
+            print(r.text)
 
             return
 
