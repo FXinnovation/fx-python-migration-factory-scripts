@@ -1,3 +1,15 @@
+## 6.5.3
+
+* fix: makes sure CSV reader util can read multi line CSV
+* fix: disable cache for GET requests immediatly after POSTS/PUTs
+* fix: makes sure wave in MF is deleted properly
+* fix: makes sure project in CloudEndure is deleted properly
+* fix: makes sure project structure is deleted
+* fix: do not throw error if wave-name does not exists for import CSV
+* fix: fixes import CSV created_waves dict population
+* fix: fixes import CSV created_apps dict population
+* refactor: splits MF deletes in 3 steps for easier debugging
+
 ## 6.5.2
 
 * fix: (library) Missing EOL separator for CSV import
