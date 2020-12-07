@@ -158,7 +158,7 @@ class IntakeFormImporter:
             )
 
             wave.set_id(new_wave[MfField.WAVE_ID])
-            created_waves[mf_server.get(MfField.WAVE_NAME)] = wave
+            created_waves[mf_server.get_app().get_wave().get(MfField.WAVE_NAME)] = wave
 
             mf_server.get_app().set_wave(wave)
 

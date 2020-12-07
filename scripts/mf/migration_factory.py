@@ -292,7 +292,6 @@ class MigrationFactoryDataValidator:
             cls._validate_with_enum(server.get(MfField.SERVER_TIER), cls.ALLOWED_SERVER_TIER, 'a server tier')
             cls._validate_with_enum(server.get(MfField.TENANCY), cls.ALLOWED_TENANCY, 'a tenancy')
 
-            print(server.get(MfField.SECURITY_GROUP_ID))
             for security_group in server.get(MfField.SECURITY_GROUP_ID):
                 cls._validate_with_regexp(security_group, AWSValidator.REGEXP_SECURITY_GROUP_ID, 'a security group ID')
 
