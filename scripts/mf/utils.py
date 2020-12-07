@@ -135,12 +135,13 @@ class Requester:
             cls.__class__.__name__, verb.upper(), url, uri, str(response.status_code)
         ))
         logging.getLogger('root').debug(
-            "{}: {} “{}” “{}” (code: “{}”). Sent data:\n{}\nSent headers:\n{}\nResponse:\n{}\n".format(
+            "{}: {} “{}” “{}” (code: “{}”). Cached: {}\nSent data:\n{}\nSent headers:\n{}\nResponse:\n{}\n".format(
                 cls.__class__.__name__,
                 verb.upper(),
                 url,
                 uri,
                 str(response.status_code),
+                str(response.from_cache),
                 str(data),
                 str(headers),
                 str(response.content)
