@@ -1,3 +1,9 @@
+## 6.5.2
+
+* fix: (library) Missing EOL separator for CSV import
+* fix: (install-windows) Wrong list in powershell script
+
+
 ## 6.5.1
 
 * fix: (import-tags) Wrong lower method usage when searching `server_id`
