@@ -361,7 +361,6 @@ class MigrationFactoryAuthenticator:
             ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Migration Factory password', sensitive=True
         )
         self._login_api_url = login_api_url
-        requests_cache.install_cache('migration_factory', backend='memory', expire_after=30)
 
     def login(self):
         self._authorization_token = Requester.post(
@@ -403,6 +402,11 @@ class MigrationFactoryRequester:
     def __init__(self, endpoints_loader):
         self._migration_factory_authenticator = MigrationFactoryAuthenticator(endpoints_loader.get_login_api_url())
         self._endpoints_loader = endpoints_loader
+        requests_cache.install_cache('migration_factory', backend='memory', expire_after=30)
+
+    @classmethod
+    def clear_cache(cls):
+        requests_cache.clear()
 
     def get(self, uri, url=None, headers=None, response_type=Requester.RESPONSE_TYPE_JSON):
         if url is None:
@@ -419,6 +423,8 @@ class MigrationFactoryRequester:
         if url is None:
             url = self._guess_url(uri)
 
+        self.clear_cache()
+
         return Requester.put(
             uri=uri,
             url=url,
@@ -431,6 +437,8 @@ class MigrationFactoryRequester:
         if url is None:
             url = self._guess_url(uri)
 
+        self.clear_cache()
+
         return Requester.post(
             uri=uri,
             url=url,
@@ -442,6 +450,8 @@ class MigrationFactoryRequester:
     def delete(self, uri, url=None, headers=None, response_type=Requester.RESPONSE_TYPE_JSON):
         if url is None:
             url = self._guess_url(uri)
+
+        self.clear_cache()
 
         return Requester.delete(
             uri=uri,
