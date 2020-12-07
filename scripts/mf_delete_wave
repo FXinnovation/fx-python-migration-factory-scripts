@@ -81,8 +81,10 @@ class WaveDeleter:
                 response_type=Requester.RESPONSE_TYPE_RAW,
             )
 
+        _wave = self._migration_factory_requester.get_user_wave_by_name(self._arguments.wave_name)
+
         self._migration_factory_requester.delete(
-            uri=MigrationFactoryRequester.URI_USER_WAVE.format(self._arguments.wave_id),
+            uri=MigrationFactoryRequester.URI_USER_WAVE.format(_wave[MfField.WAVE_ID]),
             response_type=Requester.RESPONSE_TYPE_RAW,
         )
 
