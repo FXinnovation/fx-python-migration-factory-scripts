@@ -93,8 +93,13 @@ class WaveDeleter:
     def delete_ce_project(self):
         print('### Delete CloudEndure Project…', end=' ')
 
+        _apps = self._migration_factory_requester.get_user_apps_by_wave_name(
+            wave_name=self._arguments.wave_name
+        )
+
         _cloud_endure_project = self._cloud_endure_requester.get_project_by_name(
-            self._arguments.cloudendure_project_name)
+            _apps[0][MfField.CLOUDENDURE_PROJECT_NAME]
+        )
 
         if not _cloud_endure_project:
             print('✔ Already deleted')
