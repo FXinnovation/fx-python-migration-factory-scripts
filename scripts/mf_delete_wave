@@ -48,45 +48,11 @@ class WaveDeleter:
         self._path_wave = os.path.join(mf.PATH_HOME, self._arguments.wave_name)
 
     def delete_mf(self):
-        print('### Delete Migration Factory Project…', end=' ')
+        print('### Delete Migration Factory Project…')
 
-        _app_ids = map(lambda x: x[MfField.APP_ID], self._migration_factory_requester.get_user_apps_by_wave_name(
-            wave_name=self._arguments.wave_name
-        ))
-
-        logging.getLogger('root').info('{}: app id “{}” are selected for deletion)'.format(
-            self.__class__.__name__, _app_ids
-        ))
-
-        _server_ids = []
-
-        for app_id in _app_ids:
-            _server_ids += self._migration_factory_requester.get_user_server_ids(
-                filter_app_id=app_id
-            )
-
-        logging.getLogger('root').info('{}: server id “{}” are selected for deletion)'.format(
-            self.__class__.__name__, _server_ids
-        ))
-
-        for server_id in _server_ids:
-            self._migration_factory_requester.delete(
-                uri=MigrationFactoryRequester.URI_USER_SERVER.format(server_id),
-                response_type=Requester.RESPONSE_TYPE_RAW,
-            )
-
-        for app_id in _app_ids:
-            self._migration_factory_requester.delete(
-                uri=MigrationFactoryRequester.URI_USER_APP.format(app_id),
-                response_type=Requester.RESPONSE_TYPE_RAW,
-            )
-
-        _wave = self._migration_factory_requester.get_user_wave_by_name(self._arguments.wave_name)
-
-        self._migration_factory_requester.delete(
-            uri=MigrationFactoryRequester.URI_USER_WAVE.format(_wave[MfField.WAVE_ID]),
-            response_type=Requester.RESPONSE_TYPE_RAW,
-        )
+        self._delete_servers()
+        self._delete_apps()
+        self._delete_wave()
 
         print('✔ Done')
 
@@ -97,15 +63,19 @@ class WaveDeleter:
             wave_name=self._arguments.wave_name
         )
 
+        if _apps is None:
+            print('✔ Already Done (or MF app deleted).')
+            return
+
         _cloud_endure_project = self._cloud_endure_requester.get_project_by_name(
             _apps[0][MfField.CLOUDENDURE_PROJECT_NAME]
         )
 
-        if not _cloud_endure_project:
-            print('✔ Already deleted')
+        if _cloud_endure_project is None:
+            print('✔ Already Done')
             return
 
-        self._cloud_endure_requester.delete(CloudEndureRequester.URI_PROJECT.format(_cloud_endure_project["id"]))
+        self._cloud_endure_requester.delete(CloudEndureRequester.URI_PROJECT.format(_cloud_endure_project['id']))
 
         print('✔ Done')
 
@@ -120,9 +90,86 @@ class WaveDeleter:
 
         print('✔ Done')
 
+    def _delete_apps(self):
+        print('# Delete Apps…', end=' ')
+
+        _apps = self._migration_factory_requester.get_user_apps_by_wave_name(
+            wave_name=self._arguments.wave_name
+        )
+
+        if _apps is None:
+            print('✔ Already Done')
+            return
+
+        _app_ids = map(lambda x: x[MfField.APP_ID], _apps)
+
+        logging.getLogger('root').info("\n{}: app id “{}” are selected for deletion)".format(
+            self.__class__.__name__, _app_ids
+        ))
+
+        for app_id in _app_ids:
+            self._migration_factory_requester.delete(
+                uri=MigrationFactoryRequester.URI_USER_APP.format(app_id),
+                response_type=Requester.RESPONSE_TYPE_RAW,
+            )
+
+        print('✔ Done')
+
+    def _delete_servers(self):
+        print('# Delete Servers…', end=' ')
+
+        _server_ids = []
+
+        _apps = self._migration_factory_requester.get_user_apps_by_wave_name(
+            wave_name=self._arguments.wave_name
+        )
+
+        if _apps is None:
+            print('✔ Already Done')
+            return
+
+        _app_ids = map(lambda x: x[MfField.APP_ID], _apps)
+
+        for app_id in _app_ids:
+            _server_ids += self._migration_factory_requester.get_user_server_ids(
+                filter_app_id=app_id
+            )
+
+        if len(_server_ids) == 0:
+            print('✔ Already Done')
+            return
+
+        logging.getLogger('root').info('{}: server id “{}” are selected for deletion)'.format(
+            self.__class__.__name__, _server_ids
+        ))
+
+        for server_id in _server_ids:
+            self._migration_factory_requester.delete(
+                uri=MigrationFactoryRequester.URI_USER_SERVER.format(server_id),
+                response_type=Requester.RESPONSE_TYPE_RAW,
+            )
+
+        print('✔ Done')
+
+    def _delete_wave(self):
+        print('# Delete Wave…', end=' ')
+
+        _wave = self._migration_factory_requester.get_user_wave_by_name(self._arguments.wave_name)
+
+        if _wave is None:
+            print('✔ Already Done')
+            return
+
+        self._migration_factory_requester.delete(
+            uri=MigrationFactoryRequester.URI_USER_WAVE.format(_wave[MfField.WAVE_ID]),
+            response_type=Requester.RESPONSE_TYPE_RAW,
+        )
+
+        print('✔ Done')
+
 
 if __name__ == '__main__':
     wave_deletion = WaveDeleter()
-    wave_deletion.delete_mf()
     wave_deletion.delete_ce_project()
+    wave_deletion.delete_mf()
     wave_deletion.delete_folder_structure()

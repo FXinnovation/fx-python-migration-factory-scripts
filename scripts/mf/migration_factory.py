@@ -461,9 +461,11 @@ class MigrationFactoryRequester:
         )
 
     def get_user_apps_by_wave_name(self, wave_name: str):
-        wave_id = self.get_user_wave_by_name(wave_name)[MfField.WAVE_ID]
+        wave = self.get_user_wave_by_name(wave_name)
+        if wave is None:
+            return None
 
-        return self.get_user_apps_by_wave_id(wave_id)
+        return self.get_user_apps_by_wave_id(wave[MfField.WAVE_ID])
 
     def get_user_apps_by_wave_id(self, wave_id: str):
         all_apps = self.get(uri=self.URI_USER_APP_LIST)
