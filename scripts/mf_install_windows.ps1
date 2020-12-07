@@ -10,7 +10,7 @@ Param($key, $account, $Username, $Password)
 
 $ScriptPath = "c:\Scripts\"
 if ($account -ne "") {
-  foreach ($machine in $account) {
+  foreach ($machine in $account -split (',')) {
   if ($Username -ne "") {
     $s = New-PSSession -ComputerName $machine -Credential (New-Object System.Management.Automation.PSCredential($Username, (ConvertTo-SecureString $Password -AsPlainText -Force))) -Authentication Negotiate
   }
