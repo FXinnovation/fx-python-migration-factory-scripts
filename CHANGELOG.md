@@ -2,7 +2,7 @@
 
 * fix: (library) Missing EOL separator for CSV import
 * fix: (install-windows) Wrong list in powershell script
-
+* fix: wrong constant call + add more verbose output
 
 ## 6.5.1
 
