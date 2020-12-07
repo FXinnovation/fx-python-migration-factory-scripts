@@ -1,3 +1,7 @@
+## 6.5.1
+
+* fix: (import-tags) Wrong lower method usage when searching `server_id`
+
 ## 6.5.0
 
 * feat: (prepare-wave) Generate CSV skeleton for tags
