@@ -183,7 +183,7 @@ class IntakeFormImporter:
 
             mf_server.get_app().set_id(new_app[MfField.APP_ID])
 
-            created_apps[mf_server.get(MfField.APP_NAME)] = mf_server.get_app()
+            created_apps[mf_server.get_app().get(MfField.APP_NAME)] = mf_server.get_app()
 
         print('✔ Done')
 

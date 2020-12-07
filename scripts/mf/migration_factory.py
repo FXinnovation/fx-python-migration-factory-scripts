@@ -469,7 +469,12 @@ class MigrationFactoryRequester:
     def get_user_apps_by_wave_id(self, wave_id: str):
         all_apps = self.get(uri=self.URI_USER_APP_LIST)
 
-        return sorted(app for app in all_apps if app[MfField.WAVE_ID] == wave_id)
+        apps = []
+        for app in all_apps:
+            if app[MfField.WAVE_ID] == wave_id:
+                apps.append(app)
+
+        return apps
 
     def get_user_app_by_name(self, app_name):
         all_apps = self.get(uri=self.URI_USER_APP_LIST)
