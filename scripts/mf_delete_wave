@@ -54,7 +54,7 @@ class WaveDeleter:
         self._delete_apps()
         self._delete_wave()
 
-        print('✔ Done')
+        print('### ✔ Done')
 
     def delete_ce_project(self):
         print('### Delete CloudEndure Project…', end=' ')
@@ -64,7 +64,7 @@ class WaveDeleter:
         )
 
         if _apps is None:
-            print('✔ Already Done (or MF app deleted).')
+            print('✔ MF app already deleted')
             return
 
         _cloud_endure_project = self._cloud_endure_requester.get_project_by_name(
@@ -82,7 +82,7 @@ class WaveDeleter:
     def delete_folder_structure(self):
         print('### Delete Folder Structure…', end=' ')
 
-        if not pathlib.Path(os.path.join(self._path_wave, mf.DIRECTORY_POST_LAUNCH).exists()):
+        if not pathlib.Path(os.path.join(self._path_wave, mf.DIRECTORY_POST_LAUNCH)).exists():
             print('✔ Already Done')
             return
 
