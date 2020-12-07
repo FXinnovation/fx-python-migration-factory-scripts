@@ -59,7 +59,7 @@ class Utils:
     @classmethod
     def csv_to_dicts(cls, csv_path: str):
         content = []
-        with open(csv_path, newline='') as csv_content:
+        with open(csv_path, newline='\n') as csv_content:
             reader = csv.DictReader(csv_content)
             for row in reader:
                 content.append(row)
