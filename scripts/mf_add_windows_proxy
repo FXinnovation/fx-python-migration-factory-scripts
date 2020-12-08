@@ -12,6 +12,7 @@ import mf
 from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader
 
+
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
 
@@ -95,7 +96,19 @@ def main(arguments):
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    token = Factorylogin(input("Factory Username: ") , getpass.getpass('Factory Password: '), LoginHOST)
+    token = Factorylogin(
+        EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME,
+            env_var_description='Factory username',
+            sensitive=False
+        ),
+        EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD,
+            env_var_description='Factory password',
+            sensitive=True
+        ),
+        LoginHOST
+    )
 
     print("****************************")
     print("*Getting Server List*")

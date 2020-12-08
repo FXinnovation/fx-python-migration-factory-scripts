@@ -80,7 +80,13 @@ def main(arguments):
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--Waveid', required=True)
-    parser.add_argument('--WindowsUser', default = os.environ.get('MF_WINDOWS_USERNAME', ''), help= "This can also be set in environment variable MF_ENDPOINT_CONFIG_FILE")
+    parser.add_argument('--WindowsUser', default =
+        EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_WINDOWS_USERNAME,
+            default='')
+        ),
+        help= "The windows username"
+    )
     parser.add_argument(
            '--config-file-endpoints',
            default=EnvironmentVariableFetcher.fetch(
@@ -114,17 +120,10 @@ def main(arguments):
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
+    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
+    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
 
-    if 'MF_USERNAME' not in os.environ:
-        username = input('Factory Username: ')
-    else:
-        username = os.getenv('MF_USERNAME')
-    if 'MF_PASSWORD' not in os.environ:
-        password = getpass.getpass('Factory Password: ')
-    else:
-        password = os.getenv('MF_PASSWORD')
-
-    token = Factorylogin(username, password, LoginHOST)
+    token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
     print("****************************")
     print("*Getting Server List*")
@@ -132,10 +131,7 @@ def main(arguments):
     Servers = ServerList(args.Waveid, token, UserHOST)
     print("")
     if Domain_User != "":
-      if 'MF_WINDOWS_PASSWORD' not in os.environ:
-            Domain_Password = getpass.getpass("Windows User Password: ")
-      else:
-            Domain_Password = os.getenv('MF_WINDOWS_PASSWORD')
+        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Windows password', sensitive=True)
     if choice == '1':
         print("")
         print("************************************")

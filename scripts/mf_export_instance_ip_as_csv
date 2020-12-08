@@ -250,27 +250,18 @@ def main(arguments):
     print("******************************")
     print("* Login to Migration factory *")
     print("******************************")
-    if 'MF_USERNAME' not in os.environ:
-        username = input('Factory Username: ')
-    else:
-        username = os.getenv('MF_USERNAME')
-    if 'MF_PASSWORD' not in os.environ:
-        password = getpass.getpass('Factory Password: ')
-    else:
-        password = os.getenv('MF_PASSWORD')
+    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
+    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
 
-    token = Factorylogin(username, password, LoginHOST)
+    token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST
 
     print("")
     print("************************")
     print("* Login to CloudEndure *")
     print("************************")
-    if 'MF_CE_API_TOKEN' not in os.environ:
-        ce_api_token = input('CE API Token: ')
-    else:
-        ce_api_token = os.getenv('MF_CE_API_TOKEN')
+    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
 
-    r = CElogin(ce_api_token, endpoint)
+    r = CElogin(_ce_user_api_token, endpoint)
     if r is not None and "ERROR" in r:
         print(r)
     project_id = GetCEProject(args.CloudEndureProjectName, session, headers, endpoint, HOST)
@@ -296,16 +287,11 @@ def main(arguments):
     print("*****************************")
     print("* Get target Instance  IPs *")
     print("*****************************")
-    if 'MF_AWS_ACCESS_KEY_ID' not in os.environ:
-        aws_access_key_id = input("AWS Access key id: ")
-    else:
-        aws_access_key_id = os.getenv('MF_AWS_ACCESS_KEY_ID')
-    if 'MF_AWS_SECRET_ACCESS_KEY' not in os.environ:
-        aws_secret_acess_key = getpass.getpass('Secret access key: ')
-    else:
-        aws_secret_acess_key = os.getenv('MF_AWS_SECRET_ACCESS_KEY')
+    _aws_access_key = EnvironmentVariableFetcher.fetch(ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID', sensitive=False)
+    _aws_secret_access_key = EnvironmentVariableFetcher.fetch(ENV_VAR_AWS_SECRET_KEY_NAMES, 'AWS Access Secret Key', sensitive=True)
 
-    get_instance_ips(InstanceList, serverlist, token, aws_access_key_id, aws_secret_acess_key, region_id, args.Waveid, args.CloudEndureProjectName)
+
+    get_instance_ips(InstanceList, serverlist, token, _aws_access_key, _aws_secret_access_key, region_id, args.Waveid, args.CloudEndureProjectName)
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

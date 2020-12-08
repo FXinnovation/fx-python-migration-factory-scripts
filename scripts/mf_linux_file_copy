@@ -157,16 +157,10 @@ def main(arguments):
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    if 'MF_USERNAME' not in os.environ:
-        username = input('Factory Username: ')
-    else:
-        username = os.getenv('MF_USERNAME')
-    if 'MF_PASSWORD' not in os.environ:
-        password = getpass.getpass('Factory Password: ')
-    else:
-        password = os.getenv('MF_PASSWORD')
+    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
+    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
 
-    token = Factorylogin(username, password, LoginHOST)
+    token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
     print("****************************")
     print("*Getting Server List*")

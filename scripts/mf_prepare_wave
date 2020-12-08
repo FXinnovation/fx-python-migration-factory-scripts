@@ -271,7 +271,7 @@ class WavePreparator:
 
         if 'replicationConfiguration' not in project.keys():
             region_id = self._cloud_endure_requester.get_aws_region_id(
-                cloud_credentials_id, EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_REGION_NAMES)
+                cloud_credentials_id, EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_AWS_REGION_NAMES, env_var_description='AWS target region')
             )
 
             project_replication_config = {
