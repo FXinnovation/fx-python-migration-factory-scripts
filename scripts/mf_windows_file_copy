@@ -81,7 +81,7 @@ def main(arguments):
     parser.add_argument('--WindowsUser', default =
         EnvironmentVariableFetcher.fetch(
             env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_WINDOWS_USERNAME,
-            default='')
+            default=''
         ),
         help= "The windows username"
     )

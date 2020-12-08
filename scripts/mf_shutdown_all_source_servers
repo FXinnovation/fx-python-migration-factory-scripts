@@ -57,7 +57,7 @@ def ServerList(waveid, token, UserHOST, serverendpoint, appendpoint):
                 if 'server_os' in server:
                     if 'server_fqdn' in server:
                         if server['server_os'].lower() == "windows":
-                            winServerlist.append(server['server_name'])
+                            winServerlist.append(server['server_fqdn'])
                         elif server['server_os'].lower() == 'linux':
                             linuxServerlist.append(server['server_fqdn'])
                     else:
@@ -131,7 +131,7 @@ def main(arguments):
     parser.add_argument('--WindowsUser', default =
         EnvironmentVariableFetcher.fetch(
             env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_WINDOWS_USERNAME,
-            default='')
+            default=''
         ),
         help= "The windows username"
     )

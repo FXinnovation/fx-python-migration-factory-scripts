@@ -329,7 +329,7 @@ def main(arguments):
     print("************************")
     print("* Login to CloudEndure *")
     print("************************")
-    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
+    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
 
     r = CElogin(_ce_user_api_token, endpoint)
     if r is not None and "ERROR" in r:
@@ -356,8 +356,8 @@ def main(arguments):
     print("*****************************")
     print("** Verify instance  status **")
     print("*****************************")
-    _aws_access_key = EnvironmentVariableFetcher.fetch(ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID', sensitive=False)
-    _aws_secret_access_key = EnvironmentVariableFetcher.fetch(ENV_VAR_AWS_SECRET_KEY_NAMES, 'AWS Access Secret Key', sensitive=True)
+    _aws_access_key = EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID', sensitive=False)
+    _aws_secret_access_key = EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_SECRET_KEY_NAMES, 'AWS Access Secret Key', sensitive=True)
 
     verify_instance_status(InstanceList, serverlist, token, _aws_access_key, _aws_secret_access_key, region_id)
 

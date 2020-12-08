@@ -160,7 +160,7 @@ def main(arguments):
     _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
     _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
 
-    token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST
+    token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
     print("****************************")
     print("*** Getting Server List ****")
@@ -182,7 +182,7 @@ def main(arguments):
         if has_key.lower() in 'y':
             pass_key = getpass.getpass('Private Key: ')
         else:
-            pass_key_first = getpass.getpass('Linux Password: '
+            pass_key_first = getpass.getpass('Linux Password: ')
             pass_key_second = getpass.getpass('Re-enter Password: ')
             while(pass_key_first != pass_key_second):
                 print("Password mismatch, please try again!")

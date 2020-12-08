@@ -214,7 +214,7 @@ def main(arguments):
     parser.add_argument('--WindowsUser', default =
         EnvironmentVariableFetcher.fetch(
             env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_WINDOWS_USERNAME,
-            default='')
+            default=''
         ),
         help= "The windows username"
     )
@@ -247,7 +247,7 @@ def main(arguments):
     print("************************")
     print("* Login to CloudEndure *")
     print("************************")
-    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
+    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
 
     r = CElogin(_ce_user_api_token, endpoint)
 

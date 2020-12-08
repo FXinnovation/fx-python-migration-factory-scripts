@@ -260,13 +260,12 @@ def main(arguments):
     _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
     _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
 
-    token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST
+    token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
-    print("")
     print("************************")
     print("* Login to CloudEndure *")
     print("************************")
-    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
+    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
 
     r = CElogin(_ce_user_api_token, endpoint)
     if r is not None and "ERROR" in r:
