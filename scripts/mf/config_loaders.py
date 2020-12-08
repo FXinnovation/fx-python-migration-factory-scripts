@@ -11,6 +11,7 @@ from .utils import Utils
 
 DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE = os.path.join(PATH_CONFIG, 'endpoints.yml')
 DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE = os.path.join(PATH_CONFIG, 'defaults.yml')
+DEFAULT_ENV_VAR_CONFIG_FILE = os.path.join(PATH_CONFIG, 'config.yml')
 
 
 class DefaultValues(MutableMapping):
@@ -49,6 +50,30 @@ class DefaultValues(MutableMapping):
             return default
 
         return self._store[key]
+
+
+class ConfigLoader:
+    """ Load general configuration file """
+
+    NOTIFICATION_SECTION = 'notifications'
+
+    _config = None
+
+    def load(self, config_file: str = DEFAULT_ENV_VAR_CONFIG_FILE):
+        with open(config_file, 'r') as stream:
+            try:
+                self._config = yaml.safe_load(stream)
+            except yaml.YAMLError as exception:
+                logging.getLogger('root').error(exception)
+
+    def get_config(self):
+        return self._config
+
+    def get_notifications_config(self):
+        if self.NOTIFICATION_SECTION not in self._config:
+            return {}
+
+        return self._config[self.NOTIFICATION_SECTION]
 
 
 class DefaultsLoader:

@@ -1,4 +1,4 @@
-notification:
+notifications:
   # Available events: AgentInstalled, PostLaunchScriptsUpdated, ReplicationDone, TestTargetsReady, CutoverTargetsReady
 
   # Enables notifications without the need to pass an explicit argument to all commands
