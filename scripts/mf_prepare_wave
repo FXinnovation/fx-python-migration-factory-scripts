@@ -246,10 +246,10 @@ class WavePreparator:
         print('## Setup Cloud Credentials…', end=' ')
         if not project['cloudCredentialsIDs']:
             credentials_data = {
-                'publicKey': EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_ACCESS_KEY_NAMES),
+                'publicKey': EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID', sensitive=False),
                 'privateKey': base64.b64encode(
                     EnvironmentVariableFetcher.fetch(
-                        mf.ENV_VAR_AWS_SECRET_KEY_NAMES, sensitive=True
+                        mf.ENV_VAR_AWS_SECRET_KEY_NAMES, 'AWS Access Secret Key', sensitive=True
                     ).encode('utf-8')).decode('utf-8'),
                 'cloudId': self._cloud_endure_requester.get_aws_cloud_id()
             }
