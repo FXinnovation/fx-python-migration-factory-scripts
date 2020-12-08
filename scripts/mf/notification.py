@@ -66,18 +66,18 @@ class Notifier:
     CUTOVER_TARGETS_READY = 'CutoverTargetsReady'
 
     AGENT_INSTALLED_MESSAGE = 'The CloudEndure agents are now installed for the {} project.'
-    POST_LAUNCH_SCRIPTS_UPDATED = 'The post launch scripts has been copied on the servers of the {} project.'
-    REPLICATION_DONE = 'The initial replication for all the servers in the {} project is done.'
-    TEST_TARGETS_READY = 'Test targets of the {} project are up and running.'
-    CUTOVER_TARGETS_READY = 'Cutover targets of the {} project are up and running.'
+    POST_LAUNCH_SCRIPTS_UPDATED_MESSAGE = 'The post launch scripts has been copied on the servers of the {} project.'
+    REPLICATION_DONE_MESSAGE = 'The initial replication for all the servers in the {} project is done.'
+    TEST_TARGETS_READY_MESSAGE = 'Test targets of the {} project are up and running.'
+    CUTOVER_TARGETS_READY_MESSAGE = 'Cutover targets of the {} project are up and running.'
 
-    ALL_EVENTS = [
-        AGENT_INSTALLED,
-        POST_LAUNCH_SCRIPTS_UPDATED,
-        REPLICATION_DONE,
-        TEST_TARGETS_READY,
-        CUTOVER_TARGETS_READY,
-    ]
+    ALL_EVENTS = {
+        AGENT_INSTALLED: AGENT_INSTALLED_MESSAGE,
+        POST_LAUNCH_SCRIPTS_UPDATED: POST_LAUNCH_SCRIPTS_UPDATED_MESSAGE,
+        REPLICATION_DONE: REPLICATION_DONE_MESSAGE,
+        TEST_TARGETS_READY: TEST_TARGETS_READY_MESSAGE,
+        CUTOVER_TARGETS_READY: CUTOVER_TARGETS_READY_MESSAGE,
+    }
 
     _notifier_bag: NotifierBag = None
     _enabled_notifiers: [str] = []
@@ -93,15 +93,12 @@ class Notifier:
 
         self._enabled_notifiers = config['enabled_notifiers']
 
-    def notify(self, event: str, message: str = None):
+    def notify(self, event: str, message: str):
         if event not in self.ALL_EVENTS:
             logging.getLogger('error').error(
                 '{}: “{}” is not a authorized event. Cancelling notifications.'.format(self.__class__.__name__, event)
             )
             return
-
-        if message is None:
-            message =
 
         asyncio.run(self._do_notify(event, message))
 
