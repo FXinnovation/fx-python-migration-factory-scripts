@@ -1,3 +1,10 @@
+## 6.6.0
+
+* feat: adds config.yml configuration file
+* feat: adds notification library with Teams implementation
+* feat: adds ConfigLoader class to load configuration
+* feat: notifies at the end of the agent installation
+
 ## 6.5.3
 
 * fix: makes sure CSV reader util can read multi line CSV
