@@ -5,6 +5,7 @@ TEMPLATES_PATH=/usr/local/share/applications/migration_factory
 CONFIG_DESTINATION_PATH=/etc/migration_factory
 ENDPOINT_FILE=endpoints.yml
 DEFAULTS_FILE=defaults.yml
+CONFIG_FILE=config.yml
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 set -e
@@ -69,6 +70,7 @@ find scripts/mf -type f -not -iname '*pyc' -exec install '{}' '/usr/local/bin/mf
 
 install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDPOINT_FILE"
 install_without_override "config/$DEFAULTS_FILE" "$CONFIG_DESTINATION_PATH/$DEFAULTS_FILE"
+install_without_override "config/$CONFIG_FILE" "$CONFIG_DESTINATION_PATH/$CONFIG_FILE"
 
 # Deprecated - To remove once no scripts uses "endpoints.json" anymore
 install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/endpoints.json"
