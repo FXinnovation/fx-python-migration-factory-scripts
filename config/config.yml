@@ -1,13 +1,19 @@
 notification:
-  # Available events: AgentInstalled, PostLaunchScriptsUpdated, ReplicationDone, TestTargetsLaunched, CutoverTargetsLaunched
+  # Available events: AgentInstalled, PostLaunchScriptsUpdated, ReplicationDone, TestTargetsReady, CutoverTargetsReady
 
   # Enables notifications without the need to pass an explicit argument to all commands
   notify_by_default: True
+  # Name of the notifiers to enable. Can be "teams", "null"
+  enabled_notifiers: []
+
+  # Teams notifier options
+  # No notification will be sent if "teams" is not in "enabled_notifiers" list
   teams:
-    # Enable notifications on Microsoft Teams
-    enable: False
-    # Even if teams notifications are enabled, all events in the blacklist will not send notifications
-    event_blacklist: []
+    # If this list is not empty, only the events in this list will be sent.
+    # Careful: if events are also in blacklist, they will NOT be sent.
+    event_whitelist: []
+    # All events mentioned in this list will not be sent.
+    event_blacklist: [ ]
     # List of URLs where to publish notifications
     webhook_urls:
       -
