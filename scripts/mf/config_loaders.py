@@ -67,9 +67,15 @@ class ConfigLoader:
                 logging.getLogger('root').error(exception)
 
     def get_config(self):
+        if self._config is None:
+            self.load()
+
         return self._config
 
     def get_notifications_config(self):
+        if self._config is None:
+            self.load()
+
         if self.NOTIFICATION_SECTION not in self._config:
             return {}
 

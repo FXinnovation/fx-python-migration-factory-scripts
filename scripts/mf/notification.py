@@ -87,7 +87,11 @@ class Notifier:
         # This is because we don't have a dependency injection framework
         self._notifier_bag = NotifierBag()
         self._notifier_bag.add(
-            TeamsNotifier(config[TeamsNotifier.NAME]['webhook_urls'], config[TeamsNotifier.NAME]['event_whitelist'])
+            TeamsNotifier(
+                config[TeamsNotifier.NAME]['webhook_urls'],
+                config[TeamsNotifier.NAME]['event_whitelist'],
+                config[TeamsNotifier.NAME]['event_blacklist'],
+            )
         )
         self._notifier_bag.add(NullNotifier())
 
