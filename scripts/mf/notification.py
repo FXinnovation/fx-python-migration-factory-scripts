@@ -3,8 +3,9 @@
 import logging
 from abc import ABC
 import pymsteams
-import asyncio
+import time
 import validators
+from threading import Thread
 
 
 class SendEventDecider:
@@ -37,7 +38,7 @@ class CanNotify(ABC):
     def get_name(self):
         pass
 
-    async def notify(self, event: str, message: str):
+    def notify(self, event: str, message: str):
         pass
 
 
@@ -104,18 +105,20 @@ class Notifier:
             )
             return
 
-        asyncio.run(self._do_notify(event, message))
+        self._do_notify(event, message)
 
-    async def _do_notify(self, event: str, message: str):
+    def _do_notify(self, event: str, message: str):
         tasks = []
         for notifier_name, notifier in self._notifier_bag.get_all().items():
             if notifier_name not in self._enabled_notifiers:
                 continue
 
-            tasks.append(asyncio.create_task(notifier.notify(event, message)))
+            task = Thread(target=notifier.notify, args=[event, message])
+            task.start()
+            tasks.append(task)
 
         for task in tasks:
-            await task
+            task.join()
 
 
 class NullNotifier(CanNotify):
@@ -126,15 +129,12 @@ class NullNotifier(CanNotify):
     def get_name(self):
         return self.NAME
 
-    async def notify(self, event: str, message: str):
-        await asyncio.create_task(self._do_notify(event, message))
-
-    async def _do_notify(self, event: str, message: str):
+    def notify(self, event: str, message: str):
         logging.getLogger('root').debug("{}: Notify “{}” with message: “{}”.".format(
             self.__class__.__name__, event, message
         ))
 
-        return await asyncio.sleep(0.1)
+        time.sleep(0.1)
 
 
 class TeamsNotifier(CanNotify):
@@ -152,7 +152,7 @@ class TeamsNotifier(CanNotify):
     def get_name(self):
         return self.NAME
 
-    async def notify(self, event: str, message: str):
+    def notify(self, event: str, message: str):
         if not self._send_event_decider.should_send(event):
             return
 
@@ -168,12 +168,14 @@ class TeamsNotifier(CanNotify):
                     '{}: “{}” is not a valid URL.'.format(self.__class__.__name__, webhook_url)
                 )
 
-            tasks.append(asyncio.create_task(self._do_notify(webhook_url, message)))
+            task = Thread(target=self._do_notify, args=[webhook_url, message])
+            task.start()
+            tasks.append(task)
 
         for task in tasks:
-            await task
+            task.join()
 
-    async def _do_notify(self, webhook_url: str, message: str):
+    def _do_notify(self, webhook_url: str, message: str):
         logging.getLogger('root').debug("{}: Sending message: {}\n to: {}".format(
             self.__class__.__name__, message, webhook_url
         ))
