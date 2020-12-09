@@ -51,6 +51,9 @@ class NotifierBag:
         self._bag[notifier.get_name()] = notifier
 
     def get(self, notifier_name: str):
+        if notifier_name not in self._bag:
+            return None
+
         return self._bag[notifier_name]
 
     def get_all(self):
