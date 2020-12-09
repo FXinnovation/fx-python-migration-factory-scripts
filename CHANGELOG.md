@@ -1,7 +1,7 @@
 ## 6.7.0
 
 * refactor: Use enironment variable fetch static method
-* feat: (library) Add `ENV_VAR_MIGRATION_FACTORY_WINDOWS_USERNAME` and `ENV_VAR_MIGRATION_FACTORY_WINDOWS_PASSWORD`
+* feat: (library) Add `ENV_VAR_WINDOWS_USERNAME` and `ENV_VAR_WINDOWS_PASSWORD`
 
 ## 6.6.0
 

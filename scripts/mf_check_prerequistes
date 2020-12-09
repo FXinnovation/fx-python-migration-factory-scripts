@@ -463,7 +463,7 @@ def main(arguments):
     parser.add_argument('--CEServerIP', required=True)
     parser.add_argument('--WindowsUser', default =
         EnvironmentVariableFetcher.fetch(
-            env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_WINDOWS_USERNAME,
+            env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
             default=''
         ),
         help= "The windows username"
