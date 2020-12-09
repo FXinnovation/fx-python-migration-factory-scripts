@@ -146,14 +146,14 @@ class TeamsNotifier(CanNotify):
     _send_event_decider: SendEventDecider = None
 
     def __init__(self, webhook_urls: [str], event_whitelist: [str], event_blacklist: [str]):
-        self._event_decider = SendEventDecider(whitelist=event_whitelist, blacklist=event_blacklist)
+        self._send_event_decider = SendEventDecider(whitelist=event_whitelist, blacklist=event_blacklist)
         self._webook_urls = webhook_urls
 
     def get_name(self):
         return self.NAME
 
     async def notify(self, event: str, message: str):
-        if not self._send_event_decider.should_send():
+        if not self._send_event_decider.should_send(event):
             return
 
         if len(self._webook_urls) > 10:
