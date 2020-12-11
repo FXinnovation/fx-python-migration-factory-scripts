@@ -137,6 +137,7 @@ class NullNotifier(CanNotify):
             self.__class__.__name__, event, message
         ))
 
+        # Allows to test concurrency
         time.sleep(0.1)
 
 
