@@ -22,7 +22,14 @@ if ($account -ne "") {
   write-host "- Installing CloudEndure for:   $machine -" -BackgroundColor Blue
   write-host "--------------------------------------------------------"
   if (!(Invoke-Command -Session $s -ScriptBlock {Test-path "c:\Scripts\"})) {Invoke-Command -Session $s -ScriptBlock {New-Item -Path "c:\Scripts\" -ItemType directory}}
-  Invoke-Command -Session $s -ScriptBlock {(New-Object System.Net.WebClient).DownloadFile("https://console.cloudendure.com/installer_win.exe","C:\Scripts\installer_win.exe")}
+
+  Invoke-Command -Session $s -ScriptBlock {
+    $p = [Enum]::ToObject([System.Net.SecurityProtocolType], 3072);
+    [System.Net.ServicePointManager]::SecurityProtocol = $p;
+    $WebClient = New-Object System.Net.WebClient
+    $WebClient.proxy=$null
+    $WebClient.DownloadFile("https://console.cloudendure.com/installer_win.exe","C:\Scripts\installer_win.exe")
+  }
   $fileexist = Invoke-Command -Session $s -ScriptBlock {Test-path "c:\Scripts\installer_win.exe"}
   if ($fileexist -eq "true") {
     $message = "** Successfully downloaded CloudEndure for: " + $machine + " **"
