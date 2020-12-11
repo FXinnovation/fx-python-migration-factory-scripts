@@ -471,7 +471,7 @@ class MigrationFactoryRequester:
 
         apps = []
         for app in all_apps:
-            if app[MfField.WAVE_ID] == wave_id:
+            if MfField.WAVE_ID in app and app[MfField.WAVE_ID] == wave_id:
                 apps.append(app)
 
         return apps
@@ -480,7 +480,7 @@ class MigrationFactoryRequester:
         all_apps = self.get(uri=self.URI_USER_APP_LIST)
 
         for app in all_apps:
-            if app[MfField.APP_NAME] == app_name:
+            if MfField.WAVE_ID in app and app[MfField.APP_NAME] == app_name:
                 return app
 
         return None
