@@ -1,3 +1,7 @@
+## 6.7.2
+
+  * fix: (delete_wave) makes sure the script does not crash even if wave ID is absent
+
 ## 6.7.1
 
 * fix: download agent file without proxy
