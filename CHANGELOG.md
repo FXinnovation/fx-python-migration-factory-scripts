@@ -1,3 +1,7 @@
+## 6.7.1
+
+* fix: download agent file without proxy
+
 ## 6.7.0
 
 * refactor: Use enironment variable fetch static method
