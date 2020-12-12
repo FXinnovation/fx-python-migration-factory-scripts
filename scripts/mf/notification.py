@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 
 import logging
+import smtplib
 from abc import ABC
+from email.message import EmailMessage
+from threading import Thread
+
 import pymsteams
 import time
 import validators
-from threading import Thread
+
+from mf import BRAND
+from mf.utils import EnvironmentVariableFetcher
 
 
 class SendEventDecider:
@@ -187,6 +193,111 @@ class TeamsNotifier(CanNotify):
         teams_connector = pymsteams.connectorcard(webhook_url)
         teams_connector.text(message)
         teams_connector.send()
+
+
+class SMTPNotifier(CanNotify):
+    """ Handles notification by email with SMTP """
+
+    NAME = 'smtp'
+
+    _destination_emails: [str] = []
+    _send_event_decider: SendEventDecider = None
+    _needs_authentication: bool = None
+    _username: bool = None
+    _password: bool = None
+    _host: str = None
+    _port: int = None
+    _tls: bool = None
+
+    def __init__(self, config: dict):
+
+        self._needs_authentication = self._get_config_value(
+            config, 'needs_authentication', False
+        )
+        self._host = self._get_config_value(
+            config, 'host', '127.0.0.1', 'MF_NOTIFIER_SMTP_HOST', '[Notify SMTP] Host'
+        )
+        self._port = self._get_config_value(
+            config, 'port', 465, 'MF_NOTIFIER_SMTP_PORT', '[Notify SMTP] Port'
+        )
+        self._tls = self._get_config_value(
+            config, 'tls', True, 'MF_NOTIFIER_SMTP_TLS', '[Notify SMTP] Use TLS'
+        )
+        self._destination_emails = self._get_config_value(
+            config, 'destination_emails', []
+        )
+        self._event_whitelist = config[self.NAME]['event_whitelist']
+        self._event_blacklist = config[self.NAME]['event_blacklist']
+        self._send_event_decider = SendEventDecider(whitelist=self._event_whitelist, blacklist=self._event_blacklist)
+
+        if self._needs_authentication:
+            self._username = EnvironmentVariableFetcher.fetch(['MF_NOTIFIER_SMTP_USERNAME'], '[Notify SMTP] Username')
+            self._password = EnvironmentVariableFetcher.fetch(['MF_NOTIFIER_SMTP_PASSWORD'], '[Notify SMTP] Password')
+
+    def get_name(self):
+        return self.NAME
+
+    def notify(self, event: str, message: str):
+        if not self._send_event_decider.should_send(event):
+            return
+
+        if not self._check_destination_emails():
+            return
+
+        email_message = EmailMessage()
+        email_message.set_content(message + "\n\nThis message was sent by {}.".format(BRAND))
+
+        email_message['Subject'] = '[' + BRAND + '] ' + message
+        email_message['To'] = self._destination_emails.split(';')
+        if self._needs_authentication:
+            email_message['From'] = self._username
+        else:
+            email_message['From'] = BRAND
+
+        if self._tls:
+            smtpclient = smtplib.SMTP_SSL(self._host, self._port)
+        else:
+            smtpclient = smtplib.SMTP(self._host, self._port)
+
+        if self._needs_authentication:
+            smtpclient.login(self._username, self._password)
+
+        smtpclient.send_message(email_message)
+        smtpclient.quit()
+
+    def _do_notify(self, webhook_url: str, message: str):
+        logging.getLogger('root').debug("{}: Sending message: {}\n to: {}".format(
+            self.__class__.__name__, message, webhook_url
+        ))
+
+        teams_connector = pymsteams.connectorcard(webhook_url)
+        teams_connector.text(message)
+        teams_connector.send()
+
+    def _get_config_value(
+            self, config: dict, key: str, default, env_var_name: str = None, env_var_description: str = None
+    ):
+        value = None
+        if key not in config or config[key] is None or config[key] == '' and env_var_name is not None:
+            value = EnvironmentVariableFetcher.fetch([env_var_name], env_var_description)
+
+        if value is None:
+            value = config[key]
+
+        if not value:
+            return default
+
+        return value
+
+    def _check_destination_emails(self):
+        for email in self._destination_emails:
+            if not validators.email(email):
+                logging.getLogger('error').error(
+                    '{}: “{}” is not a valid email. Cancelling notifications.'.format(self.__class__.__name__, email)
+                )
+                return False
+
+        return True
 
 
 if __name__ == '__main__':

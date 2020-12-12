@@ -27,6 +27,7 @@ DIRECTORY_POST_LAUNCH = 'post-launch'
 DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE = os.path.join(PATH_CONFIG, 'endpoints.yml')
 DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE = os.path.join(PATH_CONFIG, 'defaults.yml')
 
+BRAND = 'Migration Factory'
 
 def setup_logging(logging, info=False, debug=False):
     if debug is True:
