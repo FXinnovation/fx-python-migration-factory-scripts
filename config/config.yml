@@ -3,7 +3,7 @@ notifications:
 
   # Enables notifications without the need to pass an explicit argument to all commands
   notify_by_default: True
-  # Name of the notifiers to enable. Can be "teams", "null"
+  # Name of the notifiers to enable. Can be "teams", "smtp", "null"
   enabled_notifiers: []
 
   # Teams notifier options
@@ -16,4 +16,25 @@ notifications:
     event_blacklist: [ ]
     # List of URLs where to publish notifications
     webhook_urls:
+      -
+
+  # SMTP notifier options
+  # No notification will be sent if "smtp" is not in "enabled_notifiers" list
+  smtp:
+    # If this list is not empty, only the events in this list will be sent.
+    # Careful: if events are also in blacklist, they will NOT be sent.
+    event_whitelist: []
+    # All events mentioned in this list will not be sent.
+    event_blacklist: [ ]
+    # Whether or not the SMTP is public or private. Default: private (meaning needs authentication)
+    # MF_NOTIFIER_SMTP_USERNAME and MF_NOTIFIER_SMTP_PASSWORD may be read to get credentials
+    needs_authentication: True
+    # The host of the SMTP. If not specified, will read MF_NOTIFIER_SMTP_HOST.
+    host: 127.0.0.1
+    # The port to use for SMTP. If not specified, will read MF_NOTIFIER_SMTP_PORT.
+    port: 465
+    # Whether or not to use TLS. StartTLS is equivalent to cleartext and thus not supported.
+    tls: True
+    # List of destination emails
+    destination_emails:
       -
