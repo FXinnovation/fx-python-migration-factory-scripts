@@ -1,3 +1,8 @@
+## 6.9.0
+
+* feat: adds SMTP notifier implementation
+* feat: changes config.yml to include SMTP
+
 ## 6.8.1
 
 * fix: wrong environment variable for windows password
