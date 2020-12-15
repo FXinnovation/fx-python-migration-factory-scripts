@@ -1,3 +1,7 @@
+## 6.8.1
+
+* fix: wrong environment variable for windows password
+
 ## 6.8.0
 
  * feat: Added the PSModule AWSPowerShell
