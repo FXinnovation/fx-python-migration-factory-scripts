@@ -122,7 +122,7 @@ def main(arguments):
     print("*************************************")
 
     if Domain_User != "":
-        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Windows password', sensitive=True)
+        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
     dest_path = "C:\\Program Files (x86)\\CloudEndure\\post_launch"
     for server in Servers:
         command1 = "Invoke-Command -ComputerName " + server + " -ScriptBlock {if (!(Test-path \"" + dest_path + "\")) {New-Item -Path \"" + dest_path + "\"  -ItemType directory}}"

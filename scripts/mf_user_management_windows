@@ -131,7 +131,7 @@ def main(arguments):
     Servers = ServerList(args.Waveid, token, UserHOST)
     print("")
     if Domain_User != "":
-        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Windows password', sensitive=True)
+        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
     if choice == '1':
         print("")
         print("************************************")

@@ -311,7 +311,7 @@ def main(arguments):
     print("*********************************")
     print("")
     if Domain_User != "":
-        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Windows password', sensitive=True)
+        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
     server_status = {}
     for project in Projects:
         server_string = ""

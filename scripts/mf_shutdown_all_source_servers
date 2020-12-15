@@ -166,7 +166,7 @@ def main(arguments):
         print("*Shutting down Windows servers*")
         print("****************************")
         if Domain_User != "":
-            Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Windows password', sensitive=True)
+            Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
         for s in winServers:
             command = "Invoke-Command -ComputerName " + s + " -ScriptBlock {Stop-Computer -Force}"
             if Domain_User != "":

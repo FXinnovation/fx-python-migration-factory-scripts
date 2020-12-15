@@ -95,7 +95,7 @@ def ServerList(waveid, token, UserHOST, Projectname):
 
 def check_windows(Servers_Windows, CEServerIP, Domain_User):
     if Domain_User != "":
-        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Windows password', sensitive=True)
+        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
     print("")
     windows_results = []
     for s in Servers_Windows:
