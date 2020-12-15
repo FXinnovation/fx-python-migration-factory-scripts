@@ -1,6 +1,6 @@
 ## 6.8.0
 
- * feat: Added the PSModule AWSPowerShell 
+ * feat: Added the PSModule AWSPowerShell
  * feat: Added the 2nd vmware script to uninstall the tools by removing files and registry entries
 
 ## 6.7.2

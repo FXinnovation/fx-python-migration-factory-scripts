@@ -16,7 +16,7 @@ if (!(test-path $LogFileLocation)) {
 }
 
 function com_registeredpath()
-{  
+{
     param([string]$guid)
 
     $key = Get-Item "HKCR:\CLSID\$guid\InprocServer32"
@@ -28,7 +28,7 @@ function com_registeredpath()
     return $defaultValue
 }
 function com_registeredProgID()
-{  
+{
     param([string]$guid)
 
     $key = Get-Item "HKCR:\CLSID\$guid\ProgID"
@@ -42,7 +42,7 @@ function com_registeredProgID()
 #com_registeredpath "{C73DA087-EDDB-4a7c-B216-8EF8A3B92C7B}"
 
 function com_registeredAppID()
-{  
+{
     param([string]$guid)
 
     $key = Get-Item "HKCR:\CLSID\$guid\"
@@ -64,9 +64,9 @@ Function LogWrite
 }
 
 function ParseCLSID () {
-	
-	$RegBaseKey="REGISTRY::HKEY_CLASSES_ROOT\CLSID\" 
-	
+
+	$RegBaseKey="REGISTRY::HKEY_CLASSES_ROOT\CLSID\"
+
 	$VmwareComDefinition=@{}
 
 	$CLSID_Items = Get-childitem  $RegBaseKey
@@ -77,7 +77,7 @@ function ParseCLSID () {
             $ComDefaultValue = com_registeredpath $ClassID
             if ($ComDefaultValue -like "*vmware*") {
                 #com_registeredProgID  $ClassID
-                $ComDefaultValue 
+                $ComDefaultValue
                 $ClassID
                 $VmwareComDefinition[$ClassID]=@{}
                 $VmwareComDefinition[$ClassID]["Prog"]=com_registeredProgID  $ClassID
@@ -96,9 +96,9 @@ function ParseCLSID () {
     LocateClassAppIdsFromGuid $VmwareComDefinition
 }
 function ParseTypeLibs () {
-	
-	$RegBaseKey="REGISTRY::HKEY_CLASSES_ROOT\TypeLib\" 
-	
+
+	$RegBaseKey="REGISTRY::HKEY_CLASSES_ROOT\TypeLib\"
+
 	$VmwareComDefinition=@{}
 
 	$CLSID_Items = Get-childitem  $RegBaseKey
@@ -122,8 +122,8 @@ function ParseTypeLibs () {
 }
 
 function ParseTypeLibsWow6432 () {
-		$RegBaseKey="REGISTRY::HKEY_CLASSES_ROOT\Wow6432Node\TypeLib\" 
-	
+		$RegBaseKey="REGISTRY::HKEY_CLASSES_ROOT\Wow6432Node\TypeLib\"
+
 	$VmwareComDefinition=@{}
 
 	$CLSID_Items = Get-childitem  $RegBaseKey
@@ -146,9 +146,9 @@ function ParseTypeLibsWow6432 () {
     #LocateClassAppIdsFromGuid $VmwareComDefinition
 }
 function LocateClassKeys ($ClassArray ) {
-    
+
     $ClassArray
-    $RegBaseKey="REGISTRY::HKEY_CLASSES_ROOT\" 
+    $RegBaseKey="REGISTRY::HKEY_CLASSES_ROOT\"
     $CLSID_Items = Get-childitem  $RegBaseKey
     foreach ($CLS_Entries in $CLSID_Items ) {
         $RegKeyInCLSID = join-path $CLS_Entries.PSPath 'CLSID'
@@ -165,14 +165,14 @@ function LocateClassKeys ($ClassArray ) {
             DeleteRegistryKeys $CLS_Entries.PSPath
             }
          }
-        
+
     }
 }
 
 function LocateClassAppIdsFromAppID ($ClassAppArray ) {
     $ClassAppArray.Keys
     #$ClassAppArray
-    $RegBaseKey="REGISTRY::HKEY_CLASSES_ROOT\AppID" 
+    $RegBaseKey="REGISTRY::HKEY_CLASSES_ROOT\AppID"
     $CLSID_Items = Get-childitem  $RegBaseKey
     foreach ($CLS_Entries in $CLSID_Items ) {
             $key = Get-Item $CLS_Entries.PSPath
@@ -194,7 +194,7 @@ function LocateClassAppIdsFromAppID ($ClassAppArray ) {
 function LocateClassAppIdsFromGuid ($ClassAppArray ) {
     #$ClassAppArray.Keys
 
-    $RegBaseKey="REGISTRY::HKEY_CLASSES_ROOT\AppID" 
+    $RegBaseKey="REGISTRY::HKEY_CLASSES_ROOT\AppID"
     $CLSID_Items = Get-childitem  $RegBaseKey
 #    $CLSID_Items
     foreach ($ClassAppArrayInfo in $ClassAppArray.Keys) {
@@ -216,13 +216,13 @@ function LocateClassAppIdsFromGuid ($ClassAppArray ) {
 
 
 function DeleteRegistryKeys ($RegistryPath) {
-   
+
    if ($VarDebug -eq $true) {
         $RegistryPath
     }
     if ( Test-Path $RegistryPath ) {
         LogWrite "Registry Key found - Deleting $RegistryPath"
-        Remove-Item $RegistryPath -Recurse    
+        Remove-Item $RegistryPath -Recurse
     } else {
         if ($LogFilePrintNotFound -eq $true) {
             LogWrite "Registry Key Not found, Skipping - $RegistryPath"
@@ -246,7 +246,7 @@ function DeleteVmFiles ($VarFilePath) {
 
 }
 function DeleteRegistryProperties ($RegistryPath,$RegistryItem) {
-   
+
    if ($VarDebug -eq $true) {
     "Path: $RegistryPath , Name: $RegistryItem"
    }
@@ -262,7 +262,7 @@ function DeleteRegistryProperties ($RegistryPath,$RegistryItem) {
 
 
 function UnregisterDLL () {
-    
+
     regsvr32 /u "C:\Program Files\VMware\VMware Tools\vmStatsProvider\win32\vmStatsProvider.dll" /s
     regsvr32 /u "C:\Program Files\VMware\VMware Tools\vmStatsProvider\win64\vmStatsProvider.dll" /s
     regsvr32 /u "C:\Program Files\Common Files\VMware\Drivers\vss\VCBSnapshotProvider.dll" /s
@@ -289,7 +289,7 @@ function RemoveSoftwareFromAddRemoveSoftware($RegKey) {
     }
     if ($UninstallStringFound -eq $true) {
        return $UninstallPath
-    } else { 
+    } else {
         return $null
     }
 }
@@ -321,7 +321,7 @@ function RemoveVmwareRegistryEntries() {
 	DeleteRegistryKeys "HKLM:\SYSTEM\CurrentControlSet\Services\vmxnet3ndis6"
 	DeleteRegistryKeys "HKLM:\SYSTEM\CurrentControlSet\Services\vmhgfs"
 	DeleteRegistryKeys "HKLM:\SYSTEM\CurrentControlSet\Services\vsepflt"
-	
+
     DeleteRegistryKeys "HKLM:\SYSTEM\CurrentControlSet\Services\EventLog\Application\vmStatsProvider"
     DeleteRegistryKeys "HKLM:\SYSTEM\CurrentControlSet\Services\EventLog\Application\vmtools"
     DeleteRegistryKeys "HKLM:\SYSTEM\CurrentControlSet\Services\EventLog\Application\VMUpgradeHelper"
@@ -335,13 +335,13 @@ function RemoveVmwareRegistryEntries() {
     DeleteRegistryProperties "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" "VMware VM3DService Process"
 
     $RegPath1=RemoveSoftwareFromAddRemoveSoftware "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
-    if ($RegPath1 -ne $null) { 
+    if ($RegPath1 -ne $null) {
         $RegPath1
-       DeleteRegistryKeys $RegPath1 
+       DeleteRegistryKeys $RegPath1
     }
     $RegPath2=RemoveSoftwareFromAddRemoveSoftware "REGISTRY::HKEY_CLASSES_ROOT\Installer\Products"
     #$RegPath2
-    if ($RegPath2 -ne $null) { 
+    if ($RegPath2 -ne $null) {
         $VmProductID=(get-itemproperty $RegPath2).PSChildName
         DeleteRegistryKeys "REGISTRY::HKEY_CLASSES_ROOT\Installer\Features\$VmProductID"
         DeleteRegistryKeys "REGISTRY::HKEY_CLASSES_ROOT\Installer\Products\$VmProductID"
@@ -386,7 +386,7 @@ function RemoveVmwareFiles() {
     DeleteVmFiles "C:\Windows\System32\vm3dservice.exe"
 	DeleteVmFiles "C:\Windows\System32\vmhgfs.sys"
 	DeleteVmFiles "C:\Windows\System32\VMWSU.DLL"
-	
+
 	DeleteVmFiles "C:\Windows\System32\Drivers\vm3dmp.sys"
 	DeleteVmFiles "C:\Windows\System32\Drivers\vm3dmp_loader.sys"
 	DeleteVmFiles "C:\Windows\System32\Drivers\vm3dmp-debug.sys"
@@ -403,9 +403,9 @@ function RemoveVmwareFiles() {
 	DeleteVmFiles "C:\Windows\System32\Drivers\vsepflt.sys"
 	DeleteVmFiles "C:\Windows\System32\Drivers\vmhgfs.sys"
 	DeleteVmFiles "C:\Windows\System32\Drivers\vmrawdsk.sys"
-	
-	
-	
+
+
+
 
     DeleteVmFiles "C:\Windows\SysWOW64\vm3ddevapi.dll"
 	DeleteVmFiles "C:\Windows\SysWOW64\vm3ddevapi-debug.dll"
@@ -426,7 +426,7 @@ function RemoveVmwareFiles() {
 	DeleteVmFiles "C:\Windows\SysWOW64\vmGuestLib.dll"
     DeleteVmFiles "C:\Windows\SysWOW64\vsocklib.dll"
 	DeleteVmFiles "C:\Windows\SysWOW64\vmhgfs.sys"
-	
+
 
     DeleteVmFiles "C:\Windows\System32\DriverStore\FileRepository\pvscsi.inf*"
     DeleteVmFiles "C:\Windows\System32\DriverStore\FileRepository\efifw.inf*"
@@ -435,7 +435,7 @@ function RemoveVmwareFiles() {
     DeleteVmFiles "C:\Windows\System32\DriverStore\FileRepository\vmmouse.inf*"
     DeleteVmFiles "C:\Windows\System32\DriverStore\FileRepository\vmusbmouse.inf*"
     DeleteVmFiles "C:\Windows\System32\DriverStore\FileRepository\vmxnet3.inf*"
-	
+
 
 
 }
@@ -444,7 +444,7 @@ function TerminateVmProcess() {
 
     stop-process -name "vm3dservice" -Force
     stop-process -name "vmtoolsd" -Force
-    
+
 
 }
 
