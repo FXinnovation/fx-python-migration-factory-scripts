@@ -2,6 +2,7 @@
 
 * feat: adds SMTP notifier implementation
 * feat: changes config.yml to include SMTP
+* fix: Only displays project name in notifications
 
 ## 6.8.1
 
