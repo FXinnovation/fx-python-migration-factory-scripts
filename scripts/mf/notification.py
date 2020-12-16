@@ -236,7 +236,7 @@ class SMTPNotifier(CanNotify):
         email_message.set_content(message + "\n\nThis message was sent by {}.".format(BRAND))
 
         email_message['Subject'] = '[' + BRAND + '] ' + message
-        email_message['To'] = self._destination_emails.split(';')
+        email_message['To'] = ', '.join(self._destination_emails)
         if self._needs_authentication:
             email_message['From'] = self._username
         else:
@@ -250,6 +250,10 @@ class SMTPNotifier(CanNotify):
         if self._needs_authentication:
             smtpclient.login(self._username, self._password)
 
+        logging.getLogger('root').debug("{}: Sending SMTP message: {}".format(
+            self.__class__.__name__, str(email_message)
+        ))
+
         smtpclient.send_message(email_message)
         smtpclient.quit()
 
@@ -258,7 +262,7 @@ class SMTPNotifier(CanNotify):
         value = None
         if key not in config or config[key] is None or config[key] == '':
             if env_var_name is not None:
-                value = EnvironmentVariableFetcher.fetch(env_var_names=[env_var_name], default=default)
+                value = EnvironmentVariableFetcher.fetch(env_var_names=[env_var_name], env_var_description=env_var_name)
         else:
             value = config[key]
 
