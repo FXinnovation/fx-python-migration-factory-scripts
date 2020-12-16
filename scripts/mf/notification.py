@@ -96,13 +96,8 @@ class Notifier:
         # Don't forget to add any new Notifier implementation to the Notifier bag.
         # This is because we don't have a dependency injection framework
         self._notifier_bag = NotifierBag()
-        self._notifier_bag.add(
-            TeamsNotifier(
-                config[TeamsNotifier.NAME]['webhook_urls'],
-                config[TeamsNotifier.NAME]['event_whitelist'],
-                config[TeamsNotifier.NAME]['event_blacklist'],
-            )
-        )
+        self._notifier_bag.add(TeamsNotifier(config[TeamsNotifier.NAME]))
+        self._notifier_bag.add(SMTPNotifier(config[SMTPNotifier.NAME]))
         self._notifier_bag.add(NullNotifier())
 
         self._enabled_notifiers = config['enabled_notifiers']
@@ -155,9 +150,9 @@ class TeamsNotifier(CanNotify):
     _webook_urls: [str] = []
     _send_event_decider: SendEventDecider = None
 
-    def __init__(self, webhook_urls: [str], event_whitelist: [str], event_blacklist: [str]):
-        self._send_event_decider = SendEventDecider(whitelist=event_whitelist, blacklist=event_blacklist)
-        self._webook_urls = webhook_urls
+    def __init__(self, config: dict):
+        self._webook_urls = config['webhook_urls']
+        self._send_event_decider = SendEventDecider(config['event_whitelist'], config['event_blacklist'])
 
     def get_name(self):
         return self.NAME
@@ -210,29 +205,22 @@ class SMTPNotifier(CanNotify):
     _tls: bool = None
 
     def __init__(self, config: dict):
-
-        self._needs_authentication = self._get_config_value(
-            config, 'needs_authentication', False
-        )
-        self._host = self._get_config_value(
-            config, 'host', '127.0.0.1', 'MF_NOTIFIER_SMTP_HOST', '[Notify SMTP] Host'
-        )
-        self._port = self._get_config_value(
-            config, 'port', 465, 'MF_NOTIFIER_SMTP_PORT', '[Notify SMTP] Port'
-        )
-        self._tls = self._get_config_value(
-            config, 'tls', True, 'MF_NOTIFIER_SMTP_TLS', '[Notify SMTP] Use TLS'
-        )
-        self._destination_emails = self._get_config_value(
-            config, 'destination_emails', []
-        )
-        self._event_whitelist = config[self.NAME]['event_whitelist']
-        self._event_blacklist = config[self.NAME]['event_blacklist']
+        self._needs_authentication = self._get_config_value(config, 'needs_authentication', False)
+        self._host = self._get_config_value(config, 'host', '127.0.0.1', 'MF_NOTIFIER_SMTP_HOST')
+        self._port = self._get_config_value(config, 'port', 465, 'MF_NOTIFIER_SMTP_PORT')
+        self._tls = self._get_config_value(config, 'tls', True, 'MF_NOTIFIER_SMTP_TLS')
+        self._destination_emails = self._get_config_value(config, 'destination_emails', [])
+        self._event_whitelist = config['event_whitelist']
+        self._event_blacklist = config['event_blacklist']
         self._send_event_decider = SendEventDecider(whitelist=self._event_whitelist, blacklist=self._event_blacklist)
 
         if self._needs_authentication:
             self._username = EnvironmentVariableFetcher.fetch(['MF_NOTIFIER_SMTP_USERNAME'], '[Notify SMTP] Username')
-            self._password = EnvironmentVariableFetcher.fetch(['MF_NOTIFIER_SMTP_PASSWORD'], '[Notify SMTP] Password')
+            self._password = EnvironmentVariableFetcher.fetch(
+                env_var_names=['MF_NOTIFIER_SMTP_PASSWORD'],
+                env_var_description='[Notify SMTP] Password',
+                sensitive=True
+            )
 
     def get_name(self):
         return self.NAME
@@ -265,23 +253,13 @@ class SMTPNotifier(CanNotify):
         smtpclient.send_message(email_message)
         smtpclient.quit()
 
-    def _do_notify(self, webhook_url: str, message: str):
-        logging.getLogger('root').debug("{}: Sending message: {}\n to: {}".format(
-            self.__class__.__name__, message, webhook_url
-        ))
-
-        teams_connector = pymsteams.connectorcard(webhook_url)
-        teams_connector.text(message)
-        teams_connector.send()
-
-    def _get_config_value(
-            self, config: dict, key: str, default, env_var_name: str = None, env_var_description: str = None
-    ):
+    @classmethod
+    def _get_config_value(cls, config: dict, key: str, default, env_var_name: str = None):
         value = None
-        if key not in config or config[key] is None or config[key] == '' and env_var_name is not None:
-            value = EnvironmentVariableFetcher.fetch([env_var_name], env_var_description)
-
-        if value is None:
+        if key not in config or config[key] is None or config[key] == '':
+            if env_var_name is not None:
+                value = EnvironmentVariableFetcher.fetch(env_var_names=[env_var_name], default=default)
+        else:
             value = config[key]
 
         if not value:
