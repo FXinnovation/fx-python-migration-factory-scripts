@@ -1,3 +1,7 @@
+## 6.9.1
+
+* fix: (delete-wave) wrong delete path
+
 ## 6.9.0
 
 * feat: adds SMTP notifier implementation
