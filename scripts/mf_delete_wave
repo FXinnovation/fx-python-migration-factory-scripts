@@ -82,11 +82,11 @@ class WaveDeleter:
     def delete_folder_structure(self):
         print('### Delete Folder Structure…', end=' ')
 
-        if not pathlib.Path(os.path.join(self._path_wave, mf.DIRECTORY_POST_LAUNCH)).exists():
+        if not pathlib.Path(self._path_wave).exists():
             print('✔ Already Done')
             return
 
-        shutil.rmtree(os.path.join(self._path_wave, mf.DIRECTORY_POST_LAUNCH))
+        shutil.rmtree(self._path_wave)
 
         print('✔ Done')
 
