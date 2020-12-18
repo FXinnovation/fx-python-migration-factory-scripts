@@ -1,3 +1,7 @@
+## 6.10.0
+
+* fix: Removed a post install script for PSModule AWSPowerShell as it froze the post lunch process on the servers. need more investigation
+
 ## 6.9.1
 
 * fix: (delete-wave) wrong delete path
