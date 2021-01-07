@@ -1,3 +1,8 @@
+## 6.11.1
+
+* fix: (import CSV) makes sure wave is created correctly even with multiple servers
+* fix: (import CSV) makes sure app is created correctly even with multiple servers
+
 ## 6.11.0
 
 * feat: adds estimation script to get replication time and when cutover could be performed
