@@ -131,6 +131,9 @@ class Wave(MigrationFactoryData):
         super().__init__(data=data, identifier=identifier)
 
     def __str__(self):
+        if MfField.WAVE_ID not in self._data:
+            return ''
+
         return self._data[MfField.WAVE_ID]
 
 
@@ -156,6 +159,9 @@ class App(MigrationFactoryData):
         self.set_wave(wave)
 
     def __str__(self):
+        if MfField.APP_ID not in self._data:
+            return ''
+
         return self._data[MfField.APP_ID]
 
     def set_wave(self, wave: Wave):
@@ -222,6 +228,9 @@ class Server(MigrationFactoryData):
         self.set_app(app)
 
     def __str__(self):
+        if MfField.SERVER_ID not in self._data:
+            return ''
+
         return self._data[MfField.SERVER_ID]
 
     def set_app(self, app: App):
