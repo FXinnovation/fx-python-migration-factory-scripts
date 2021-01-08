@@ -1,3 +1,7 @@
+## 6.11.0
+
+* feat: adds estimation script to get replication time and when cutover could be performed
+
 ## 6.10.0
 
 * fix: Removed a post install script for PSModule AWSPowerShell as it froze the post lunch process on the servers. need more investigation
