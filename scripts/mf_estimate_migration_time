@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+
+import argparse
+import datetime
+import logging
+import os
+
+import mf
+
+
+class WaveMigrationEstimator:
+    """ Estimate the amount of time to replicate, test and do the cutover """
+
+    DEFAULT_MBPS_SPEED = 250
+    DEFAULT_PREPARATION_TIME_BEFORE_REPLICATION = 600
+    DEFAULT_FINITION_TIME_AFTER_REPLICATION = 1000
+
+    REPLICATION_BEST_TIME_COEFFICIENT = 0.9
+    REPLICATION_WORST_TIME_COEFFICIENT = 0.7
+
+    WORK_HOURS_START = 8
+    WORK_HOURS_END = 16
+    WORK_HOURS_PAUSE_START = 12
+    WORK_HOURS_PAUSE_END = 13
+    MINIMAL_TEST_DURATION = 4
+
+    _arguments = []
+    _path_wave = None
+
+    def __init__(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-v', action='store_true', help='Enable info outputs')
+        parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
+        parser.add_argument(
+            '--total-disk-size',
+            required=True,
+            help='Total disk size in GB in this wave'
+        )
+
+        self._arguments = parser.parse_args()
+
+        mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
+
+        self._path_wave = os.path.join(mf.PATH_HOME, self._arguments.wave_name)
+
+    def estimate(self):
+        print('    ##################################################################################')
+
+        print('### Estimation for the {} wave, with total disk size at {}GB and a speed of {}Mbps ###'.format(
+            self._arguments.wave_name,
+            self._arguments.total_disk_size,
+            self.DEFAULT_MBPS_SPEED
+        ))
+
+        print('    ##################################################################################')
+        print('')
+
+        disk_size_in_mega_bytes = int(self._arguments.total_disk_size) * 1000
+
+        best_speed_in_mega_bytes = (self.DEFAULT_MBPS_SPEED * self.REPLICATION_BEST_TIME_COEFFICIENT) / 8
+        best_duration_in_seconds = int(disk_size_in_mega_bytes / best_speed_in_mega_bytes)
+        best_replication_end_date = self._get_replication_end_date(best_duration_in_seconds)
+        print('### Best:  with a speed of {}MB/s, the replication would end in about \033[1m{} ({})\033[0m.'.format(
+            best_speed_in_mega_bytes,
+            self._get_formatted_replication_time(best_duration_in_seconds),
+            self._get_formatted_replication_end_date(best_replication_end_date)
+        ))
+
+        worst_speed_in_mega_bytes = (self.DEFAULT_MBPS_SPEED * self.REPLICATION_WORST_TIME_COEFFICIENT) / 8
+        worst_duration_in_seconds = int(disk_size_in_mega_bytes / worst_speed_in_mega_bytes)
+        worst_replication_end_date = self._get_replication_end_date(worst_duration_in_seconds)
+        print('### Worst: with a speed of {}MB/s, the replication would end in about \033[1m{} ({})\033[0m.'.format(
+            worst_speed_in_mega_bytes,
+            self._get_formatted_replication_time(worst_duration_in_seconds),
+            self._get_formatted_replication_end_date(worst_replication_end_date)
+        ))
+
+        estimated_test_date = self._get_estimated_test_date(int(disk_size_in_mega_bytes / worst_speed_in_mega_bytes))
+
+        print('##### By starting the replication immediately, tests could be started \033[1m{}\033[0m.'.format(
+            'on {} {}'.format(estimated_test_date.strftime('%A'), estimated_test_date.strftime('%-d'))
+        ))
+
+        estimated_cutover_date = self._get_estimated_cutover_date(estimated_test_date)
+
+        print('##### By starting the replication immediately, cutover could be performed \033[1m{}\033[0m.'.format(
+            'starting {} {}, around {}h'.format(
+                estimated_cutover_date.strftime('%A'),
+                estimated_cutover_date.strftime('%-d'),
+                estimated_cutover_date.strftime('%H')
+            )
+        ))
+
+    def _get_formatted_replication_time(self, seconds: int) -> str:
+        seconds += self.DEFAULT_PREPARATION_TIME_BEFORE_REPLICATION + self.DEFAULT_FINITION_TIME_AFTER_REPLICATION
+
+        days = seconds // (24 * 3600)
+        hours = (seconds % (24 * 3600)) // 3600
+        minutes = (seconds % 3600) // 60
+        seconds %= 60
+
+        result = ''
+        if days >= 1:
+            result = result + '{} day'.format(str(days))
+
+        if days >= 2:
+            result = result + 's'
+
+        if hours >= 1:
+            if days >= 1:
+                result = result + ' and '
+
+            result = result + '{} hour'.format(str(hours))
+
+        if hours >= 2:
+            result = result + 's'
+
+        if minutes >= 1 and days == 0:
+            if hours > 1:
+                result = result + ' and '
+
+            result = result + '{} minute'.format(str(minutes))
+
+        if minutes >= 2 and days == 0:
+            result = result + 's'
+
+        return result
+
+    def _get_formatted_replication_end_date(self, replication_end_date: datetime) -> str:
+        result = ''
+        if replication_end_date.day == datetime.datetime.now().day:
+            result += 'today'
+        elif (replication_end_date - datetime.datetime.now()).days == 1:
+            result += 'tomorrow'
+        elif (replication_end_date - datetime.datetime.now()).days >= 2:
+            result += '{} {}'.format(replication_end_date.strftime('%A'), replication_end_date.strftime('%-d'))
+
+        return result
+
+    def _get_replication_end_date(self, seconds_to_replicate: int) -> datetime:
+        logging.getLogger('root').debug("{}: Replication time is: {}".format(
+            self.__class__.__name__,
+            datetime.timedelta(seconds=seconds_to_replicate)
+        ))
+
+        replication_end_date = datetime.datetime.now() + datetime.timedelta(seconds=seconds_to_replicate)
+
+        logging.getLogger('root').debug("{}: Replication end date is: {}".format(
+            self.__class__.__name__,
+            replication_end_date.ctime()
+        ))
+
+        return replication_end_date
+
+    def _get_estimated_test_date(self, seconds_to_replicate: int) -> datetime:
+        test_can_be_started_date = datetime.datetime.now() + datetime.timedelta(seconds=seconds_to_replicate)
+
+        logging.getLogger('root').debug("{}: Test can be started date without delay: {}".format(
+            self.__class__.__name__,
+            test_can_be_started_date.ctime()
+        ))
+
+        return self._delay_date_for_working_hours(test_can_be_started_date)
+
+    def _get_estimated_cutover_date(self, test_can_be_started_date: datetime) -> datetime:
+        test_end_date = test_can_be_started_date + datetime.timedelta(hours=self.MINIMAL_TEST_DURATION)
+
+        logging.getLogger('root').debug("{}: Cutover can be performed date without delay: {}".format(
+            self.__class__.__name__,
+            test_end_date.ctime()
+        ))
+
+        return self._delay_date_for_working_hours(test_end_date)
+
+    def _delay_date_for_working_hours(self, date_to_delay: datetime) -> datetime:
+        date_to_delay_day = date_to_delay.strftime('%a')
+        date_to_delay_hour = int(date_to_delay.strftime('%H'))
+
+        if date_to_delay_hour >= self.WORK_HOURS_END:
+            date_to_delay = date_to_delay + datetime.timedelta(
+                hours=(24 - date_to_delay_hour) + self.WORK_HOURS_START
+            )
+            date_to_delay_day = date_to_delay.strftime('%a')
+            date_to_delay_hour = int(date_to_delay.strftime('%H'))
+        elif self.WORK_HOURS_PAUSE_START >= date_to_delay_hour < self.WORK_HOURS_PAUSE_END:
+            date_to_delay = date_to_delay + datetime.timedelta(hours=1)
+            date_to_delay_day = date_to_delay.strftime('%a')
+            date_to_delay_hour = int(date_to_delay.strftime('%H'))
+
+        if date_to_delay_day == 'Sat':
+            date_to_delay = date_to_delay + datetime.timedelta(days=2)
+            test_can_be_started_day = date_to_delay.strftime('%a')
+
+        elif date_to_delay_day == 'Sun':
+            date_to_delay = date_to_delay + datetime.timedelta(days=1)
+            test_can_be_started_day = date_to_delay.strftime('%a')
+
+        logging.getLogger('root').debug("{}: Delayed date: {}".format(
+            self.__class__.__name__,
+            date_to_delay.ctime()
+        ))
+
+        return date_to_delay
+
+
+if __name__ == '__main__':
+    wave_migration_estimator = WaveMigrationEstimator()
+    wave_migration_estimator.estimate()
