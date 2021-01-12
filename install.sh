@@ -55,9 +55,10 @@ install_without_override() {
 
 check_arguments "$@"
 
+cd "$DIR"
+
 python3 -m "pip" install -r requirements.txt
 
-cd "$DIR"
 git reset --hard HEAD
 git checkout master
 git pull --rebase origin master
