@@ -6,6 +6,9 @@ import logging
 import os
 
 import mf
+from mf.config_loaders import ConfigLoader, DefaultsLoader
+from mf.notification import Notifier
+from mf.utils import EnvironmentVariableFetcher
 
 
 class WaveMigrationEstimator:
@@ -26,12 +29,15 @@ class WaveMigrationEstimator:
 
     _arguments = []
     _path_wave = None
+    _config_loader = None
+    _notifier = None
 
     def __init__(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable info outputs')
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
         parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
+        parser.add_argument('--notify', action='store_true', help='Whether or not to notify the results')
         parser.add_argument(
             '--total-disk-size',
             required=True,
@@ -43,61 +49,66 @@ class WaveMigrationEstimator:
         mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
 
         self._path_wave = os.path.join(mf.PATH_HOME, self._arguments.wave_name)
+        self._config_loader = ConfigLoader()
+        self._notifier = Notifier(self._config_loader.get_notifications_config())
 
     def estimate(self):
-        print('    ##################################################################################')
+        buffer = "    ##################################################################################\n"
 
-        print('### Estimation for the {} wave, with total disk size at {}GB and a speed of {}Mbps ###'.format(
+        buffer += "### Estimation for the {} wave, with total disk size at {}GB and a speed of {}Mbps ###\n".format(
             self._arguments.wave_name,
             self._arguments.total_disk_size,
             self.DEFAULT_MBPS_SPEED
-        ))
-
-        print('    ##################################################################################')
-        print('')
+        )
+        buffer += "    ##################################################################################\n\n"
 
         best_duration_in_seconds = int(self._get_disk_size_in_mega_bytes() / self._get_best_speed_in_mega_bytes())
         best_replication_end_date = self._get_replication_end_date(best_duration_in_seconds)
-        print('### Best:  with a speed of {}MB/s, the replication would end in about \033[1m{} ({})\033[0m.'.format(
+        buffer += "### Best:  with a speed of {}MB/s, the replication would end in about \033[1m{} ({})\033[0m.\n".format(
             self._get_best_speed_in_mega_bytes(),
             self._get_formatted_replication_time(best_duration_in_seconds),
             self._get_formatted_replication_end_date(best_replication_end_date)
-        ))
+        )
 
         worst_duration_in_seconds = int(self._get_disk_size_in_mega_bytes() / self._get_worst_speed_in_mega_bytes())
         worst_replication_end_date = self._get_replication_end_date(worst_duration_in_seconds)
-        print('### Worst: with a speed of {}MB/s, the replication would end in about \033[1m{} ({})\033[0m.'.format(
+        buffer += "### Worst: with a speed of {}MB/s, the replication would end in about \033[1m{} ({})\033[0m.\n".format(
             self._get_worst_speed_in_mega_bytes(),
             self._get_formatted_replication_time(worst_duration_in_seconds),
             self._get_formatted_replication_end_date(worst_replication_end_date)
-        ))
+        )
 
         estimated_test_date = self._get_estimated_test_date(worst_duration_in_seconds)
 
-        print('##### By starting the replication immediately, tests could be started \033[1m{}\033[0m.'.format(
+        buffer += "### By starting the replication immediately, tests could be started \033[1m{}\033[0m.\n".format(
             'on {} {}'.format(estimated_test_date.strftime('%A'), estimated_test_date.strftime('%-d'))
-        ))
+        )
 
         estimated_cutover_date = self._get_estimated_cutover_date(estimated_test_date)
 
-        print('##### By starting the replication immediately, cutover could be performed \033[1m{}\033[0m.'.format(
+        buffer += "### By starting the replication immediately, cutover could be performed \033[1m{}\033[0m.\n".format(
             'starting {} {}, around {}h'.format(
                 estimated_cutover_date.strftime('%A'),
                 estimated_cutover_date.strftime('%-d'),
                 estimated_cutover_date.strftime('%H')
             )
-        ))
+        )
+
+        print(buffer)
+
+        if self._arguments.notify:
+            self._notifier.notify(Notifier.ESTIMATION_DONE, buffer)
 
     def _get_disk_size_in_mega_bytes(self) -> int:
         return int(self._arguments.total_disk_size) * 1000
 
-    def _get_speed_in_mega_bytes(self, coefficient: int) -> int:
+    def _get_speed_in_mega_bytes(self, coefficient: int) -> float:
         return (self.DEFAULT_MBPS_SPEED * coefficient) / 8
 
-    def _get_worst_speed_in_mega_bytes(self) -> int:
+    def _get_worst_speed_in_mega_bytes(self) -> float:
         return (self.DEFAULT_MBPS_SPEED * self.REPLICATION_WORST_TIME_COEFFICIENT) / 8
 
-    def _get_best_speed_in_mega_bytes(self) -> int:
+    def _get_best_speed_in_mega_bytes(self) -> float:
         return (self.DEFAULT_MBPS_SPEED * self.REPLICATION_BEST_TIME_COEFFICIENT) / 8
 
     def _get_formatted_replication_time(self, seconds: int) -> str:
@@ -125,7 +136,7 @@ class WaveMigrationEstimator:
             result = result + 's'
 
         if minutes >= 1 and days == 0:
-            if hours > 1:
+            if hours >= 1:
                 result = result + ' and '
 
             result = result + '{} minute'.format(str(minutes))
