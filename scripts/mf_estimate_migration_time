@@ -14,7 +14,7 @@ from mf.utils import EnvironmentVariableFetcher
 class WaveMigrationEstimator:
     """ Estimate the amount of time to replicate, test and do the cutover """
 
-    DEFAULT_MBPS_SPEED = 250
+    DEFAULT_MBPS_SPEED = 1000
     DEFAULT_PREPARATION_TIME_BEFORE_REPLICATION = 600
     DEFAULT_FINITION_TIME_AFTER_REPLICATION = 1000
 
@@ -31,6 +31,7 @@ class WaveMigrationEstimator:
     _path_wave = None
     _config_loader = None
     _notifier = None
+    _default_mbps_speed = DEFAULT_MBPS_SPEED
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -38,15 +39,37 @@ class WaveMigrationEstimator:
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
         parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
         parser.add_argument('--notify', action='store_true', help='Whether or not to notify the results')
+        parser.add_argument('--default-mbps-speed', default=self.DEFAULT_MBPS_SPEED, help='Default speed in Mbit/s')
+        parser.add_argument(
+            '--config-file-defaults',
+            default=EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_DEFAULTS_CONFIG_FILE,
+                default=mf.DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE
+            ),
+            help='Configuration file containing default IDs'
+        )
         parser.add_argument(
             '--total-disk-size',
             required=True,
             help='Total disk size in GB in this wave'
         )
+        environment_arg = parser.add_argument('--environment', help='Environment of the wave')
 
         self._arguments = parser.parse_args()
 
         mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
+        defaults_loader = DefaultsLoader()
+        self._defaults = defaults_loader.load(
+            default_config_file=self._arguments.config_file_defaults,
+            environment=self._arguments.environment
+        )
+
+        environment_arg.choices = defaults_loader.get_available_environments()
+
+        self._arguments = parser.parse_args()
+
+        if self._arguments.default_mbps_speed == self.DEFAULT_MBPS_SPEED:
+            self._default_mbps_speed = self._defaults.get('replication_bandwidth_throttling', self.DEFAULT_MBPS_SPEED)
 
         self._path_wave = os.path.join(mf.PATH_HOME, self._arguments.wave_name)
         self._config_loader = ConfigLoader()
