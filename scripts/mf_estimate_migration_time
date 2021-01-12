@@ -56,27 +56,23 @@ class WaveMigrationEstimator:
         print('    ##################################################################################')
         print('')
 
-        disk_size_in_mega_bytes = int(self._arguments.total_disk_size) * 1000
-
-        best_speed_in_mega_bytes = (self.DEFAULT_MBPS_SPEED * self.REPLICATION_BEST_TIME_COEFFICIENT) / 8
-        best_duration_in_seconds = int(disk_size_in_mega_bytes / best_speed_in_mega_bytes)
+        best_duration_in_seconds = int(self._get_disk_size_in_mega_bytes() / self._get_best_speed_in_mega_bytes())
         best_replication_end_date = self._get_replication_end_date(best_duration_in_seconds)
         print('### Best:  with a speed of {}MB/s, the replication would end in about \033[1m{} ({})\033[0m.'.format(
-            best_speed_in_mega_bytes,
+            self._get_best_speed_in_mega_bytes(),
             self._get_formatted_replication_time(best_duration_in_seconds),
             self._get_formatted_replication_end_date(best_replication_end_date)
         ))
 
-        worst_speed_in_mega_bytes = (self.DEFAULT_MBPS_SPEED * self.REPLICATION_WORST_TIME_COEFFICIENT) / 8
-        worst_duration_in_seconds = int(disk_size_in_mega_bytes / worst_speed_in_mega_bytes)
+        worst_duration_in_seconds = int(self._get_disk_size_in_mega_bytes() / self._get_worst_speed_in_mega_bytes())
         worst_replication_end_date = self._get_replication_end_date(worst_duration_in_seconds)
         print('### Worst: with a speed of {}MB/s, the replication would end in about \033[1m{} ({})\033[0m.'.format(
-            worst_speed_in_mega_bytes,
+            self._get_worst_speed_in_mega_bytes(),
             self._get_formatted_replication_time(worst_duration_in_seconds),
             self._get_formatted_replication_end_date(worst_replication_end_date)
         ))
 
-        estimated_test_date = self._get_estimated_test_date(int(disk_size_in_mega_bytes / worst_speed_in_mega_bytes))
+        estimated_test_date = self._get_estimated_test_date(worst_duration_in_seconds)
 
         print('##### By starting the replication immediately, tests could be started \033[1m{}\033[0m.'.format(
             'on {} {}'.format(estimated_test_date.strftime('%A'), estimated_test_date.strftime('%-d'))
@@ -91,6 +87,18 @@ class WaveMigrationEstimator:
                 estimated_cutover_date.strftime('%H')
             )
         ))
+
+    def _get_disk_size_in_mega_bytes(self) -> int:
+        return int(self._arguments.total_disk_size) * 1000
+
+    def _get_speed_in_mega_bytes(self, coefficient: int) -> int:
+        return (self.DEFAULT_MBPS_SPEED * coefficient) / 8
+
+    def _get_worst_speed_in_mega_bytes(self) -> int:
+        return (self.DEFAULT_MBPS_SPEED * self.REPLICATION_WORST_TIME_COEFFICIENT) / 8
+
+    def _get_best_speed_in_mega_bytes(self) -> int:
+        return (self.DEFAULT_MBPS_SPEED * self.REPLICATION_BEST_TIME_COEFFICIENT) / 8
 
     def _get_formatted_replication_time(self, seconds: int) -> str:
         seconds += self.DEFAULT_PREPARATION_TIME_BEFORE_REPLICATION + self.DEFAULT_FINITION_TIME_AFTER_REPLICATION
