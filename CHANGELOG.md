@@ -1,3 +1,7 @@
+## 6.11.2
+
+* fix: makes sure installation script finds requirements.txt
+
 ## 6.11.1
 
 * fix: (import CSV) makes sure wave is created correctly even with multiple servers
