@@ -1,5 +1,5 @@
 notifications:
-  # Available events: AgentInstalled, PostLaunchScriptsUpdated, ReplicationDone, TestTargetsReady, CutoverTargetsReady
+  # Available events: AgentInstalled, EstimationDone, PostLaunchScriptsUpdated, ReplicationDone, TestTargetsReady, CutoverTargetsReady
 
   # Enables notifications without the need to pass an explicit argument to all commands
   notify_by_default: True

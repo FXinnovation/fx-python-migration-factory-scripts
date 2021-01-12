@@ -70,12 +70,14 @@ class Notifier:
     """ Handles all kind of notifications """
 
     AGENT_INSTALLED = 'AgentInstalled'
+    ESTIMATION_DONE = 'EstimationDone'
     POST_LAUNCH_SCRIPTS_UPDATED = 'PostLaunchScriptsUpdated'
     REPLICATION_DONE = 'ReplicationDone'
     TEST_TARGETS_READY = 'TestTargetsReady'
     CUTOVER_TARGETS_READY = 'CutoverTargetsReady'
 
     AGENT_INSTALLED_MESSAGE = 'The CloudEndure agents are now installed for the {} project.'
+    ESTIMATION_DONE_MESSAGE = '{}'
     POST_LAUNCH_SCRIPTS_UPDATED_MESSAGE = 'The post launch scripts has been copied on the servers of the {} project.'
     REPLICATION_DONE_MESSAGE = 'The initial replication for all the servers in the {} project is done.'
     TEST_TARGETS_READY_MESSAGE = 'Test targets of the {} project are up and running.'
@@ -87,6 +89,7 @@ class Notifier:
         REPLICATION_DONE: REPLICATION_DONE_MESSAGE,
         TEST_TARGETS_READY: TEST_TARGETS_READY_MESSAGE,
         CUTOVER_TARGETS_READY: CUTOVER_TARGETS_READY_MESSAGE,
+        ESTIMATION_DONE: ESTIMATION_DONE_MESSAGE,
     }
 
     _notifier_bag: NotifierBag = None
