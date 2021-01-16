@@ -1,3 +1,12 @@
+## 6.12.0
+
+* feat: adds new notification event: EstimationDone
+* feat: (estimation script) notifies the estimation if parameter is passed
+* feat: (estimation script) try to fetch the default mpbs speed from defaults configuration
+* feat: (estimation script) fetch configuration in configuration file instead of constants
+* feat: (mf) adds `MF_CONFIG_FILE` environment variable to be able to set config file path
+* doc: adds mention of the *CONFIG_FILE family of env vars
+
 ## 6.11.2
 
 * fix: makes sure installation script finds requirements.txt
