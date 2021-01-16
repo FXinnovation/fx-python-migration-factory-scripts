@@ -2,6 +2,7 @@
 
 import logging
 import smtplib
+import re
 from abc import ABC
 from email.message import EmailMessage
 from threading import Thread
@@ -120,12 +121,16 @@ class Notifier:
             if notifier_name not in self._enabled_notifiers:
                 continue
 
-            task = Thread(target=notifier.notify, args=[event, message])
+            task = Thread(target=notifier.notify, args=[event, self._clean_message(message)])
             task.start()
             tasks.append(task)
 
         for task in tasks:
             task.join()
+
+    def _clean_message(self, message: str) -> str:
+        # Remove bash formatting
+        return re.sub(r'\[.*?;.*?m', '', message)
 
 
 class NullNotifier(CanNotify):

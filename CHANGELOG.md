@@ -8,6 +8,7 @@
 * feat: (mf) adds `MF_CONFIG_FILE` environment variable to be able to set config file path
 * doc: adds mention of the *CONFIG_FILE family of env vars
 * fix: (estimation script) fix delays being calculated incorrectly when date hour was between 0 and 8
+* fix: (notifications) always clean message before sending notifications
 
 ## 6.11.2
 
