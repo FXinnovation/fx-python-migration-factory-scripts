@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 
 import logging
-import os
 from collections.abc import MutableMapping
 
 import yaml
 
-from . import PATH_CONFIG
-from .utils import Utils
-
-DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE = os.path.join(PATH_CONFIG, 'endpoints.yml')
-DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE = os.path.join(PATH_CONFIG, 'defaults.yml')
-DEFAULT_ENV_VAR_CONFIG_FILE = os.path.join(PATH_CONFIG, 'config.yml')
+from . import DEFAULT_ENV_VAR_CONFIG_FILE, ENV_VAR_DEFAULTS_CONFIG_FILE, ENV_VAR_CONFIG_FILE
+from .utils import Utils, EnvironmentVariableFetcher
 
 
 class DefaultValues(MutableMapping):
@@ -59,7 +54,13 @@ class ConfigLoader:
 
     _config = None
 
-    def load(self, config_file: str = DEFAULT_ENV_VAR_CONFIG_FILE):
+    def load(self, config_file: str = None):
+        if config_file is None:
+            config_file = EnvironmentVariableFetcher.fetch(
+                env_var_names=ENV_VAR_CONFIG_FILE,
+                default=DEFAULT_ENV_VAR_CONFIG_FILE
+            )
+
         with open(config_file, 'r') as stream:
             try:
                 self._config = yaml.safe_load(stream)

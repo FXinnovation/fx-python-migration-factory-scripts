@@ -14,7 +14,7 @@ from mf.utils import EnvironmentVariableFetcher
 class WaveMigrationEstimator:
     """ Estimate the amount of time to replicate, test and do the cutover """
 
-    DEFAULT_MBPS_SPEED = 1000
+    DEFAULT_MBPS_SPEED = 100
     DEFAULT_PREPARATION_TIME_BEFORE_REPLICATION = 600
     DEFAULT_FINITION_TIME_AFTER_REPLICATION = 1000
 
