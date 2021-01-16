@@ -18,7 +18,7 @@ class WaveMigrationEstimator:
     DEFAULT_MBPS_SPEED = 1000
 
     REPLICATION_BEST_TIME_COEFFICIENT = 0.9
-    REPLICATION_WORST_TIME_COEFFICIENT = 0.7
+    REPLICATION_WORST_TIME_COEFFICIENT = 0.6
 
     _arguments = []
     _path_wave = None

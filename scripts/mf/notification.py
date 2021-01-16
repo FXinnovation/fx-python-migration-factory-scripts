@@ -130,7 +130,7 @@ class Notifier:
 
     def _clean_message(self, message: str) -> str:
         # Remove bash formatting
-        return re.sub(r'\[.*?;.*?m', '', message)
+        return re.sub(r'\[.*?;?.*?m', '', message, re.MULTILINE)
 
 
 class NullNotifier(CanNotify):
