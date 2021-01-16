@@ -4,8 +4,10 @@
 * feat: (estimation script) notifies the estimation if parameter is passed
 * feat: (estimation script) try to fetch the default mpbs speed from defaults configuration
 * feat: (estimation script) fetch configuration in configuration file instead of constants
+* feat: (estimation script) handles timezone for more accurate estimates
 * feat: (mf) adds `MF_CONFIG_FILE` environment variable to be able to set config file path
 * doc: adds mention of the *CONFIG_FILE family of env vars
+* fix: (estimation script) fix delays being calculated incorrectly when date hour was between 0 and 8
 
 ## 6.11.2
 

@@ -5,7 +5,7 @@ from collections.abc import MutableMapping
 
 import yaml
 
-from . import DEFAULT_ENV_VAR_CONFIG_FILE, ENV_VAR_DEFAULTS_CONFIG_FILE, ENV_VAR_CONFIG_FILE
+from . import DEFAULT_ENV_VAR_CONFIG_FILE, ENV_VAR_CONFIG_FILE
 from .utils import Utils, EnvironmentVariableFetcher
 
 

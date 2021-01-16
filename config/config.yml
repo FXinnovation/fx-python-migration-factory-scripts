@@ -55,3 +55,5 @@ estimations:
   warmup_time_before_replication: 600
   # Estimation of the amount of time in seconds to complete replication after data transfer ends
   close_time_after_replication: 1200
+  # Timezone to use to compile results
+  timezone: 'America/Toronto'
