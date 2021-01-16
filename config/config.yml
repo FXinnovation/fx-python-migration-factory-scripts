@@ -52,5 +52,6 @@ estimations:
   # Amount of time require to perform tests on a workload
   minimal_test_duration: 4
   # Estimation of the amount of time in seconds before replication starts
-  warmup-time-before-replication: 600
+  warmup_time_before_replication: 600
   # Estimation of the amount of time in seconds to complete replication after data transfer ends
+  close_time_after_replication: 1200
