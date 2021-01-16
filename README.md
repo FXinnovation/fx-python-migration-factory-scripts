@@ -27,7 +27,7 @@ When environment in passed as an argument of any script, it will check dynamical
 
 ## Environment variable
 
-Here are all supported environment variable:
+Here are all main environment variable:
 
 * `MF_USERNAME`: The username used to log on the migration factory
 * `MF_PASSWORD`: The password used to log on the migration factory
@@ -38,6 +38,13 @@ Here are all supported environment variable:
 * `MF_ENDPOINT_CONFIG_FILE`: The location of endpoint config file
 * `MF_WINDOWS_USERNAME`: The Windows username to connect to source host
 * `MF_WINDOWS_PASSWORD`: The Windows password to connect to source host
+
+
+Also supported for edge cases:
+
+* `MF_CONFIG_FILE`: Path of the YAML main configuration file
+* `MF_ENDPOINT_CONFIG_FILE`: Path of the YAML configuration file containing endpoints configuration
+* `MF_DEFAULTS_CONFIG_FILE`: Path of the YAML configuration file containing default values and environments
 
 You can also use the command `source mf_setup_environment` to set all these environment variables
 
