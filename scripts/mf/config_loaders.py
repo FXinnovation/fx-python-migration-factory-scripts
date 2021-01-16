@@ -51,6 +51,7 @@ class ConfigLoader:
     """ Load general configuration file """
 
     NOTIFICATION_SECTION = 'notifications'
+    ESTIMATION_SECTION = 'estimations'
 
     _config = None
 
@@ -81,6 +82,15 @@ class ConfigLoader:
             return {}
 
         return self._config[self.NOTIFICATION_SECTION]
+
+    def get_estimations_config(self):
+        if self._config is None:
+            self.load()
+
+        if self.ESTIMATION_SECTION not in self._config:
+            return {}
+
+        return self._config[self.ESTIMATION_SECTION]
 
 
 class DefaultsLoader:

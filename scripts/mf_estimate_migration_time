@@ -14,24 +14,23 @@ from mf.utils import EnvironmentVariableFetcher
 class WaveMigrationEstimator:
     """ Estimate the amount of time to replicate, test and do the cutover """
 
-    DEFAULT_MBPS_SPEED = 100
-    DEFAULT_PREPARATION_TIME_BEFORE_REPLICATION = 600
-    DEFAULT_FINITION_TIME_AFTER_REPLICATION = 1000
+    DEFAULT_MBPS_SPEED = 1000
 
     REPLICATION_BEST_TIME_COEFFICIENT = 0.9
     REPLICATION_WORST_TIME_COEFFICIENT = 0.7
-
-    WORK_HOURS_START = 8
-    WORK_HOURS_END = 16
-    WORK_HOURS_PAUSE_START = 12
-    WORK_HOURS_PAUSE_END = 13
-    MINIMAL_TEST_DURATION = 4
 
     _arguments = []
     _path_wave = None
     _config_loader = None
     _notifier = None
     _default_mbps_speed = DEFAULT_MBPS_SPEED
+    _work_hours_start = None
+    _work_hours_end = None
+    _work_hours_pause_start = None
+    _work_hours_pause_end = None
+    _minimal_test_duration = None
+    _warmup_time_before_replication = None
+    _close_time_after_replication = None
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -40,6 +39,30 @@ class WaveMigrationEstimator:
         parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
         parser.add_argument('--notify', action='store_true', help='Whether or not to notify the results')
         parser.add_argument('--default-mbps-speed', default=self.DEFAULT_MBPS_SPEED, help='Default speed in Mbit/s')
+        parser.add_argument('--work-hours-start', default=None, help='Shift start hour')
+        parser.add_argument('--work-hours-end', default=None, help='Shift leave hour')
+        parser.add_argument('--work-hours-pause-start', default=None, help='Lunch break hour')
+        parser.add_argument('--work-hours-pause-end', default=None, help='Lunch break hour end')
+        parser.add_argument(
+            '--minimal-test-duration',
+            default=None,
+            help='Amount of time in hours required to test'
+        )
+        parser.add_argument(
+            '--warmup-time-before-replication',
+            default=None,
+            help='Estimation of the amount of time in seconds before replication starts'
+        )
+        parser.add_argument(
+            '--close-time-after-replication',
+            default=None,
+            help='Estimation of the amount of time in seconds to complete replication after data transfer ends'
+        )
+        parser.add_argument(
+            '--total-disk-size',
+            required=True,
+            help='Total disk size in GB in this wave'
+        )
         parser.add_argument(
             '--config-file-defaults',
             default=EnvironmentVariableFetcher.fetch(
@@ -47,11 +70,6 @@ class WaveMigrationEstimator:
                 default=mf.DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE
             ),
             help='Configuration file containing default IDs'
-        )
-        parser.add_argument(
-            '--total-disk-size',
-            required=True,
-            help='Total disk size in GB in this wave'
         )
         environment_arg = parser.add_argument('--environment', help='Environment of the wave')
 
@@ -67,13 +85,10 @@ class WaveMigrationEstimator:
         environment_arg.choices = defaults_loader.get_available_environments()
 
         self._arguments = parser.parse_args()
-
-        if self._arguments.default_mbps_speed == self.DEFAULT_MBPS_SPEED:
-            self._default_mbps_speed = self._defaults.get('replication_bandwidth_throttling', self.DEFAULT_MBPS_SPEED)
-
         self._path_wave = os.path.join(mf.PATH_HOME, self._arguments.wave_name)
         self._config_loader = ConfigLoader()
         self._notifier = Notifier(self._config_loader.get_notifications_config())
+        self._assign_configuration_values()
 
     def estimate(self):
         buffer = "    ##################################################################################\n"
@@ -122,6 +137,26 @@ class WaveMigrationEstimator:
         if self._arguments.notify:
             self._notifier.notify(Notifier.ESTIMATION_DONE, buffer)
 
+    def _assign_configuration_values(self):
+        if self._arguments.default_mbps_speed == self.DEFAULT_MBPS_SPEED:
+            self._default_mbps_speed = self._defaults.get('replication_bandwidth_throttling', self.DEFAULT_MBPS_SPEED)
+
+        estimation_config = self._config_loader.get_estimations_config()
+        if self._arguments.work_hours_start is None:
+            self._work_hours_start = estimation_config['work_hours_start']
+        if self._arguments.work_hours_end is None:
+            self._work_hours_end = estimation_config['work_hours_end']
+        if self._arguments.work_hours_pause_start is None:
+            self._work_hours_pause_start = estimation_config['work_hours_pause_start']
+        if self._arguments.work_hours_pause_end is None:
+            self._work_hours_pause_end = estimation_config['work_hours_pause_end']
+        if self._arguments.minimal_test_duration is None:
+            self._minimal_test_duration = estimation_config['minimal_test_duration']
+        if self._arguments.warmup_time_before_replication is None:
+            self._warmup_time_before_replication = estimation_config['warmup_time_before_replication']
+        if self._arguments.close_time_after_replication is None:
+            self._close_time_after_replication = estimation_config['close_time_after_replication']
+
     def _get_disk_size_in_mega_bytes(self) -> int:
         return int(self._arguments.total_disk_size) * 1000
 
@@ -135,7 +170,7 @@ class WaveMigrationEstimator:
         return (self.DEFAULT_MBPS_SPEED * self.REPLICATION_BEST_TIME_COEFFICIENT) / 8
 
     def _get_formatted_replication_time(self, seconds: int) -> str:
-        seconds += self.DEFAULT_PREPARATION_TIME_BEFORE_REPLICATION + self.DEFAULT_FINITION_TIME_AFTER_REPLICATION
+        seconds += self._warmup_time_before_replication + self._close_time_after_replication
 
         days = seconds // (24 * 3600)
         hours = (seconds % (24 * 3600)) // 3600
@@ -206,7 +241,7 @@ class WaveMigrationEstimator:
         return self._delay_date_for_working_hours(test_can_be_started_date)
 
     def _get_estimated_cutover_date(self, test_can_be_started_date: datetime) -> datetime:
-        test_end_date = test_can_be_started_date + datetime.timedelta(hours=self.MINIMAL_TEST_DURATION)
+        test_end_date = test_can_be_started_date + datetime.timedelta(hours=self._minimal_test_duration)
 
         logging.getLogger('root').debug("{}: Cutover can be performed date without delay: {}".format(
             self.__class__.__name__,
@@ -219,13 +254,13 @@ class WaveMigrationEstimator:
         date_to_delay_day = date_to_delay.strftime('%a')
         date_to_delay_hour = int(date_to_delay.strftime('%H'))
 
-        if date_to_delay_hour >= self.WORK_HOURS_END:
+        if date_to_delay_hour >= self._work_hours_start:
             date_to_delay = date_to_delay + datetime.timedelta(
-                hours=(24 - date_to_delay_hour) + self.WORK_HOURS_START
+                hours=(24 - date_to_delay_hour) + self._work_hours_start
             )
             date_to_delay_day = date_to_delay.strftime('%a')
             date_to_delay_hour = int(date_to_delay.strftime('%H'))
-        elif self.WORK_HOURS_PAUSE_START >= date_to_delay_hour < self.WORK_HOURS_PAUSE_END:
+        elif self._work_hours_pause_start >= date_to_delay_hour < self._work_hours_pause_end:
             date_to_delay = date_to_delay + datetime.timedelta(hours=1)
             date_to_delay_day = date_to_delay.strftime('%a')
             date_to_delay_hour = int(date_to_delay.strftime('%H'))

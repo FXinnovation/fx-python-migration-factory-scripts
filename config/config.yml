@@ -38,3 +38,19 @@ notifications:
     # List of destination emails
     destination_emails:
       -
+
+# Settings for estimations
+estimations:
+  # Hour of the day when people start to work
+  work_hours_start: 8
+  # Hour of the day when people leave work
+  work_hours_end: 17
+  # Hour of the day when people go on lunch break
+  work_hours_pause_start: 12
+  # Hour of the day when people go back from from lunch break
+  work_hours_pause_end: 13
+  # Amount of time require to perform tests on a workload
+  minimal_test_duration: 4
+  # Estimation of the amount of time in seconds before replication starts
+  warmup-time-before-replication: 600
+  # Estimation of the amount of time in seconds to complete replication after data transfer ends
