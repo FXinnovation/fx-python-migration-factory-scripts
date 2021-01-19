@@ -529,6 +529,35 @@ class MigrationFactoryRequester:
                 _server_selected_list_id.append(server[MfField.SERVER_ID])
 
         return _server_selected_list_id
+    
+    def get_user_servers_by_wave(self, filter_wave_name=None):
+        _server_list = self.get(self.URI_USER_SERVER_LIST)
+
+        _server_selected_list_id = []
+
+        for server in _server_list:
+            if filter_wave_name:
+                if MfField.WAVE_NAME in server and server[MfField.WAVE_NAME] == filter_wave_name:
+                    _server_selected_list_id.append(server)
+                else:
+                    logging.getLogger('root').debug('{}: server id “{}” filtered (not in wave {})'.format(
+                        self.__class__.__name__, server[MfField.WAVE_NAME], filter_wave_name
+                    ))
+            else:
+                _server_selected_list_id.append(server)
+
+        return _server_selected_list_id
+
+    def get_user_servers_by_wave_and_os(self, filter_wave_name, filter_os):
+        _server_list = self.get_user_servers_by_wave(filter_wave_name = filter_wave_name)
+
+        _server_selected_list_id = []
+        if _server_list:
+            for server in _server_list:
+                if server[MfField.SERVER_OS].lower().strip() == filter_os.lower().strip():
+                    _server_selected_list_id.append(server)
+
+        return _server_selected_list_id
 
     def _guess_url(self, uri):
         if self._has_user_uri(uri):
