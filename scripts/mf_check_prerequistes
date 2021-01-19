@@ -10,6 +10,7 @@ import getpass
 import paramiko
 import socket
 import os
+import logging
 
 import mf
 from mf.utils import EnvironmentVariableFetcher
@@ -29,12 +30,28 @@ class PrerequisitesChecker:
 
     def __init__(self):
         parser = argparse.ArgumentParser()
+        parser.add_argument('-v', action='store_true', help='Enable info outputs')
+        parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
         parser.add_argument('--wave-name', required=True)
         parser.add_argument('--cloud-endure-project-name', default="")
         parser.add_argument('--cloudendure-server-ip', required=True)
         parser.add_argument('--windows-username', default =
             EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
+                default=''
+            ),
+            help= "The windows username"
+        )
+        parser.add_argument('--linux-username', default =
+            EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_USERNAME,
+                default=''
+            ),
+            help= "The windows username"
+        )
+        parser.add_argument('--linux-private-key-file', default =
+            EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_FILE,
                 default=''
             ),
             help= "The windows username"
@@ -51,14 +68,14 @@ class PrerequisitesChecker:
     
         mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
 
-        self._endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
+        self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
         self._migration_factory_requester = MigrationFactoryRequester(self._endpoints_loader)
 
         logging.getLogger('root').debug(self._arguments)
 
     def check(self):
-        windows_results = check_windows(Servers_Windows, args.CEServerIP, args.WindowsUser)
-        linux_results = check_linux(Servers_Linux, args.CEServerIP)
+        windows_results = self._check_windows()
+        linux_results = self._check_linux()
 
         print("")
         print("********************************************")
@@ -74,12 +91,16 @@ class PrerequisitesChecker:
         if _username != "":
             _password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
 
-        s_results = []
+        windows_results = []
 
         _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(filter_wave_name = self._arguments.wave_name, filter_os = 'windows')
 
+        logging.getLogger('root').info("\n{}: windows server list for wave “{}” is : “{}” are selected for deletion)".format(
+            self.__class__.__name__, self._arguments.wave_name, _server_list
+        ))
+
         if not _server_list:
-            return s_results
+            return windows_results 
 
         print("")
         print("*********************************************")
@@ -91,9 +112,10 @@ class PrerequisitesChecker:
             print('### Windows server result for ' + server[MfField.SERVER_NAME])
             _result = {}
             final = ""
-            command = "Invoke-Command -ComputerName " + server[MfField.SERVER_NAME] + " -FilePath " + PATH + "/mf_prerequisites_windows.ps1 -ArgumentList " + self._arguments.cloudendure_server_ip
+            command = "Invoke-Command -ComputerName " + server[MfField.SERVER_FQDN] + " -FilePath " + os.path.dirname(os.path.abspath(__file__)) + "/mf_prerequisites_windows.ps1 -ArgumentList " + self._arguments.cloudendure_server_ip
             if _username != "":
                 command += " -Credential (New-Object System.Management.Automation.PSCredential('" + _username + "', (ConvertTo-SecureString '" + _password + "' -AsPlainText -Force))) -Authentication Negotiate"
+
             p = subprocess.Popen(["pwsh", "-Command", command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             output, error = p.communicate()
             if output != "":
@@ -101,33 +123,33 @@ class PrerequisitesChecker:
                 for r in returnlist:
                     if r.strip() != "":
                         result = r.split(":")
-                        s_result[result[0]] = result[1]
+                        _result[result[0]] = result[1]
                         if "Pass" not in result[1]:
                             final = final + result[0] + ","
-                s_result["final_result"] = final[:-1]
-            s_result["server_name"] = s["server_fqdn"]
-            s_result["server_id"] = s["server_id"]
+                _result["final_result"] = final[:-1]
+            _result["server_name"] = server["server_fqdn"]
+            _result["server_id"] = server["server_id"]
             if len(error) > 0:
-                s_result["error"] = error
-            if 'TCP443' in s_result:
-                print(" TCP 443 to CE Console  : " + s_result['TCP443'])
-            if 'TCP1500' in s_result:
-                print(" TCP 1500 to Rep Server : " + s_result['TCP1500'])
-            if 'NET35' in s_result:
-                print(" .Net 3.5 version       : " + s_result['NET35'])
-            if 'FreeSpace' in s_result:
-                print(" 3GB C:\ Free Space     : " + s_result['FreeSpace'])
+                _result["error"] = error
+            if 'TCP443' in _result:
+                print(" TCP 443 to CE Console  : " + _result['TCP443'])
+            if 'TCP1500' in _result:
+                print(" TCP 1500 to Rep Server : " + _result['TCP1500'])
+            if 'NET35' in _result:
+                print(" .Net 3.5 version       : " + _result['NET35'])
+            if 'FreeSpace' in _result:
+                print(" 3GB C:\ Free Space     : " + _result['FreeSpace'])
             print("")
-            if "error" in s_result:
-                print(s_result['error'])
-            windows_results.append(s_result)
+            if "error" in _result:
+                print(_result['error'])
+            windows_results.append(_result)
         return windows_results
 
-    def _check_ssh_connectivity(self, host, username, key_pwd, using_key, server_result):
-        self.ssh, self.error = self._open_ssh(ip, user_name, pass_key, is_key)
+    def _check_ssh_connectivity(self, host, username, passkey, using_key, server_result):
+        self._ssh_connexion, self._ssh_connexion_error = self._open_ssh(host, username, passkey, using_key)
         if self._ssh_connexion is None or len(self._ssh_connexion_error) > 0:
-            s_result["error"] = self._ssh_connexion_error
-            s_result["SSH22"] = "Fail"
+            server_result["error"] = self._ssh_connexion_error
+            server_result["SSH22"] = "Fail"
             if "final_result" in server_result:
                 server_result["final_result"] = server_result["final_result"] + "SSH22,"
             else:
@@ -144,7 +166,7 @@ class PrerequisitesChecker:
         ssh_err = ''
         if self._ssh_connexion is not None:
             try:
-                stdin, stdout, stderr = self_ssh_connexion.exec_command("sudo -n -l")
+                stdin, stdout, stderr = self._ssh_connexion.exec_command("sudo -n -l")
             except paramiko.SSHException as e:
                 ssh_err = "Got exception! " + str(e)
         else:
@@ -170,10 +192,10 @@ class PrerequisitesChecker:
         stdout = None
         check = "TCP" + str(port)
         ssh_err = ''
-        if _ssh_connexion is not None:
+        if self._ssh_connexion is not None:
             cmd = "sudo timeout 2 bash -c '</dev/tcp/" + host + "/" + port + " && echo port is open || echo port is closed' || echo connection timeout"
             try:
-                stdin, stdout, stderr = _ssh_connexion.exec_command(cmd)
+                stdin, stdout, stderr = self._ssh_connexion.exec_command(cmd)
                 str_output = ''
                 for output in stdout.readlines():
                     str_output = str_output + output
@@ -214,7 +236,7 @@ class PrerequisitesChecker:
             if len(ssh_err) > 0:
                 server_result["error"] = ssh_err
             server_result[check] = "Fail"
-            if "final_result" in s_result:
+            if "final_result" in server_result:
                 server_result["final_result"] = server_result["final_result"] + check + ","
             else:
                 server_result["final_result"] = check + ","
@@ -227,7 +249,7 @@ class PrerequisitesChecker:
         if self._ssh_connexion is not None:
             cmd = "df -h " + dir + " | tail -1 | tr -s ' ' | cut -d' ' -f4"
             try:
-                stdin, stdout, stderr = self_ssh_connexion.exec_command(cmd)
+                stdin, stdout, stderr = self._ssh_connexion.exec_command(cmd)
                 str_output = ''
                 for output in stdout.readlines():
                     str_output = str_output + output
@@ -257,7 +279,7 @@ class PrerequisitesChecker:
         if len(ssh_err) > 0 :
                 server_result["error"] = ssh_err
                 server_result["FreeSpace"] = "Fail"
-                if "final_result" in s_result:
+                if "final_result" in server_result:
                     server_result["final_result"] = server_result["final_result"] + "FreeSpace" + str(min) + ","
                 else:
                     server_result["final_result"] = "FreeSpace" + str(min) + ","
@@ -317,22 +339,16 @@ class PrerequisitesChecker:
             print("********************************************")
             print("")
 
-            user_name = input("Linux Username: ")
-            has_key = input("If you use a private key to login, press [Y] or if use password press [N]: ")
-            if has_key.lower() in 'y':
-                pass_key = input('Private Key file name: ')
+            user_name = self._arguments.linux_username if self._arguments.linux_username.lower().strip() != '' else EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_LINUX_USERNAME, env_var_description='Linux username')
+            has_key = self._arguments.linux_private_key_file.lower().strip() != ''
+            if has_key:
+                pass_key = self._arguments.linux_private_key_file
             else:
-                pass_key_first = getpass.getpass('Linux Password: ')
-                pass_key_second = getpass.getpass('Re-enter Password: ')
-                while(pass_key_first != pass_key_second):
-                    print("Password mismatch, please try again!")
-                    pass_key_first = getpass.getpass('Linux Password: ')
-                    pass_key_second = getpass.getpass('Re-enter Password: ')
-                pass_key = pass_key_second
+                pass_key = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_LINUX_PASSWORD, env_var_description='Linux password', sensitive=True)
         for server in _server_list:
             print("")
             print("---------------------------------------------------------")
-            print("-- Linux Server result for " + s['server_name'] + " --")
+            print("-- Linux Server result for " + server['server_name'] + " --")
             print("---------------------------------------------------------")
             print("")
             server_result = {}
@@ -341,8 +357,7 @@ class PrerequisitesChecker:
             server_result["final_result"] = ""
     
             # This checks network connectivity, if we can SSH to the source machine
-            sefl._check_ssh_connectivity(server[MfField.SERVER_FQDN], user_name, pass_key,
-                                   has_key.lower() in 'y', server_result)
+            self._check_ssh_connectivity(server[MfField.SERVER_FQDN], user_name, pass_key, has_key, server_result)
             if "SSH22" not in server_result["final_result"]:
                 # Check if the given user has sudo permissions
                 self._check_sudo_permissions(server_result)
@@ -353,7 +368,7 @@ class PrerequisitesChecker:
     
                     # Check if user is able to connect to TCP 1500
                     # for a specific IP (user provide IP address)
-                    self._check_tcp_connectivity(self._cloudendure_server_ip, '1500', server_result)
+                    self._check_tcp_connectivity(self._arguments.cloudendure_server_ip, '1500', server_result)
     
                     # Check if root directory have more than 3GB free space
                     self._check_freespace('/', 3.0, server_result)
@@ -400,7 +415,7 @@ class PrerequisitesChecker:
         return ssh, error
 
 
-    def _print_results(label, results):
+    def _print_results(self, label, results):
         print("------------------------------------------------------------")
         print("-- " + label +" server passed all Pre-requisites checks --")
         print("------------------------------------------------------------")
@@ -429,7 +444,7 @@ class PrerequisitesChecker:
                     self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(result['server_id']), data=json.dumps({"migration_status": "Pre-requisites check : Failed - Unexpected error"}))
                 if result['final_result'] != "":
                     print("     " + result['server_name'] + " : " + result['final_result'])
-                    self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(result['server_id']), data=json.dumps({"migration_status": "Pre-requisites check : Failed - " + result['final_result']}))
+                    self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(result['server_id']), data=json.dumps({"migration_status": "Pre-requisites check : Failed - " + result['final_result'] + " "}))
         print("")
 
 

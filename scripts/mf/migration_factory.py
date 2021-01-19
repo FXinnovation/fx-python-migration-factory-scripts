@@ -537,11 +537,25 @@ class MigrationFactoryRequester:
 
         for server in _server_list:
             if filter_wave_name:
-                if MfField.WAVE_NAME in server and server[MfField.WAVE_NAME] == filter_wave_name:
+                app = self.get(self.URI_USER_APP.format(server[MfField.APP_ID]))
+                if app is None:
+                    logging.getLogger('root').debug('{}: server id “{}” filtered (not in wave {})'.format(
+                        self.__class__.__name__, server[MfField.SERVER_ID], filter_wave_name
+                    ))
+                    continue
+                 
+                wave = self.get(self.URI_USER_WAVE.format(app[MfField.APP_ID]))
+                if wave is None:
+                    logging.getLogger('root').debug('{}: server id “{}” filtered (not in wave {})'.format(
+                        self.__class__.__name__, server[MfField.SERVER_ID], filter_wave_name
+                    ))
+                    continue
+
+                if MfField.WAVE_NAME in wave and wave[MfField.WAVE_NAME] == filter_wave_name:
                     _server_selected_list_id.append(server)
                 else:
                     logging.getLogger('root').debug('{}: server id “{}” filtered (not in wave {})'.format(
-                        self.__class__.__name__, server[MfField.WAVE_NAME], filter_wave_name
+                        self.__class__.__name__, server[MfField.SERVER_ID], filter_wave_name
                     ))
             else:
                 _server_selected_list_id.append(server)
