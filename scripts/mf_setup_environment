@@ -59,6 +59,8 @@ set_environment_variable "MF_PASSWORD" "Factory password" true
 set_environment_variable "MF_CE_API_TOKEN" "Cloud Endure API token" true
 set_environment_variable "MF_WINDOWS_USERNAME" "Windows username"
 set_environment_variable "MF_WINDOWS_PASSWORD" "Windows password" true
+set_environment_variable "MF_LINUX_USERNAME" "Linux username"
+set_environment_variable "MF_LINUX_PASSWORD" "Linux password" true
 set_environment_variable "MF_AWS_ACCESS_KEY_ID" "AWS access key ID"
 set_environment_variable "MF_AWS_SECRET_ACCESS_KEY" "AWS secret access key" true
 set_environment_variable "MF_AWS_REGION" "AWS Region"

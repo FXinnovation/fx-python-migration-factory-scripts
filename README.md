@@ -38,6 +38,9 @@ Here are all main environment variable:
 * `MF_ENDPOINT_CONFIG_FILE`: The location of endpoint config file
 * `MF_WINDOWS_USERNAME`: The Windows username to connect to source host
 * `MF_WINDOWS_PASSWORD`: The Windows password to connect to source host
+* `MF_LINUX_USERNAME`: The linux username to connect to source host
+* `MF_LINUX_PASSWORD`: The linux password to connect to source host
+* `MF_LINUX_PRIVATE_KEY_FILE`: This linux private key file to connect to source host
 
 
 Also supported for edge cases:

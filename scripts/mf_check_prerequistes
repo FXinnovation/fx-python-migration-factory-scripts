@@ -65,7 +65,7 @@ class PrerequisitesChecker:
                help='Configuration file containing the Migration Factory endpoint URLs'
            )
         self._arguments = parser.parse_args()
-    
+
         mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
 
         self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
@@ -87,7 +87,7 @@ class PrerequisitesChecker:
         self._print_results("Linux", linux_results)
 
     def _check_windows(self):
-        _username = self._arguments.windows_username 
+        _username = self._arguments.windows_username
         if _username != "":
             _password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
 
@@ -100,7 +100,7 @@ class PrerequisitesChecker:
         ))
 
         if not _server_list:
-            return windows_results 
+            return windows_results
 
         print("")
         print("*********************************************")
@@ -171,7 +171,7 @@ class PrerequisitesChecker:
                 ssh_err = "Got exception! " + str(e)
         else:
             ssh_err = 'Unable to connect! SSH is null'
-    
+
         if stderr:
             for err in stderr.readlines():
                 ssh_err = ssh_err + err
@@ -212,14 +212,14 @@ class PrerequisitesChecker:
                           " due to " + str(e)
         else:
             ssh_err = 'Unable to connect! SSH is null'
-    
+
         if port == '1500':
             message = " TCP 1500 to Rep Server  : "
         elif port == '443':
             message = " TCP 443 to CE Console   : "
         else:
             message = "Incorrect port! "
-    
+
         if stderr:
             for err in stderr.readlines():
                 ssh_err = ssh_err + err
@@ -272,7 +272,7 @@ class PrerequisitesChecker:
                           " due to " + str(e)
         else:
             ssh_err = 'Unable to connect! SSH is null'
-    
+
         if stderr:
             for err in stderr.readlines():
                 ssh_err = ssh_err + err
@@ -293,7 +293,7 @@ class PrerequisitesChecker:
                 print(" " + str(min) + " GB " + dir + " FreeSpace      : Pass")
             else:
                 print(" " + str(min) + " GB " + dir + " FreeSpace   : Pass")
-    
+
 
     def _check_dhclient(self, server_result):
         stderr = None
@@ -306,7 +306,7 @@ class PrerequisitesChecker:
                 ssh_err = "Got exception! " + str(e)
         else:
             ssh_err = 'Unable to connect! SSH is null'
-    
+
         if stderr:
             for err in stderr.readlines():
                 ssh_err = ssh_err + err
@@ -355,7 +355,7 @@ class PrerequisitesChecker:
             server_result["server_id"] = server[MfField.SERVER_ID]
             server_result["server_name"] = server[MfField.SERVER_NAME]
             server_result["final_result"] = ""
-    
+
             # This checks network connectivity, if we can SSH to the source machine
             self._check_ssh_connectivity(server[MfField.SERVER_FQDN], user_name, pass_key, has_key, server_result)
             if "SSH22" not in server_result["final_result"]:
@@ -365,17 +365,17 @@ class PrerequisitesChecker:
                     # Check if user is able to access Internet and
                     # connect to https://console.cloudendure.com
                     self._check_tcp_connectivity('console.cloudendure.com', '443', server_result)
-    
+
                     # Check if user is able to connect to TCP 1500
                     # for a specific IP (user provide IP address)
                     self._check_tcp_connectivity(self._arguments.cloudendure_server_ip, '1500', server_result)
-    
+
                     # Check if root directory have more than 3GB free space
                     self._check_freespace('/', 3.0, server_result)
-    
+
                     # Check if /tmp directory have more than 500MB free space
                     self._check_freespace('/tmp', 0.5, server_result)
-    
+
                     # Check if dhclient package is installed.
                     self._check_dhclient(server_result)
             if "error" in server_result:
@@ -426,7 +426,7 @@ class PrerequisitesChecker:
                     if 'error' not in result:
                         print("     " + result['server_name'])
                         self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(result['server_id']), data=json.dumps({"migration_status": "Pre-requisites check : Passed"}))
-    
+
         print("")
         print("-------------------------------------------------------------")
         print("-- " + label + " server failed one or more Pre-requisites checks --")

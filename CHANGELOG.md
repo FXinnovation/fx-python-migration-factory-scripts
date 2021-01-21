@@ -1,3 +1,9 @@
+## 6.13.0
+
+* feat: (MigrationFactory) Add `get_user_servers_by_wave` and `get_user_servers_by_wave_and_os`
+* refactor: (mf_add_windows_proxy) Use MigrationFactory class
+* refactor: (mf_check_prerequisites) Use MigrationFactory class
+
 ## 6.12.0
 
 * feat: adds new notification event: EstimationDone

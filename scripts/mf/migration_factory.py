@@ -529,7 +529,7 @@ class MigrationFactoryRequester:
                 _server_selected_list_id.append(server[MfField.SERVER_ID])
 
         return _server_selected_list_id
-    
+
     def get_user_servers_by_wave(self, filter_wave_name=None):
         _server_list = self.get(self.URI_USER_SERVER_LIST)
 
@@ -543,7 +543,7 @@ class MigrationFactoryRequester:
                         self.__class__.__name__, server[MfField.SERVER_ID], filter_wave_name
                     ))
                     continue
-                 
+
                 wave = self.get(self.URI_USER_WAVE.format(app[MfField.APP_ID]))
                 if wave is None:
                     logging.getLogger('root').debug('{}: server id “{}” filtered (not in wave {})'.format(
