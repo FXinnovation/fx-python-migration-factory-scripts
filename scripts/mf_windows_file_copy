@@ -76,9 +76,9 @@ def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--Waveid', required=True)
-    parser.add_argument('--Source', required=True)
-    parser.add_argument('--WindowsUser', default =
+    parser.add_argument('--wave-name', required=True)
+    parser.add_argument('--source', required=True)
+    parser.add_argument('--windows-user', default =
         EnvironmentVariableFetcher.fetch(
             env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
             default=''
