@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import argparse
+import glob
 import logging
 import os
 from threading import Thread
@@ -22,6 +23,7 @@ class PostLaunchFileCopier:
     _endpoints_loader = {}
     _migration_factory_requester = None
     _path_wave_post_launch = None
+    _domain_password = None
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -64,6 +66,14 @@ class PostLaunchFileCopier:
             self._endpoints_loader
         )
 
+        if self._has_windows_user():
+            self._domain_password = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
+                env_var_description='Windows password',
+                default='',
+                sensitive=True
+            )
+
     def copy(self):
         if not os.path.exists(self._arguments.source):
             logging.error('{}: “{}” directory does not exists.'.format(
@@ -79,39 +89,21 @@ class PostLaunchFileCopier:
 
         print('### Copying post-launch files to post-launch folder in source servers…')
 
-        domain_password = ''
-        if self._has_windows_user():
-            domain_password = EnvironmentVariableFetcher.fetch(
-                env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
-                env_var_description='Windows password',
-                sensitive=True
-            )
-
         create_destination_tasks = []
         copy_files_tasks = []
         for server in servers:
+            if 'windows' != server[MfField.SERVER_OS]:
+                continue
+
             server_fqdn = server[MfField.SERVER_FQDN]
             create_path_command = f'Invoke-Command -ComputerName {server_fqdn} -ScriptBlock {{if (!(Test-path "{self.WINDOWS_POST_LAUNCH_DESTINATION}")) {{New-Item -Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}" -ItemType directory}}}}'
-            copy_command = 'Copy-Item "{}/*" "{}" -ToSession (New-PSSession -ComputerName "{}" %s)'.format(
-                self._arguments.source,
-                self.WINDOWS_POST_LAUNCH_DESTINATION,
-                server_fqdn,
-                '{}',
-            )
 
             if self._has_windows_user():
                 create_path_command = PowershellRunner.authenticate_command(
                     create_path_command,
                     self._arguments.windows_user,
-                    domain_password
+                    self._domain_password
                 )
-                copy_command = PowershellRunner.insert_authenthication_arguments(
-                    copy_command,
-                    self._arguments.windows_user,
-                    domain_password
-                )
-            else:
-                copy_command = copy_command % ''
 
             create_destination_task = Thread(
                 target=self._do_run_powershell,
@@ -120,21 +112,25 @@ class PostLaunchFileCopier:
             )
             create_destination_tasks.append(create_destination_task)
 
-            copy_task = Thread(
-                target=self._do_run_powershell,
-                args=[copy_command],
-                name='from “{}” to “{}”'.format(self._arguments.source, server_fqdn)
-            )
-            copy_task.getName()
-            copy_files_tasks.append(copy_task)
+            for task in create_destination_tasks:
+                print("# Creating post-launch directory on server “{}”…".format(task.getName()))
+                task.start()
 
-        for task in create_destination_tasks:
-            print("# Creating post-launch directory on server “{}”…".format(task.getName()))
-            task.start()
+            for task in create_destination_tasks:
+                task.join()
+                print('# ✔ Done: {} '.format(task.getName()))
 
-        for task in create_destination_tasks:
-            task.join()
-            print('# ✔ Done: {} '.format(task.getName()))
+            all_scripts_pathes = self._find_all_windows_scripts(self._arguments.source)
+            all_scripts_pathes.extend(self._find_all_windows_scripts(self._path_wave_post_launch))
+
+            for script_path in all_scripts_pathes:
+                copy_task = Thread(
+                    target=self._do_run_powershell,
+                    args=[self._get_copy_command(script_path, server_fqdn)],
+                    name='from “{}” to “{}”'.format(script_path, server_fqdn)
+                )
+                copy_task.getName()
+                copy_files_tasks.append(copy_task)
 
         for task in copy_files_tasks:
             print("# Copying files {}…".format(task.getName()))
@@ -146,13 +142,42 @@ class PostLaunchFileCopier:
 
         print('### ✔ Done')
 
+    def _find_all_windows_scripts(self, basepath: str) -> list:
+        windows_scripts = []
+        windows_scripts.extend(glob.glob(f'{basepath}/*.bat', recursive=True))
+        windows_scripts.extend(glob.glob(f'{basepath}/*.exe', recursive=True))
+        windows_scripts.extend(glob.glob(f'{basepath}/*.cmd', recursive=True))
+
+        return windows_scripts
+
+    def _find_all_linux_scripts(self, basepath: str) -> list:
+        return glob.glob(f'{basepath}/*.sh', recursive=True)
+
+    def _get_copy_command(self, filepath: str, server_fqdn: str, ) -> str:
+        copy_command = 'Copy-Item "{}" "{}" -ToSession (New-PSSession -ComputerName "{}" %s)'.format(
+            filepath,
+            self.WINDOWS_POST_LAUNCH_DESTINATION,
+            server_fqdn,
+            '{}',
+        )
+
+        if self._has_windows_user():
+            copy_command = PowershellRunner.insert_authenthication_arguments(
+                copy_command,
+                self._arguments.windows_user,
+                self._domain_password
+            )
+        else:
+            copy_command = copy_command % ''
+
+        return copy_command
 
     def _do_run_powershell(self, command: str):
         logging.getLogger('root').info(
             self.__class__.__name__ + ':Running “{}”'.format(command)
         )
 
-        PowershellRunner.run(command)
+        # PowershellRunner.run(command)
 
     def _has_windows_user(self):
         return self._arguments.windows_user != ""

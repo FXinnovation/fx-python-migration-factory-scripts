@@ -4,7 +4,7 @@
 * refactor(BREAKING): (mf_windows_file_copy) make arguments kebab-case
 * refactor: (mf_windows_file_copy) removes deprecated code
 * feat(BREAKING): (mf_windows_file_copy) uses wave-name instead of waveId as main argument
-* feat: (mf_windows_file_copy) copy files in parallel for each servers / sources
+* feat: (mf_windows_file_copy) copy each single files in parallel for each servers / files
 * feat: (mf_windows_file_copy) '--source' now defaults to ~/migration/post-launch
 * feat: adds PowershellRunner object to run pwsh commands
 
