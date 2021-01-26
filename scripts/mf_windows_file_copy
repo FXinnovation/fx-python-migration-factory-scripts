@@ -6,12 +6,12 @@ import argparse
 import glob
 import logging
 import os
-import time
 from threading import Thread
 
 import mf
-from mf.config_loaders import EndpointsLoader
+from mf.config_loaders import EndpointsLoader, ConfigLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
+from mf.notification import Notifier
 from mf.utils import EnvironmentVariableFetcher, PowershellRunner
 
 
@@ -25,6 +25,8 @@ class PostLaunchFileCopier:
     _migration_factory_requester = None
     _path_wave_post_launch = None
     _domain_password = None
+    _notifier = None
+    _config_loader = None
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -66,6 +68,8 @@ class PostLaunchFileCopier:
         self._migration_factory_requester = MigrationFactoryRequester(
             self._endpoints_loader
         )
+        self._config_loader = ConfigLoader()
+        self._notifier = Notifier(self._config_loader.get_notifications_config())
 
         if self._has_windows_user():
             self._domain_password = EnvironmentVariableFetcher.fetch(
@@ -141,6 +145,17 @@ class PostLaunchFileCopier:
             print('# ✔ Done: {}'.format(task.getName()))
 
         print('### ✔ Done')
+
+        print('### …')
+
+        print('### Notifying…', end='', flush=True)
+
+        self._notifier.notify(
+            Notifier.POST_LAUNCH_SCRIPTS_UPDATED,
+            Notifier.POST_LAUNCH_SCRIPTS_UPDATED_MESSAGE.format(self._arguments.wave_name)
+        )
+
+        print(' ✔ Done')
 
     def _find_all_windows_scripts(self, basepath: str) -> list:
         windows_scripts = []
