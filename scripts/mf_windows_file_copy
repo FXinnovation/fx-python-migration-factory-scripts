@@ -6,6 +6,7 @@ import argparse
 import glob
 import logging
 import os
+import time
 from threading import Thread
 
 import mf
@@ -79,8 +80,7 @@ class PostLaunchFileCopier:
             logging.error('{}: “{}” directory does not exists.'.format(
                 self.__class__.__name__, self._arguments.source
             ))
-
-        print('### Fetching servers list…', end='')
+        print('### Fetching servers list…', end='', flush=True)
         servers = self._migration_factory_requester.get_user_servers_by_wave_name(self._arguments.wave_name)
         logging.getLogger('root').debug(
             self.__class__.__name__ + ":Found servers: \n “{}”".format(servers)
@@ -95,7 +95,7 @@ class PostLaunchFileCopier:
             if 'windows' != server[MfField.SERVER_OS]:
                 continue
 
-            server_fqdn = server[MfField.SERVER_FQDN]
+            server_fqdn = server[MfField.SERVER_FQDN].strip()
             create_path_command = f'Invoke-Command -ComputerName {server_fqdn} -ScriptBlock {{if (!(Test-path "{self.WINDOWS_POST_LAUNCH_DESTINATION}")) {{New-Item -Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}" -ItemType directory}}}}'
 
             if self._has_windows_user():
@@ -147,6 +147,7 @@ class PostLaunchFileCopier:
         windows_scripts.extend(glob.glob(f'{basepath}/*.bat', recursive=True))
         windows_scripts.extend(glob.glob(f'{basepath}/*.exe', recursive=True))
         windows_scripts.extend(glob.glob(f'{basepath}/*.cmd', recursive=True))
+        windows_scripts.extend(glob.glob(f'{basepath}/*.ps1', recursive=True))
 
         return windows_scripts
 
@@ -154,7 +155,7 @@ class PostLaunchFileCopier:
         return glob.glob(f'{basepath}/*.sh', recursive=True)
 
     def _get_copy_command(self, filepath: str, server_fqdn: str, ) -> str:
-        copy_command = 'Copy-Item "{}" "{}" -ToSession (New-PSSession -ComputerName "{}" %s)'.format(
+        copy_command = 'Copy-Item "{}" "{}" -ToSession (New-PSSession -ComputerName "{}" %s) | Out-Null'.format(
             filepath,
             self.WINDOWS_POST_LAUNCH_DESTINATION,
             server_fqdn,
@@ -177,7 +178,7 @@ class PostLaunchFileCopier:
             self.__class__.__name__ + ':Running “{}”'.format(command)
         )
 
-        # PowershellRunner.run(command)
+        PowershellRunner.run(command)
 
     def _has_windows_user(self):
         return self._arguments.windows_user != ""
