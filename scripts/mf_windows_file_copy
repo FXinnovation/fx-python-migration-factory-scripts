@@ -1,140 +1,172 @@
 #!/usr/bin/env python3
 
 from __future__ import print_function
-import sys
+
 import argparse
-import requests
-import json
-import subprocess
-import getpass
+import logging
 import os
+from threading import Thread
 
 import mf
-from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader
+from mf.migration_factory import MigrationFactoryRequester
+from mf.utils import EnvironmentVariableFetcher, PowershellRunner
 
-serverendpoint = '/prod/user/servers'
-appendpoint = '/prod/user/apps'
 
-def Factorylogin(username, password, LoginHOST):
-    login_data = {'username': username, 'password': password}
-    r = requests.post(LoginHOST + '/prod/login',
-                  data=json.dumps(login_data))
-    if r.status_code == 200:
-        print("Migration Factory : You have successfully logged in")
-        print("")
-        token = str(json.loads(r.text))
-        return token
-    if r.status_code == 502:
-        print("ERROR: Incorrect username or password....")
-        sys.exit(1)
-    else:
-        print(r.text)
-        sys.exit(2)
+class PostLaunchFileCopier:
+    """ Copy post-launch files from to the source servers (Windows only) """
 
-def ServerList(waveid, token, UserHOST):
-# Get all Apps and servers from migration factory
-    auth = {"Authorization": token}
-    servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
-    #print(servers)
-    apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
-    #print(apps)
+    WINDOWS_POST_LAUNCH_DESTINATION = "C:\\Program Files (x86)\\CloudEndure\\post_launch"
 
-    # Get App list
-    applist = []
-    for app in apps:
-        if 'wave_id' in app:
-            if str(app['wave_id']) == str(waveid):
-                applist.append(app['app_id'])
+    _arguments = []
+    _endpoints_loader = {}
+    _migration_factory_requester = None
+    _path_wave_post_launch = None
 
-    # Get Server List
-    serverlist = []
-    for app in applist:
+    def __init__(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-v', action='store_true', help='Enable info outputs')
+        parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
+        parser.add_argument(
+            '--config-file-endpoints',
+            default=EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+                default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+            ),
+            help='Configuration file containing the Migration Factory endpoint URLs'
+        )
+        parser.add_argument(
+            '--source',
+            default=mf.PATH_DEFAULT_POST_LAUNCH,
+            help="Generic post-launch files to copy (.exe, .bat of .sh)."
+                 " Defaults to {}."
+                 " Specific post-launch files will be fetched in wave directory dynamically.".format(
+                mf.PATH_DEFAULT_POST_LAUNCH
+            )
+        )
+        parser.add_argument(
+            '--windows-user',
+            default=EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
+                default=''
+            ),
+            help="The windows username. Will fetch {} by default".format(mf.ENV_VAR_WINDOWS_USERNAME.join(', '))
+        )
+        self._path_wave_post_launch = os.path.join(mf.PATH_HOME, self._arguments.wave_name, mf.DIRECTORY_POST_LAUNCH)
+
+        self._arguments = parser.parse_args()
+
+        mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
+
+        self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
+        self._migration_factory_requester = MigrationFactoryRequester(
+            self._endpoints_loader
+        )
+
+    def copy(self):
+        if not os.path.exists(self._arguments.source):
+            logging.error('{}: “{}” directory does not exists.'.format(
+                self.__class__.__name__, self._arguments.source
+            ))
+
+        print('### Fetching servers list…')
+        servers = self._migration_factory_requester.get_user_server_by_name(self._arguments.wave_name)
+        print('### ✔ Done')
+
+        print('### Copying post_launch files to post_launch folder in source servers…')
+
+        domain_password = ''
+        if self._has_windows_user():
+            domain_password = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
+                env_var_description='Windows password',
+                sensitive=True
+            )
+
+        create_destination_tasks = []
+        copy_files_tasks = []
         for server in servers:
-            if app == server['app_id']:
-                        if 'server_os' in server:
-                                if 'server_fqdn' in server:
-                                    if server['server_os'].lower() == "windows":
-                                        serverlist.append(server['server_fqdn'])
-                                else:
-                                    print("ERROR: server_fqdn for server: " + server['server_name'] + " doesn't exist")
-                                    sys.exit(4)
-                        else:
-                            print ('server_os attribute does not exist for server: ' + server['server_name'] + ", please update this attribute")
-                            sys.exit(2)
+            create_path_command = 'Invoke-Command -ComputerName {} -ScriptBlock {if (!(Test-path "{}")) {New-Item -Path "{}" -ItemType directory}}'.format(
+                server,
+                self.WINDOWS_POST_LAUNCH_DESTINATION,
+                self.WINDOWS_POST_LAUNCH_DESTINATION,
+            )
+            copy_command = 'Copy-Item "{}/*" "{}" -ToSession (New-PSSession -ComputerName "{}" {})'.format(
+                self._arguments.source,
+                self.WINDOWS_POST_LAUNCH_DESTINATION,
+                server,
+                '{}',
+            )
 
-    if len(serverlist) == 0:
-        print("ERROR: Serverlist for wave: " + waveid + " is empty....")
-        print("")
-    else:
-        print("successfully retrived server list")
-        for s in serverlist:
-            print(s)
-        return serverlist
+            if self._has_windows_user():
+                create_path_command = PowershellRunner.authenticate_command(
+                    create_path_command,
+                    self._arguments.windows_user,
+                    domain_password
+                )
+                copy_command = PowershellRunner.insert_authenthication_arguments(
+                    copy_command,
+                    self._arguments.windows_user,
+                    domain_password
+                )
+            else:
+                copy_command = copy_command.format('')
 
-def main(arguments):
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--wave-name', required=True)
-    parser.add_argument('--source', required=True)
-    parser.add_argument('--windows-user', default =
-        EnvironmentVariableFetcher.fetch(
-            env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
-            default=''
-        ),
-        help= "The windows username"
-    )
-    parser.add_argument(
-           '--config-file-endpoints',
-           default=EnvironmentVariableFetcher.fetch(
-               env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
-               default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
-           ),
-           help='Configuration file containing the Migration Factory endpoint URLs'
-       )
-    args = parser.parse_args(arguments)
+            create_destination_task = Thread(
+                target=self._do_create_destination_directory,
+                args=[create_path_command, server]
+            )
+            create_destination_tasks.append(create_destination_task)
 
-    _endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
-    LoginHOST = _endpoints_loader.get_login_api_url()
-    UserHOST = _endpoints_loader.get_user_api_url()
+            copy_task = Thread(
+                target=self._do_copy,
+                args=[copy_command, server]
+            )
+            copy_files_tasks.append(copy_task)
 
-    Domain_User = args.WindowsUser
+        for task in create_destination_tasks:
+            task.start()
 
-    print("")
-    print("****************************")
-    print("*Login to Migration factory*")
-    print("****************************")
+        for task in create_destination_tasks:
+            task.join()
 
-    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
-    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
+        for task in copy_files_tasks:
+            task.start()
 
-    token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
+        for task in copy_files_tasks:
+            task.join()
 
-    print("****************************")
-    print("*Getting Server List*")
-    print("****************************")
-    Servers = ServerList(args.Waveid, token, UserHOST)
+        print('### ✔ Done')
 
-    print("")
-    print("*************************************")
-    print("*Copying files to post_launch folder*")
-    print("*************************************")
 
-    if Domain_User != "":
-        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
-    dest_path = "C:\\Program Files (x86)\\CloudEndure\\post_launch"
-    for server in Servers:
-        command1 = "Invoke-Command -ComputerName " + server + " -ScriptBlock {if (!(Test-path \"" + dest_path + "\")) {New-Item -Path \"" + dest_path + "\"  -ItemType directory}}"
-        command2 = "Copy-Item \""+ args.Source  +"/*\" \"" + dest_path + "\" -ToSession (New-PSSession -ComputerName '"+ server  +"')"
-        if Domain_User != "":
-            command1 += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
-            command2 = "Copy-Item \""+ args.Source  +"/*\" \"" + dest_path + "\" -ToSession (New-PSSession -ComputerName '"+ server  +"'  -Authentication Negotiate -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))))"
-        print("Copying files to server: " + server)
-        p1 = subprocess.Popen(["pwsh", "-Command", command1], stdout=sys.stdout)
-        p1.communicate()
-        p2 = subprocess.Popen(["pwsh", "-Command", command2], stdout=sys.stdout)
-        p2.communicate()
+    def _do_create_destination_directory(self, create_path_command: str, server_name: str):
+        logging.getLogger('root').info(
+            self.__class__.__name__ + ':Running “{}”'.format(create_path_command)
+        )
+
+        print("# Creating post-launch directory on server “{}”…", end=''.format(
+            server_name
+        ))
+        PowershellRunner.run(create_path_command)
+        print('### ✔ Done')
+
+    def _do_copy(self, copy_command: str, source: str, server_name: str):
+        logging.getLogger('root').info(
+            self.__class__.__name__ + ':Running “{}”'.format(copy_command)
+        )
+
+        print("# Copying files from “{}” to server “{}”…".format(
+            source,
+            server_name
+        ))
+        PowershellRunner.run(copy_command)
+        print('### ✔ Done')
+
+    def _has_windows_user(self):
+        return self._arguments.windows_user != ""
+
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    post_launch_file_copier = PostLaunchFileCopier()
+    post_launch_file_copier.copy()
