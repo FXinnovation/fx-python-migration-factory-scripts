@@ -140,7 +140,38 @@ class CloudEndureRequester:
                 logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str(project))
                 return project
 
+        logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project") + project_name + str(" not found"))
+
         return False
+
+    def get_project_id(self, project_name):
+        project = self.get_project_by_name(project_name)
+
+        if !project:
+            return False
+
+        return project['id']
+
+    def get_machines(self, project_name):
+        _project_id = self.get_project_by_name(project_name)
+
+        if ! _project_id:
+            return False
+
+        machines = self.get(self.URI_PROJECT.format(_project_id))
+
+        if ! machines:
+           logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project") + project_name + str(" is empty"))
+
+        return machines
+
+    def get_machine_replica(self, replica_id, project_name):
+        _project_id = self.get_project_by_name(project_name)
+
+        if ! _project_id:
+            return False
+
+        return self.get(self.URI_REPLICA.format(_project_id, replica_id))
 
     def get_all_project_names(self):
         response = self.get(self.URI_PROJECTS)

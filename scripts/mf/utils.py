@@ -71,6 +71,17 @@ class Utils:
 
         return content
 
+    @classmethod
+    def write_csv_with_headers(cls, csv_path: str, csv_content: dict):
+        with open(csv_path, 'a') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=csv_content[0].keys())
+            writer.writeheader()
+            for row in csv_content:
+                writer.writerow(row)
+        logging.getLogger('root').debug("{}: CSV content\n{}".format(
+            cls.__class__.__name__, csv_content
+        ))
+
 
 class Requester:
     """ Decorator around requests for enhanced logging """
