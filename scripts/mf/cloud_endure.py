@@ -102,6 +102,11 @@ class CloudEndureRequester:
     URI_PROJECTS = 'projects'
     URI_PROJECT = URI_PROJECTS + '/{}'
 
+    URI_MACHINES = URI_PROJECT + '/machines'
+    URI_MACHINE = URI_PROJECT + '/machine/{}'
+
+    URI_REPLICA = URI_PROJECT + '/replicas/{}'
+
     _cloud_endure_session = None
 
     def __init__(self):
@@ -147,28 +152,28 @@ class CloudEndureRequester:
     def get_project_id(self, project_name):
         project = self.get_project_by_name(project_name)
 
-        if !project:
+        if not project:
             return False
 
         return project['id']
 
     def get_machines(self, project_name):
-        _project_id = self.get_project_by_name(project_name)
+        _project_id = self.get_project_id(project_name)
 
-        if ! _project_id:
+        if not _project_id:
             return False
 
-        machines = self.get(self.URI_PROJECT.format(_project_id))
+        machines = self.get(self.URI_MACHINES.format(_project_id))
 
-        if ! machines:
+        if not machines:
            logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project") + project_name + str(" is empty"))
 
         return machines
 
     def get_machine_replica(self, replica_id, project_name):
-        _project_id = self.get_project_by_name(project_name)
+        _project_id = self.get_project_id(project_name)
 
-        if ! _project_id:
+        if not _project_id:
             return False
 
         return self.get(self.URI_REPLICA.format(_project_id, replica_id))

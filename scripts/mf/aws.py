@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import boto3
+import logging
 
 from . import ENV_VAR_AWS_ACCESS_KEY_NAMES
 from . import ENV_VAR_AWS_REGION_NAMES
@@ -34,18 +35,22 @@ class AWSServiceAccessor:
 
         return self._ec2_client
 
-   def describe_ec2_instance(self, instance_id: str = None):
-        return instance = self.get_ec2().describe_instances(Filters=[InstanceIds=['string'])
+    def describe_ec2_instance(self, instance_id: str = None):
+        return self.get_ec2().describe_instances(InstanceIds=[instance_id])
 
-   def get_ec2_instance_ips(self, instance_id: str = None):
+    def get_ec2_instance_ips(self, instance_id: str = None):
         ec2_instance = self.describe_ec2_instance(instance_id = instance_id)
 
+        logging.getLogger('root').debug('{}: instance “{}”: {}'.format(
+            self.__class__.__name__, instance_id, ec2_instance
+        ))
+
         instance_ip = []
-        for reservation in ec2_instance['instance_id']:
-             for instance in reservation['Reservations']:
+        for reservation in ec2_instance['Reservations']:
+             for instance in reservation['Instances']:
                  for nic in instance['NetworkInterfaces']:
-                     for ip in nic['PrivateIpAddresses']:
-                         instance_ip.append(ip)
+                     for ips in nic['PrivateIpAddresses']:
+                         instance_ip.append(ips['PrivateIpAddress'])
 
         return instance_ip
 

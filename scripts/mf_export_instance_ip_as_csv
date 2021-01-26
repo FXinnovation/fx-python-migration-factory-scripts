@@ -8,14 +8,16 @@ import json
 import boto3
 import getpass
 import datetime
+import logging
 import csv
 import os
 
 import mf
-from mf.utils import EnvironmentVariableFetcher
+from mf.utils import EnvironmentVariableFetcher, Utils
 from mf.config_loaders import EndpointsLoader
 from mf.cloud_endure import CloudEndureRequester
 from mf.migration_factory import MigrationFactoryRequester, MfField
+from mf.aws import AWSServiceAccessor
 
 
 class Ec2InstanceExporter:
@@ -53,22 +55,22 @@ class Ec2InstanceExporter:
 
         self._aws_service_accessor = AWSServiceAccessor()
 
-    def export_ip_as_csv(self, filename: str = self._arguments.wave_name + '-ip.csv'):
+    def export_ip_as_csv(self):
         instances = []
 
         instance_ids = self._get_instance_ids()
 
-        if ! instance_ids:
+        if not instance_ids:
             return
 
         for instance_id in instance_ids:
-            instance_id['ips'] = self._aws_service_accessor.instance_ip
+            instance_id['ips'] = ';'.join(self._aws_service_accessor.get_ec2_instance_ips(instance_id['machine_cloud_id']))
             instances.append(instance_id)
 
-        Utils.write_csv_with_headers(os.path.join(self._path_wave, filename), instances)
+        Utils.write_csv_with_headers(os.path.join(self._path_wave, self._arguments.wave_name + '-ip.csv'), instances)
 
     def _get_instance_ids(self):
-        app = self._migration_factory_requester.get_user_apps_by_wave_name(self._arguments.wave_name)
+        apps = self._migration_factory_requester.get_user_apps_by_wave_name(self._arguments.wave_name)
 
         _machine_ids = []
         for app in apps:
@@ -79,19 +81,19 @@ class Ec2InstanceExporter:
                 continue
 
             _ce_machines = self._cloud_endure_requester.get_machines(app['cloudendure_projectname'])
-            if ! _ce_machines:
+            if not _ce_machines:
                 continue
             for _ce_machine in _ce_machines['items']:
                 if _ce_machine['replica'] == '':
                     logging.getLogger('root').warn("\n{}: machine “{}” haven't launched target".format(
                     self.__class__.__name__, _ce_machine['sourceProperties']['name']
-                )
+                ))
 
                 _ce_replica = self._cloud_endure_requester.get_machine_replica(_ce_machine['replica'], app['cloudendure_projectname'])
 
                 instance_information = {}
                 instance_information['machine_name'] = _ce_machine['sourceProperties']['name']
-                instance_information['machine_cloud_id'] = _ce_replica['id']
+                instance_information['machine_cloud_id'] = _ce_replica['machineCloudId']
 
                 _machine_ids.append(instance_information)
         return _machine_ids
@@ -99,4 +101,4 @@ class Ec2InstanceExporter:
 
 if __name__ == '__main__':
     ec2_instance_exporter = Ec2InstanceExporter()
-    ec2_instance_exporter._export_ip_as_csv()
+    ec2_instance_exporter.export_ip_as_csv()
