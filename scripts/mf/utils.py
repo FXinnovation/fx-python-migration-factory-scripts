@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import subprocess
 
 import requests
 import sys
@@ -192,6 +193,27 @@ class EnvironmentVariableFetcher:
             return getpass.getpass(env_var_description + ": ")
 
         return input(env_var_description + ": ")
+
+
+class PowershellRunner:
+    """ Runs powershell commands with pwsh """
+
+    @classmethod
+    def run(cls, command: str):
+        process = subprocess.Popen(["pwsh", "-Command", command], stdout=sys.stdout)
+        return process.communicate()
+
+    @classmethod
+    def authenticate_command(cls, command: str, user: str, password: str) -> str:
+        return cls.insert_authenthication_arguments(command + ' {}', user, password)
+
+    @classmethod
+    def insert_authenthication_arguments(cls, command_with_bracket: str, user: str, password: str) -> str:
+        return command_with_bracket.format(
+            "-Credential (New-Object System.Management.Automation.PSCredential('{}', (ConvertTo-SecureString '{}' "
+            "-AsPlainText -Force))) "
+            "-Authentication Negotiate".format(user, password)
+        )
 
 
 if __name__ == '__main__':
