@@ -19,13 +19,9 @@ class AWSServiceAccessor:
     _ec2_client = None
 
     def __init__(self):
-        self._aws_access_key = EnvironmentVariableFetcher.fetch(
-            ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID'
-        )
-        self._aws_secret_access_key = EnvironmentVariableFetcher.fetch(
-            ENV_VAR_AWS_SECRET_KEY_NAMES, 'AWS Access Secret Key', sensitive=True
-        )
-        self._aws_region = EnvironmentVariableFetcher.fetch(ENV_VAR_AWS_REGION_NAMES, 'AWS Region')
+        self._aws_access_key = EnvironmentVariableFetcher.fetch(env_var_names = ENV_VAR_AWS_ACCESS_KEY_NAMES, env_var_description = 'AWS Access Key ID')
+        self._aws_secret_access_key = EnvironmentVariableFetcher.fetch(env_var_names = ENV_VAR_AWS_SECRET_KEY_NAMES, env_var_description = 'AWS Access Secret Key', sensitive=True)
+        self._aws_region = EnvironmentVariableFetcher.fetch(env_var_names = ENV_VAR_AWS_REGION_NAMES, env_var_description = 'AWS Region')
 
     def get_ec2(self):
         if self._ec2_client is None:
@@ -38,6 +34,20 @@ class AWSServiceAccessor:
 
         return self._ec2_client
 
+   def describe_ec2_instance(self, instance_id: str = None):
+        return instance = self.get_ec2().describe_instances(Filters=[InstanceIds=['string'])
+
+   def get_ec2_instance_ips(self, instance_id: str = None):
+        ec2_instance = self.describe_ec2_instance(instance_id = instance_id)
+
+        instance_ip = []
+        for reservation in ec2_instance['instance_id']:
+             for instance in reservation['Reservations']:
+                 for nic in instance['NetworkInterfaces']:
+                     for ip in nic['PrivateIpAddresses']:
+                         instance_ip.append(ip)
+
+        return instance_ip
 
 class AWSValidator:
     """ Check values to be compliant with AWS """
