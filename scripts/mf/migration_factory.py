@@ -514,6 +514,22 @@ class MigrationFactoryRequester:
 
         return None
 
+    def get_user_servers_by_wave_name(self, wave_name):
+        wave = self.get_user_wave_by_name(wave_name)
+        all_apps = self.get_user_apps_by_wave_id(wave[MfField.WAVE_ID])
+        all_servers = self.get(uri=self.URI_USER_SERVER_LIST)
+
+        filtered_servers = []
+        for app in all_apps:
+            for server in all_servers:
+                if server[MfField.APP_ID] == app[MfField.APP_ID]:
+                    filtered_servers.append(server)
+
+        if not filtered_servers:
+            return None
+
+        return filtered_servers
+
     def get_user_server_ids(self, filter_app_id=None):
         _server_list = self.get(self.URI_USER_SERVER_LIST)
 

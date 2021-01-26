@@ -9,14 +9,14 @@ from threading import Thread
 
 import mf
 from mf.config_loaders import EndpointsLoader
-from mf.migration_factory import MigrationFactoryRequester
+from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher, PowershellRunner
 
 
 class PostLaunchFileCopier:
     """ Copy post-launch files from to the source servers (Windows only) """
 
-    WINDOWS_POST_LAUNCH_DESTINATION = "C:\\Program Files (x86)\\CloudEndure\\post_launch"
+    WINDOWS_POST_LAUNCH_DESTINATION = 'c:\Program Files (x86)\CloudEndure\post_launch'
 
     _arguments = []
     _endpoints_loader = {}
@@ -51,14 +51,14 @@ class PostLaunchFileCopier:
                 env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
                 default=''
             ),
-            help="The windows username. Will fetch {} by default".format(mf.ENV_VAR_WINDOWS_USERNAME.join(', '))
+            help="The windows username. Will fetch {} by default".format(', '.join(mf.ENV_VAR_WINDOWS_USERNAME))
         )
-        self._path_wave_post_launch = os.path.join(mf.PATH_HOME, self._arguments.wave_name, mf.DIRECTORY_POST_LAUNCH)
 
         self._arguments = parser.parse_args()
 
         mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
 
+        self._path_wave_post_launch = os.path.join(mf.PATH_HOME, self._arguments.wave_name, mf.DIRECTORY_POST_LAUNCH)
         self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
         self._migration_factory_requester = MigrationFactoryRequester(
             self._endpoints_loader
@@ -70,11 +70,14 @@ class PostLaunchFileCopier:
                 self.__class__.__name__, self._arguments.source
             ))
 
-        print('### Fetching servers list…')
-        servers = self._migration_factory_requester.get_user_server_by_name(self._arguments.wave_name)
-        print('### ✔ Done')
+        print('### Fetching servers list…', end='')
+        servers = self._migration_factory_requester.get_user_servers_by_wave_name(self._arguments.wave_name)
+        logging.getLogger('root').debug(
+            self.__class__.__name__ + ":Found servers: \n “{}”".format(servers)
+        )
+        print(' ✔ Done')
 
-        print('### Copying post_launch files to post_launch folder in source servers…')
+        print('### Copying post-launch files to post-launch folder in source servers…')
 
         domain_password = ''
         if self._has_windows_user():
@@ -87,15 +90,12 @@ class PostLaunchFileCopier:
         create_destination_tasks = []
         copy_files_tasks = []
         for server in servers:
-            create_path_command = 'Invoke-Command -ComputerName {} -ScriptBlock {if (!(Test-path "{}")) {New-Item -Path "{}" -ItemType directory}}'.format(
-                server,
-                self.WINDOWS_POST_LAUNCH_DESTINATION,
-                self.WINDOWS_POST_LAUNCH_DESTINATION,
-            )
-            copy_command = 'Copy-Item "{}/*" "{}" -ToSession (New-PSSession -ComputerName "{}" {})'.format(
+            server_fqdn = server[MfField.SERVER_FQDN]
+            create_path_command = f'Invoke-Command -ComputerName {server_fqdn} -ScriptBlock {{if (!(Test-path "{self.WINDOWS_POST_LAUNCH_DESTINATION}")) {{New-Item -Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}" -ItemType directory}}}}'
+            copy_command = 'Copy-Item "{}/*" "{}" -ToSession (New-PSSession -ComputerName "{}" %s)'.format(
                 self._arguments.source,
                 self.WINDOWS_POST_LAUNCH_DESTINATION,
-                server,
+                server_fqdn,
                 '{}',
             )
 
@@ -111,57 +111,48 @@ class PostLaunchFileCopier:
                     domain_password
                 )
             else:
-                copy_command = copy_command.format('')
+                copy_command = copy_command % ''
 
             create_destination_task = Thread(
-                target=self._do_create_destination_directory,
-                args=[create_path_command, server]
+                target=self._do_run_powershell,
+                args=[create_path_command],
+                name=server_fqdn
             )
             create_destination_tasks.append(create_destination_task)
 
             copy_task = Thread(
-                target=self._do_copy,
-                args=[copy_command, server]
+                target=self._do_run_powershell,
+                args=[copy_command],
+                name='from “{}” to “{}”'.format(self._arguments.source, server_fqdn)
             )
+            copy_task.getName()
             copy_files_tasks.append(copy_task)
 
         for task in create_destination_tasks:
+            print("# Creating post-launch directory on server “{}”…".format(task.getName()))
             task.start()
 
         for task in create_destination_tasks:
             task.join()
+            print('# ✔ Done: {} '.format(task.getName()))
 
         for task in copy_files_tasks:
+            print("# Copying files {}…".format(task.getName()))
             task.start()
 
         for task in copy_files_tasks:
             task.join()
+            print('# ✔ Done: {}'.format(task.getName()))
 
         print('### ✔ Done')
 
 
-    def _do_create_destination_directory(self, create_path_command: str, server_name: str):
+    def _do_run_powershell(self, command: str):
         logging.getLogger('root').info(
-            self.__class__.__name__ + ':Running “{}”'.format(create_path_command)
+            self.__class__.__name__ + ':Running “{}”'.format(command)
         )
 
-        print("# Creating post-launch directory on server “{}”…", end=''.format(
-            server_name
-        ))
-        PowershellRunner.run(create_path_command)
-        print('### ✔ Done')
-
-    def _do_copy(self, copy_command: str, source: str, server_name: str):
-        logging.getLogger('root').info(
-            self.__class__.__name__ + ':Running “{}”'.format(copy_command)
-        )
-
-        print("# Copying files from “{}” to server “{}”…".format(
-            source,
-            server_name
-        ))
-        PowershellRunner.run(copy_command)
-        print('### ✔ Done')
+        PowershellRunner.run(command)
 
     def _has_windows_user(self):
         return self._arguments.windows_user != ""

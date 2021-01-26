@@ -205,15 +205,13 @@ class PowershellRunner:
 
     @classmethod
     def authenticate_command(cls, command: str, user: str, password: str) -> str:
-        return cls.insert_authenthication_arguments(command + ' {}', user, password)
+        return cls.insert_authenthication_arguments(command + ' %s', user, password)
 
     @classmethod
-    def insert_authenthication_arguments(cls, command_with_bracket: str, user: str, password: str) -> str:
-        return command_with_bracket.format(
-            "-Credential (New-Object System.Management.Automation.PSCredential('{}', (ConvertTo-SecureString '{}' "
-            "-AsPlainText -Force))) "
-            "-Authentication Negotiate".format(user, password)
-        )
+    def insert_authenthication_arguments(cls, command_with_percentage: str, user: str, password: str) -> str:
+        _credential_string = "-Credential (New-Object System.Management.Automation.PSCredential('{}', (ConvertTo-SecureString '{}' -AsPlainText -Force))) -Authentication Negotiate".format(user, password)
+
+        return command_with_percentage % _credential_string
 
 
 if __name__ == '__main__':
