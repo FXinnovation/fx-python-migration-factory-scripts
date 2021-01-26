@@ -1,9 +1,12 @@
 import os
 from pathlib import Path
 
+DIRECTORY_POST_LAUNCH = 'post-launch'
+
 PATH_HOME = os.path.join(str(Path.home()), 'migration')
 PATH_TEMPLATE = '/usr/local/share/applications/migration_factory'
 PATH_CONFIG = '/etc/migration_factory'
+PATH_DEFAULT_POST_LAUNCH = os.path.join(PATH_HOME, DIRECTORY_POST_LAUNCH)
 
 ENV_VAR_AWS_ACCESS_KEY_NAMES = ['MF_AWS_ACCESS_KEY_ID', 'AWS_ACCESS_KEY_ID', 'AWS_ACCESS_KEY']
 ENV_VAR_AWS_SECRET_KEY_NAMES = ['MF_AWS_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY', 'AWS_SECRET_KEY']
@@ -27,7 +30,6 @@ FILE_CSV_WAVE_TEMPLATE = 'migration-intake-form.csv'
 FILE_CSV_TAG = 'migration-tags.csv'
 FILE_MARKER_PREPARE_DONE = '.mf_prepare_done'
 
-DIRECTORY_POST_LAUNCH = 'post-launch'
 
 DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE = os.path.join(PATH_CONFIG, 'endpoints.yml')
 DEFAULT_ENV_VAR_DEFAULTS_CONFIG_FILE = os.path.join(PATH_CONFIG, 'defaults.yml')
