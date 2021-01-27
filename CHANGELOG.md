@@ -1,3 +1,17 @@
+## 6.14.0
+
+* feat: (AWSServiceAccessor) Add `describe_ec2_instance` method
+* feat: (AWSServiceAccessor) Add `get_ec2_instance_ips` method
+* refactor: (AWSServiceAccessor) Use the latest version of EnvironmentVariableFetcher
+* feat: (CloudEndureRequester) Add debug log on `get_project_by_name`
+* feat: (CloudEndureRequester) Add `get_project_id` method
+* feat: (CloudEndureRequester) Add `get_machines` method
+* feat: (CloudEndureRequester) Add `get_machine_replica` method
+* feat: (Utils) Add `write_csv_with_headers` method
+* refactor: (mf_export_instance_ip_as_csv) Use class
+* feat (BREAKING): (mf_export_instance_ip_as_csv) Use wave name instad of wave id
+* feat (BREAKING): (mf_export_instance_ip_as_csv) Use kebab-case for arguments
+
 ## 6.13.0
 
 * feat: (MigrationFactory) Add `get_user_servers_by_wave` and `get_user_servers_by_wave_and_os`
