@@ -1,3 +1,7 @@
+## 6.13.1
+
+* fix: (MigrationFactory) leaking attribute scope
+
 ## 6.13.0
 
 * feat: (MigrationFactory) Add `get_user_servers_by_wave` and `get_user_servers_by_wave_and_os`
