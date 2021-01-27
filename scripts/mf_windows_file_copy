@@ -85,7 +85,7 @@ class PostLaunchFileCopier:
                 self.__class__.__name__, self._arguments.source
             ))
         print('### Fetching servers list…', end='', flush=True)
-        servers = self._migration_factory_requester.get_user_servers_by_wave_name(self._arguments.wave_name)
+        servers = self._migration_factory_requester.get_user_servers_by_wave_and_os(self._arguments.wave_name, 'windows')
         logging.getLogger('root').debug(
             self.__class__.__name__ + ":Found servers: \n “{}”".format(servers)
         )
@@ -96,9 +96,6 @@ class PostLaunchFileCopier:
         create_destination_tasks = []
         copy_files_tasks = []
         for server in servers:
-            if 'windows' != server[MfField.SERVER_OS]:
-                continue
-
             server_fqdn = server[MfField.SERVER_FQDN].strip()
             create_path_command = f'Invoke-Command -ComputerName {server_fqdn} -ScriptBlock {{if (!(Test-path "{self.WINDOWS_POST_LAUNCH_DESTINATION}")) {{New-Item -Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}" -ItemType directory}}}}'
 

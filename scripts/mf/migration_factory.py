@@ -200,7 +200,7 @@ class Server(MigrationFactoryData):
         MfField.TENANCY: str,
         MfField.IAM_ROLE: str,
         MfField.TAGS: dict,
-     }
+    }
 
     PUT_FIELDS = {
         MfField.SERVER_OS: str,
@@ -581,7 +581,7 @@ class MigrationFactoryRequester:
         return _server_selected_list_id
 
     def get_user_servers_by_wave_and_os(self, filter_wave_name, filter_os):
-        _server_list = self.get_user_servers_by_wave(filter_wave_name = filter_wave_name)
+        _server_list = self.get_user_servers_by_wave(filter_wave_name=filter_wave_name)
 
         _server_selected_list_id = []
         if _server_list:
