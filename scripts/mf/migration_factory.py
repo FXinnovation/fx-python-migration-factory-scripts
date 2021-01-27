@@ -50,6 +50,8 @@ class MigrationFactoryData:
     _id = None
 
     def __init__(self, data: dict, identifier: int = None):
+        self._data = {}
+        self._id = None
         self.fill(data, identifier)
 
     def fill(self, data: dict, identifier: int = None):
@@ -60,8 +62,8 @@ class MigrationFactoryData:
 
             if value_type is str:
                 self._data[key] = data[key].strip()
-            if value_type is list:
-                self._data[key] = data[key].split(';')
+            elif value_type is list:
+                self._data[key] = ';'.join(data[key])
             else:
                 self._data[key] = data[key]
 
