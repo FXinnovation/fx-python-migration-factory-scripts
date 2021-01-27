@@ -55,15 +55,15 @@ class MigrationFactoryData:
         self.fill(data, identifier)
 
     def fill(self, data: dict, identifier: int = None):
-        for key, value_type in self.FIELDS.items():
+        for key, destination_value_type in self.FIELDS.items():
             if key not in data.keys():
-                self._data[key] = self._get_empty_default(value_type)
+                self._data[key] = self._get_empty_default(destination_value_type)
                 continue
 
-            if value_type is str:
+            if destination_value_type is str:
                 self._data[key] = data[key].strip()
-            elif value_type is list:
-                self._data[key] = ';'.join(data[key])
+            elif destination_value_type is list:
+                self._data[key] = data[key].split(';')
             else:
                 self._data[key] = data[key]
 
