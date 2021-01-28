@@ -51,7 +51,7 @@ class PostLaunchFileCopier:
             )
         )
         parser.add_argument(
-            '--windows-user',
+            '--windows-username',
             default=EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
                 default=''
@@ -102,7 +102,7 @@ class PostLaunchFileCopier:
             if self._has_windows_user():
                 create_path_command = PowershellRunner.authenticate_command(
                     create_path_command,
-                    self._arguments.windows_user,
+                    self._arguments.windows_username,
                     self._domain_password
                 )
 
@@ -177,7 +177,7 @@ class PostLaunchFileCopier:
         if self._has_windows_user():
             copy_command = PowershellRunner.insert_authenthication_arguments(
                 copy_command,
-                self._arguments.windows_user,
+                self._arguments.windows_username,
                 self._domain_password
             )
         else:
@@ -193,7 +193,7 @@ class PostLaunchFileCopier:
         PowershellRunner.run(command)
 
     def _has_windows_user(self):
-        return self._arguments.windows_user != ""
+        return self._arguments.windows_username != ""
 
 
 if __name__ == '__main__':
