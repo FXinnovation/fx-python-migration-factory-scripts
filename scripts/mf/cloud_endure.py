@@ -183,6 +183,14 @@ class CloudEndureRequester:
 
         return list(map(lambda project: project['name'], response['items']))
 
+    def get_api_token(self, project_name: str):
+        project = self.get_project_by_name(project_name = project_name)
+
+        if not project:
+            return False
+
+        return project['agentInstallationToken']
+
     def get(self, uri):
         return Requester.get(
             uri=self._cloud_endure_session.get_api_endpoint().format(uri),

@@ -17,148 +17,151 @@ from mf.config_loaders import EndpointsLoader, ConfigLoader
 
 linuxpkg = __import__("mf_install_linux_package")
 
-PATH = os.path.dirname(os.path.abspath(__file__))
+class CeAgentInstaller:
 
-HOST = 'https://console.cloudendure.com'
-headers = {'Content-Type': 'application/json'}
-session = {}
-endpoint = '/api/latest/{}'
 
-serverendpoint = '/prod/user/servers'
-appendpoint = '/prod/user/apps'
+    _path = None
+    _domain_password = None
+    _cloud_endure_requester = None
+    _migration_factory_requester = None
+    _endpoints_loader = None
+    _aws_service_accessor = None
 
-def Factorylogin(username, password, LoginHOST):
-    login_data = {'username': username, 'password': password}
-    r = requests.post(LoginHOST + '/prod/login',
-                  data=json.dumps(login_data))
-    if r.status_code == 200:
-        print("Migration Factory : You have successfully logged in")
-        print("")
-        token = str(json.loads(r.text))
-        return token
-    if r.status_code == 502:
-        print("ERROR: Incorrect username or password....")
-        sys.exit(1)
-    else:
-        print(r.text)
-        sys.exit(2)
+    def __init__(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-v', action='store_true', help='Enable info outputs')
+        parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
+        parser.add_argument('--windows-username', default =
+            EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
+                default=''
+            ),
+            help= "The windows username"
+        )
+        parser.add_argument('--linux-username', default =
+            EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_USERNAME,
+                default=''
+            ),
+            help= "The windows username"
+        )
+        parser.add_argument('--linux-private-key-file', default =
+            EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_FILE,
+                default=''
+            ),
+            help= "The windows username"
+        )
+        parser.add_argument(
+            '--config-file-endpoints',
+            default=EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+                default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+            ),
+            help='Configuration file containing the Migration Factory endpoint URLs'
+        )
 
-def CElogin(userapitoken, endpoint):
-    login_data = {'userApiToken': userapitoken}
-    r = requests.post(HOST + endpoint.format('login'),
-                  data=json.dumps(login_data), headers=headers)
-    if r.status_code == 200:
-        print("CloudEndure : You have successfully logged in")
-        print("")
-    if r.status_code != 200 and r.status_code != 307:
-        if r.status_code == 401 or r.status_code == 403:
-            print('ERROR: The CloudEndure login credentials provided cannot be authenticated....')
-        elif r.status_code == 402:
-            print('ERROR: There is no active license configured for this CloudEndure account....')
-        elif r.status_code == 429:
-            print('ERROR: CloudEndure Authentication failure limit has been reached. The service will become available for additional requests after a timeout....')
+        self._arguments = parser.parse_args()
 
-    # check if need to use a different API entry point
-    if r.history:
-        endpoint = '/' + '/'.join(r.url.split('/')[3:-1]) + '/{}'
-        r = requests.post(HOST + endpoint.format('login'),
-                      data=json.dumps(login_data), headers=headers)
+        mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
 
-    session['session'] = r.cookies['session']
-    try:
-       headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
-    except:
-       pass
+        self._path_wave = os.path.join(mf.PATH_HOME, self._arguments.wave_name)
 
-def GetCEProject(projectname):
-    r = requests.get(HOST + endpoint.format('projects'), headers=headers, cookies=session)
-    if r.status_code != 200:
-        print("ERROR: Failed to fetch the project....")
-        sys.exit(2)
-    try:
-        # Get Project ID
-        project_id = ""
-        projects = json.loads(r.text)["items"]
-        project_exist = False
-        for project in projects:
-            if project["name"] == projectname:
-               project_id = project["id"]
-               project_exist = True
-        if project_exist == False:
-            print("ERROR: Project Name: " + projectname + " does not exist in CloudEndure....")
-            sys.exit(3)
-        return project_id
-    except:
-        print("ERROR: Failed to fetch the project....")
-        sys.exit(4)
+        self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
+        self._migration_factory_requester = MigrationFactoryRequester(
+            self._endpoints_loader
+        )
+        self._cloud_endure_requester = CloudEndureRequester()
 
-def GetInstallToken(project_id):
-        # Get Machine List from CloudEndure
-        project = requests.get(HOST + endpoint.format('projects/{}').format(project_id), headers=headers, cookies=session)
-        InstallToken = json.loads(project.text)['agentInstallationToken']
-        return InstallToken
+        self._aws_service_accessor = AWSServiceAccessor()
 
-def ProjectList(waveid, token, UserHOST, serverendpoint, appendpoint):
-# Get all Apps and servers from migration factory
-    auth = {"Authorization": token}
-    servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
-    #print(servers)
-    apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
-    #print(apps)
-    newapps = []
+        if self._has_windows_user():
+            self._domain_password = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
+                env_var_description='Windows password',
+                default='',
+                sensitive=True
+            )
 
-    CEProjects = []
-    # Check project names in CloudEndure
-    for app in apps:
-        Project = {}
-        if 'wave_id' in app:
-            if str(app['wave_id']) == str(waveid):
-                newapps.append(app)
-                if 'cloudendure_projectname' in app:
-                    Project['ProjectName'] = app['cloudendure_projectname']
-                    project_id = GetCEProject(Project['ProjectName'])
-                    Project['ProjectId'] = project_id
-                    install_token = GetInstallToken(project_id)
-                    Project['InstallToken'] = install_token
-                    if Project not in CEProjects:
-                        CEProjects.append(Project)
-                else:
-                    print("ERROR: App " + app['app_name'] + " is not linked to any CloudEndure project....")
-                    sys.exit(5)
-    Projects = ServerList(newapps, servers, CEProjects, waveid)
-    return Projects
+        _path = os.path.dirname(os.path.abspath(__file__))
 
-def ServerList(apps, servers, CEProjects, waveid):
-    servercount = 0
-    Projects = CEProjects
-    for Project in Projects:
-        Windows = []
-        Linux = []
-        for app in apps:
-            if str(app['cloudendure_projectname']) == Project['ProjectName']:
-                for server in servers:
-                    if app['app_id'] == server['app_id']:
-                        if 'server_os' in server:
-                                if 'server_fqdn' in server:
-                                    if server['server_os'].lower() == "windows":
-                                        Windows.append(server)
-                                    elif server['server_os'].lower() == "linux":
-                                        Linux.append(server)
-                                else:
-                                    print("ERROR: server_fqdn for server: " + server['server_name'] + " doesn't exist")
-                                    sys.exit(4)
-                        else:
-                            print ('server_os attribute does not exist for server: ' + server['server_name'] + ", please update this attribute")
-                            sys.exit(2)
-        Project['Windows'] = Windows
-        Project['Linux'] = Linux
-        # print(Project)
-        servercount = servercount + len(Windows) + len(Linux)
-    if servercount == 0:
-        print("ERROR: Serverlist for wave: " + waveid + " is empty....")
-        sys.exit(3)
-    else:
-        return Projects
+    def install_agent(self):
+        self._install_windows_agent()
+        self._install_linux_agent()
+
+    def _install_windows_agent(self):
+        print('### Install Windows CloudEndure agent…', end=' ')
+
+        _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(filter_wave_name = self._arguments.wave_name, filter_os = 'windows')
+
+        if _server_list is None:
+            print('✔ No Windows server in this wave. Nothing to do')
+
+        _api_tokens = self._get_api_tokens()
+
+        if _api_tokens is None:
+            return
+
+        for server in _server_list:
+            install_command = '/mf_install_windows.ps1 "No" "' + _api_tokens[server[MfField.APP_ID]] + '" "' + server[MfField.SERVER_FQDN] + '"'
+
+            if self._has_windows_user():
+                create_path_command = PowershellRunner.authenticate_command(
+                    create_path_command,
+                    self._arguments.windows_user,
+                    self._domain_password
+                )
+
+            logging.getLogger('root').info(
+                self.__class__.__name__ + ':Running “{}”'.format(command)
+            )
+
+            PowershellRunner.run(create_path_command)
+
+            print('✔ done.')
+
+    def _install_linux_agent(self):
+        print('### Install Linux CloudEndure agent…', end=' ')
+
+        _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(filter_wave_name = self._arguments.wave_name, filter_os = 'windows')
+
+        if _server_list is None:
+            print('✔ No Linux server in this wave. Nothing to do')
+
+        _api_tokens = self._get_api_tokens()
+
+        if _api_tokens is None:
+            return
+
+        for server in _server_list:
+            linuxpkg.install_cloud_endure(server['server_fqdn'], user_name, pass_key, has_key in 'y', project['InstallToken'])
+
+    def _get_api_tokens(self):
+        _apps = self._migration_factory_requester.get_user_apps_by_wave_name(wave_name = self._arguments.wave_name)
+
+        if _apps is None:
+            logging.getLogger('root').info('{}: wave “{}” don\'t have cloudendure project)'.format(
+                self.__class__.__name__, self._arguments.wave_name
+            ))
+            return None
+
+        _installation_token_by_app_id = {}
+
+        for app in _apps:
+            if MfField.CLOUDENDURE_PROJECT_NAME not in app:
+                logging.getLogger('root').info('{}: app “{}” don\'t have cloudendure project)'.format(
+                    self.__class__.__name__, app[MfField.APP_NAME]
+                ))
+                continue
+
+           _installation_token_by_app_id[MfField.APP_ID] = self._cloud_endure_requester.get_api_token(project_name = app[MfField.CLOUDENDURE_PROJECT_NAME])
+
+        return _installation_token_by_app_id
+
+    def _has_windows_user(self):
+        return self._arguments.windows_username != ""
+
 
 def AgentCheck(projects, token, UserHOST):
     auth = {"Authorization": token}
@@ -207,138 +210,6 @@ def AgentCheck(projects, token, UserHOST):
             print("  " + s)
 
 def main(arguments):
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--Waveid', required=True)
-    parser.add_argument('--WindowsUser', default =
-        EnvironmentVariableFetcher.fetch(
-            env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
-            default=''
-        ),
-        help= "The windows username"
-    )
-    parser.add_argument(
-           '--config-file-endpoints',
-           default=EnvironmentVariableFetcher.fetch(
-               env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
-               default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
-           ),
-           help='Configuration file containing the Migration Factory endpoint URLs'
-       )
-    args = parser.parse_args(arguments)
-
-    _endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
-    LoginHOST = _endpoints_loader.get_login_api_url()
-    UserHOST = _endpoints_loader.get_user_api_url()
-
-    Domain_User = args.WindowsUser
-
-    print("")
-    print("****************************")
-    print("*Login to Migration factory*")
-    print("****************************")
-    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
-    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
-
-    token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
-
-    print("")
-    print("************************")
-    print("* Login to CloudEndure *")
-    print("************************")
-    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
-
-    r = CElogin(_ce_user_api_token, endpoint)
-
-    if r is not None and "ERROR" in r:
-        print(r)
-
-    print("****************************")
-    print("*** Getting Server List ***")
-    print("****************************")
-    Projects = ProjectList(args.Waveid, token, UserHOST, serverendpoint, appendpoint)
-    linux_machines = False
-    for project in Projects:
-        if (len(project['Windows']) + len(project['Linux']) == 0):
-            print("* CE Project " + project['ProjectName'] + " server list is empty *")
-        else:
-            print("* CE Project " + project['ProjectName'] + " *")
-            if len(project['Windows']) > 0:
-                print("   # Windows Server List #: ")
-                for s in project['Windows']:
-                   print("       " + s['server_fqdn'])
-            if len(project['Linux']) > 0:
-                linux_machines = True
-
-                try:
-                    print("   # Linux Server List #: ")
-                    for s in project['Linux']:
-                        print("       " + s['server_fqdn'])
-                except Exception as error:
-                    print('ERROR', error)
-                    sys.exit(4)
-        print("")
-
-    print("******************************************")
-    print("* Enter Linux Sudo username and password *")
-    print("******************************************")
-    user_name = ''
-    pass_key = ''
-    has_key = ''
-
-    if linux_machines:
-        user_name = input("Linux Username: ")
-        has_key = input("If you use a private key to login, press [Y] or if use password press [N]: ")
-        if has_key.lower() in 'y':
-            pass_key = input('Private Key file name: ')
-        else:
-            pass_key_first = getpass.getpass('Linux Password: ')
-            pass_key_second = getpass.getpass('Re-enter Password: ')
-            while(pass_key_first != pass_key_second):
-                print("Password mismatch, please try again!")
-                pass_key_first = getpass.getpass('Linux Password: ')
-                pass_key_second = getpass.getpass('Re-enter Password: ')
-            pass_key = pass_key_second
-
-    # Pass parameters to PowerShell
-    # First Parameter - $reinstall - "Yes" or "No"
-    # Second Parameter - $API_token - CloudEndure Install token
-    # Third Parameter - $Servername - Server name that matchs Wave Id and CloudEndure project name
-    print("")
-    print("*********************************")
-    print("* Installing CloudEndure Agents *")
-    print("*********************************")
-    print("")
-    if Domain_User != "":
-        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
-    server_status = {}
-    for project in Projects:
-        server_string = ""
-        if len(project['Windows']) > 0:
-            for server in project['Windows']:
-                server_string = server_string + server['server_fqdn'] + ','
-            server_string = server_string[:-1]
-            command = PATH + "/mf_install_windows.ps1 \"No\" \"" + project['InstallToken'] + "\" \"" + server_string + "\""
-            if Domain_User != "":
-              command += " '" + Domain_User + "' '" + Domain_Password + "'"
-            p = subprocess.Popen(["pwsh", "-Command", command], stdout=sys.stdout)
-            p.communicate()
-        if len(project['Linux']) > 0:
-            for server in project['Linux']:
-                status = linuxpkg.install_cloud_endure(server['server_fqdn'], user_name,
-                                                     pass_key,
-                                              has_key in 'y', project['InstallToken'])
-                server_status.update({server['server_fqdn']: status})
-        print("")
-
-    print("")
-    print("********************************")
-    print("*Checking Agent install results*")
-    print("********************************")
-    print("")
-
-    time.sleep(5)
     AgentCheck(Projects,token, UserHOST)
 
     config_loader = ConfigLoader()
