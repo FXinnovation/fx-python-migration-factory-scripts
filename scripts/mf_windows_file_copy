@@ -155,16 +155,17 @@ class PostLaunchFileCopier:
         print(' ✔ Done')
 
     def _find_all_windows_scripts(self, basepath: str) -> list:
-        windows_scripts = []
-        windows_scripts.extend(glob.glob(f'{basepath}/*.bat', recursive=True))
-        windows_scripts.extend(glob.glob(f'{basepath}/*.exe', recursive=True))
-        windows_scripts.extend(glob.glob(f'{basepath}/*.cmd', recursive=True))
-        windows_scripts.extend(glob.glob(f'{basepath}/*.ps1', recursive=True))
-
-        return windows_scripts
+        return [
+            f'{basepath}/*.bat',
+            f'{basepath}/*.exe',
+            f'{basepath}/*.cmd',
+            f'{basepath}/*.ps1',
+        ]
 
     def _find_all_linux_scripts(self, basepath: str) -> list:
-        return glob.glob(f'{basepath}/*.sh', recursive=True)
+        return [
+            f'{basepath}/*.sh',
+        ]
 
     def _get_copy_command(self, filepath: str, server_fqdn: str, ) -> str:
         copy_command = 'Copy-Item "{}" "{}" -ToSession (New-PSSession -ComputerName "{}" %s) | Out-Null'.format(

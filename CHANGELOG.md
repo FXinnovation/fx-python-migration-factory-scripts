@@ -1,3 +1,8 @@
+## 7.0.1
+
+* fix: (mf_windows_file_copy) only parallel by server/kind of files to avoid shell limits
+
+
 ## 7.0.0
 
 * refactor: (mf_windows_file_copy) use class instead of procedural
