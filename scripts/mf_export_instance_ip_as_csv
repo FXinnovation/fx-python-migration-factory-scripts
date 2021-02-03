@@ -31,7 +31,7 @@ class Ec2InstanceExporter:
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable info outputs')
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
-        parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to act on')
         parser.add_argument(
             '--config-file-endpoints',
             default=EnvironmentVariableFetcher.fetch(
@@ -67,29 +67,29 @@ class Ec2InstanceExporter:
             instance_id['ips'] = ';'.join(self._aws_service_accessor.get_ec2_instance_ips(instance_id['machine_cloud_id']))
             instances.append(instance_id)
 
-        Utils.write_csv_with_headers(os.path.join(self._path_wave, self._arguments.wave_name + '-ip.csv'), instances)
+        Utils.write_csv_with_headers(os.path.join(self._path_wave, 'ips.csv'), instances)
 
     def _get_instance_ids(self):
         apps = self._migration_factory_requester.get_user_apps_by_wave_name(self._arguments.wave_name)
 
         _machine_ids = []
         for app in apps:
-            if 'cloudendure_projectname' not in app:
-                logging.getLogger('root').warn("\n{}: “{}” is in “{}” but havn't cloudendure project setup".format(
-                    self.__class__.__name__, app['app_name'], self._arguments.wave_name
+            if MfField.CLOUDENDURE_PROJECT_NAME not in app:
+                logging.getLogger('root').warn("\n{}: app “{}” is in wave “{}” but it seems it doesn’t have a cloudendure project by that name.".format(
+                    self.__class__.__name__, app[MfField.APP_NAME], self._arguments.wave_name
                 ))
                 continue
 
-            _ce_machines = self._cloud_endure_requester.get_machines(app['cloudendure_projectname'])
+            _ce_machines = self._cloud_endure_requester.get_machines(app[MfField.CLOUDENDURE_PROJECT_NAME])
             if not _ce_machines:
                 continue
             for _ce_machine in _ce_machines['items']:
                 if _ce_machine['replica'] == '':
-                    logging.getLogger('root').warn("\n{}: machine “{}” haven't launched target".format(
-                    self.__class__.__name__, _ce_machine['sourceProperties']['name']
-                ))
+                    logging.getLogger('root').warn("\n{}: machine “{}” wasn’t launched as a test/cutover target yet.".format(
+                        self.__class__.__name__, _ce_machine['sourceProperties']['name']
+                    ))
 
-                _ce_replica = self._cloud_endure_requester.get_machine_replica(_ce_machine['replica'], app['cloudendure_projectname'])
+                _ce_replica = self._cloud_endure_requester.get_machine_replica(_ce_machine['replica'], app[MfField.CLOUDENDURE_PROJECT_NAME])
 
                 instance_information = {}
                 instance_information['machine_name'] = _ce_machine['sourceProperties']['name']

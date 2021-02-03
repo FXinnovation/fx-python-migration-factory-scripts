@@ -74,6 +74,10 @@ class Utils:
     @classmethod
     def write_csv_with_headers(cls, csv_path: str, csv_content: dict):
         with open(csv_path, 'a') as csv_file:
+            if not csv_content:
+                logging.getLogger('root').error("{}: CSV content argument can't be empty \n{}".format(
+                    cls.__class__.__name__, csv_content
+                ))
             writer = csv.DictWriter(csv_file, fieldnames=csv_content[0].keys())
             writer.writeheader()
             for row in csv_content:
