@@ -40,6 +40,7 @@ Here are all main environment variable:
 * `MF_WINDOWS_PASSWORD`: The Windows password to connect to source host
 * `MF_LINUX_USERNAME`: The linux username to connect to source host
 * `MF_LINUX_PASSWORD`: The linux password to connect to source host
+* `MF_LINUX_PRIVATE_KEY_PASSPHRASE`: The linux passphrase for the private key file to connect to source host
 * `MF_LINUX_PRIVATE_KEY_FILE`: This linux private key file to connect to source host
 
 
