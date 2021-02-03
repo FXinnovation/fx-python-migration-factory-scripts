@@ -38,7 +38,7 @@ class WaveMigrationEstimator:
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable info outputs')
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
-        parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to act on')
         parser.add_argument('--notify', action='store_true', help='Whether or not to notify the results')
         parser.add_argument('--default-mbps-speed', default=self.DEFAULT_MBPS_SPEED, help='Default speed in Mbit/s')
         parser.add_argument('--work-hours-start', default=None, help='Shift start hour')
