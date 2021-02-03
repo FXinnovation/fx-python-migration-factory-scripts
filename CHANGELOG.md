@@ -1,6 +1,7 @@
 ## 7.0.1
 
 * fix: (mf_windows_file_copy) only parallel by server/kind of files to avoid shell limits
+* fix: (estimation script) prevent bug for occuring with high value for storage
 
 
 ## 7.0.0

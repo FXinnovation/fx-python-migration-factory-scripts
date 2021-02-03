@@ -211,11 +211,11 @@ class WaveMigrationEstimator:
 
     def _get_formatted_replication_end_date(self, replication_end_date: datetime) -> str:
         result = ''
-        if replication_end_date.day == datetime.datetime.now().day:
+        if replication_end_date.day == self._get_now_timezoned().day:
             result += 'today'
-        elif (replication_end_date - datetime.datetime.now()).days == 1:
+        elif (replication_end_date - self._get_now_timezoned()).days == 1:
             result += 'tomorrow'
-        elif (replication_end_date - datetime.datetime.now()).days >= 2:
+        elif (replication_end_date - self._get_now_timezoned()).days >= 2:
             result += '{} {}'.format(replication_end_date.strftime('%A'), replication_end_date.strftime('%-d'))
 
         return result
