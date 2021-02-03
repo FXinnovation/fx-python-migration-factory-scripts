@@ -3,7 +3,6 @@
 from __future__ import print_function
 
 import argparse
-import glob
 import logging
 import os
 from threading import Thread
@@ -47,8 +46,8 @@ class PostLaunchFileCopier:
             help="Generic post-launch files to copy (.exe, .bat of .sh)."
                  " Defaults to {}."
                  " Specific post-launch files will be fetched in wave directory dynamically.".format(
-                mf.PATH_DEFAULT_POST_LAUNCH
-            )
+                     mf.PATH_DEFAULT_POST_LAUNCH
+                 )
         )
         parser.add_argument(
             '--windows-username',
@@ -85,7 +84,9 @@ class PostLaunchFileCopier:
                 self.__class__.__name__, self._arguments.source
             ))
         print('### Fetching servers list…', end='', flush=True)
-        servers = self._migration_factory_requester.get_user_servers_by_wave_and_os(self._arguments.wave_name, 'windows')
+        servers = self._migration_factory_requester.get_user_servers_by_wave_and_os(
+            self._arguments.wave_name, 'windows'
+        )
         logging.getLogger('root').debug(
             self.__class__.__name__ + ":Found servers: \n “{}”".format(servers)
         )
