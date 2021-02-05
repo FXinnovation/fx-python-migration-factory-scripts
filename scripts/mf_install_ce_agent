@@ -12,11 +12,15 @@ import subprocess
 import getpass
 import time
 import os
+import logging
 
 import mf
 from mf.notification import Notifier
-from mf.utils import EnvironmentVariableFetcher
+from mf.utils import EnvironmentVariableFetcher, PowershellRunner
 from mf.config_loaders import EndpointsLoader, ConfigLoader
+from mf.migration_factory import MigrationFactoryRequester, MfField, MigrationFactoryDataValidator
+from mf.cloud_endure import CloudEndureRequester
+from mf.aws import AWSServiceAccessor
 
 import mf_install_linux_package
 
@@ -72,8 +76,6 @@ class CeAgentInstaller:
 
         mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
 
-        self._path_wave = os.path.join(mf.PATH_HOME, self._arguments.wave_name)
-
         self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
         self._migration_factory_requester = MigrationFactoryRequester(
             self._endpoints_loader
@@ -90,10 +92,8 @@ class CeAgentInstaller:
                 sensitive=True
             )
 
-        _path = os.path.dirname(os.path.abspath(__file__))
-
         self._config_loader = ConfigLoader()
-        self._notifier = Notifier(config_loader.get_notifications_config())
+        self._notifier = Notifier(self._config_loader.get_notifications_config())
 
     def install(self):
         self._install_windows_agent()
@@ -110,24 +110,24 @@ class CeAgentInstaller:
 
         _api_tokens = self._get_api_tokens()
 
+        logging.getLogger('root').debug(
+            self.__class__.__name__ + ':api token: “{}”'.format(_api_tokens)
+        )
+
         if _api_tokens is None:
             return
 
         for server in _server_list:
-            install_command = '/mf_install_windows.ps1 "No" "' + _api_tokens[server[MfField.APP_ID]] + '" "' + server[MfField.SERVER_FQDN] + '"'
+            install_command = os.path.dirname(os.path.abspath(__file__)) + '/mf_install_windows.ps1 "No" "' + _api_tokens[server[MfField.APP_ID]] + '" "' + server[MfField.SERVER_FQDN] + '"'
 
             if self._has_windows_user():
-                create_path_command = PowershellRunner.authenticate_command(
-                    create_path_command,
-                    self._arguments.windows_user,
-                    self._domain_password
-                )
+                install_command += ' "' + self._arguments.windows_username + '" "' + self._domain_password + '"'
 
             logging.getLogger('root').info(
-                self.__class__.__name__ + ':Running “{}”'.format(command)
+                self.__class__.__name__ + ':Running “{}”'.format(install_command)
             )
 
-            PowershellRunner.run(create_path_command)
+            PowershellRunner.run(install_command)
 
         print('✔ done.')
 
@@ -144,8 +144,15 @@ class CeAgentInstaller:
         if _api_tokens is None:
             return
 
+        user_name = self._arguments.linux_username if self._arguments.linux_username.lower().strip() != '' else EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_LINUX_USERNAME, env_var_description='Linux username')
+        has_key = self._arguments.linux_private_key_file.lower().strip() != ''
+        if has_key:
+            pass_key = self._arguments.linux_private_key_file
+        else:
+            pass_key = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_LINUX_PASSWORD, env_var_description='Linux password', sensitive=True)
+
         for server in _server_list:
-            mf_install_linux_package.install_cloud_endure(server[MfField.SERVER_FQDN], self._arguments.linux_username, self._arguments.linux_private_key_file, 'y', _api_tokens[server[MfField.APP_ID]])
+            mf_install_linux_package.install_cloud_endure(server[MfField.SERVER_FQDN], user_name, pass_key, 'y' if  has_key else 'n', _api_tokens[server[MfField.APP_ID]])
 
         print('✔ done.')
 
@@ -167,7 +174,7 @@ class CeAgentInstaller:
                 ))
                 continue
 
-           _installation_token_by_app_id[MfField.APP_ID] = self._cloud_endure_requester.get_api_token(project_name = app[MfField.CLOUDENDURE_PROJECT_NAME])
+            _installation_token_by_app_id[app[MfField.APP_ID]] = self._cloud_endure_requester.get_api_token(project_name = app[MfField.CLOUDENDURE_PROJECT_NAME])
 
         return _installation_token_by_app_id
 
@@ -178,20 +185,26 @@ class CeAgentInstaller:
          _server_list = self._migration_factory_requester.get_user_servers_by_wave(filter_wave_name = self._arguments.wave_name)
 
          for server in _server_list:
-				for i in range(1,5):
-                    if self._cloud_endure_requester.get_machine(self.arguments.wave_name, server[MfField.SERVER_FQDN]) is not None:
-                        self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(server[MfField.SERVER_ID]), data=json.dumps({"migration_status": "CE Agent Install - Success"}))
-                        print("“{}”: ✔ Sucess".format(server[MfField.SERVER_FQDN]))
-                        if self._arguments.notifier:
-                            self._notifier.notify(Notifier.AGENT_INSTALLED, Notifier.AGENT_INSTALLED_MESSAGE.format(server[MfField.SERVER_FQDN], self.arguments.wave_name))
-                        break
-                    # Expotential backoff algorithm
-                     logging.getLogger('root').debug(
-                         self.__class__.__name__ + ': Retry “{}”/4'.format(i)
-                    )
-                    time.sleep(ceil(((2**i) - 1) /2)*5)
-                self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(server[MfField.SERVER_ID]), data=json.dumps({"migration_status": "CE Agent Install - Failed"}))
-                print("“{}”: ✗ Failed".format(server[MfField.SERVER_FQDN]))
+             is_agent_installed = False
+             for i in range(1,5):
+                 if self._cloud_endure_requester.get_machine(self._arguments.wave_name, server[MfField.SERVER_FQDN]) is not None or self._cloud_endure_requester.get_machine(self._arguments.wave_name, server[MfField.SERVER_NAME]) is not None:
+                     self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(server[MfField.SERVER_ID]), data=json.dumps({"migration_status": "CE Agent Install - Success"}))
+                     print("{} ✔ Success".format(server[MfField.SERVER_FQDN]))
+                     if self._arguments.notify:
+                         self._notifier.notify(Notifier.AGENT_INSTALLED, Notifier.AGENT_INSTALLED_MESSAGE.format(server[MfField.SERVER_FQDN], self.arguments.wave_name))
+                     is_agent_installed = True
+                     break
+                 # Expotential backoff algorithm
+                 logging.getLogger('root').debug(
+                     self.__class__.__name__ + ': Retry “{}”/4'.format(i)
+                 )
+                 time.sleep(ceil(((2**i) - 1) /2)*5)
+
+             if is_agent_installed:
+                 continue
+
+             self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(server[MfField.SERVER_ID]), data=json.dumps({"migration_status": "CE Agent Install - Failed"}))
+             print("{} ✗ Failed".format(server[MfField.SERVER_FQDN]))
 
 
 if __name__ == '__main__':
