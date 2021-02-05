@@ -170,6 +170,19 @@ class CloudEndureRequester:
 
         return machines
 
+    def get_machine(self, project_name, machine_name):
+        machines = self.get_machines(project_name)
+
+        if machines in None:
+            return None
+
+        for machine in machines['items']:
+            if machine_name.lower() ==  machine['sourceProperties']['name'].lower() or machine_name.lower() ==  machine['sourceProperties']['name'].lower():
+                logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project") + project_name + str(" has a machine ") + machine['sourceProperties']['name'])
+                return machine
+
+        return None
+
     def get_machine_replica(self, replica_id, project_name):
         _project_id = self.get_project_id(project_name)
 

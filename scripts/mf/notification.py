@@ -77,7 +77,7 @@ class Notifier:
     TEST_TARGETS_READY = 'TestTargetsReady'
     CUTOVER_TARGETS_READY = 'CutoverTargetsReady'
 
-    AGENT_INSTALLED_MESSAGE = 'The CloudEndure agents are now installed for the {} project.'
+    AGENT_INSTALLED_MESSAGE = 'The CloudEndure agent is now installed for the server {} in {} project.'
     ESTIMATION_DONE_MESSAGE = '{}'
     POST_LAUNCH_SCRIPTS_UPDATED_MESSAGE = 'The post launch scripts has been copied on the servers of the {} project.'
     REPLICATION_DONE_MESSAGE = 'The initial replication for all the servers in the {} project is done.'

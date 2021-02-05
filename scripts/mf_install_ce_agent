@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 from __future__ import print_function
+from time import sleep
+from math import ceil
+
 import sys
 import argparse
 import requests
@@ -15,7 +18,7 @@ from mf.notification import Notifier
 from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader, ConfigLoader
 
-linuxpkg = __import__("mf_install_linux_package")
+import mf_install_linux_package
 
 class CeAgentInstaller:
 
@@ -26,11 +29,14 @@ class CeAgentInstaller:
     _migration_factory_requester = None
     _endpoints_loader = None
     _aws_service_accessor = None
+    _config_loader = None
+    _notifier = None
 
     def __init__(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable info outputs')
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
+        parser.add_argument('--notify', action='store_true', help='Whether or not to notify the results')
         parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
         parser.add_argument('--windows-username', default =
             EnvironmentVariableFetcher.fetch(
@@ -86,9 +92,13 @@ class CeAgentInstaller:
 
         _path = os.path.dirname(os.path.abspath(__file__))
 
-    def install_agent(self):
+        self._config_loader = ConfigLoader()
+        self._notifier = Notifier(config_loader.get_notifications_config())
+
+    def install(self):
         self._install_windows_agent()
         self._install_linux_agent()
+        self._agent_check()
 
     def _install_windows_agent(self):
         print('### Install Windows CloudEndure agent…', end=' ')
@@ -119,12 +129,12 @@ class CeAgentInstaller:
 
             PowershellRunner.run(create_path_command)
 
-            print('✔ done.')
+        print('✔ done.')
 
     def _install_linux_agent(self):
         print('### Install Linux CloudEndure agent…', end=' ')
 
-        _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(filter_wave_name = self._arguments.wave_name, filter_os = 'windows')
+        _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(filter_wave_name = self._arguments.wave_name, filter_os = 'linux')
 
         if _server_list is None:
             print('✔ No Linux server in this wave. Nothing to do')
@@ -135,7 +145,9 @@ class CeAgentInstaller:
             return
 
         for server in _server_list:
-            linuxpkg.install_cloud_endure(server['server_fqdn'], user_name, pass_key, has_key in 'y', project['InstallToken'])
+            mf_install_linux_package.install_cloud_endure(server[MfField.SERVER_FQDN], self._arguments.linux_username, self._arguments.linux_private_key_file, 'y', _api_tokens[server[MfField.APP_ID]])
+
+        print('✔ done.')
 
     def _get_api_tokens(self):
         _apps = self._migration_factory_requester.get_user_apps_by_wave_name(wave_name = self._arguments.wave_name)
@@ -162,60 +174,26 @@ class CeAgentInstaller:
     def _has_windows_user(self):
         return self._arguments.windows_username != ""
 
+    def _agent_check(self):
+         _server_list = self._migration_factory_requester.get_user_servers_by_wave(filter_wave_name = self._arguments.wave_name)
 
-def AgentCheck(projects, token, UserHOST):
-    auth = {"Authorization": token}
-    success_servers = []
-    failed_servers = []
-    for project in projects:
-        project_id = GetCEProject(project['ProjectName'])
-        m = requests.get(HOST + endpoint.format('projects/{}/machines').format(project_id), headers=headers, cookies=session)
-        if len(project['Windows']) > 0:
-            for w in project['Windows']:
-                machine_exist = False
-                serverattr = {}
-                for machine in json.loads(m.text)["items"]:
-                    if w["server_name"].lower() == machine['sourceProperties']['name'].lower() or w["server_fqdn"].lower() == machine['sourceProperties']['name'].lower():
-                        machine_exist = True
-                if machine_exist == True:
-                    success_servers.append(w['server_fqdn'])
-                    serverattr = {"migration_status": "CE Agent Install - Success"}
-                else:
-                    failed_servers.append(w['server_fqdn'])
-                    serverattr = {"migration_status": "CE Agent Install - Failed"}
-                update_w = requests.put(UserHOST + serverendpoint + '/' + w['server_id'], headers=auth, data=json.dumps(serverattr))
-        if len(project['Linux']) > 0:
-            for li in project['Linux']:
-                serverattr = {}
-                machine_exist = False
-                serverattr = {}
-                for machine in json.loads(m.text)["items"]:
-                    if li["server_name"].lower() == machine['sourceProperties']['name'].lower() or li["server_fqdn"].lower() == machine['sourceProperties']['name'].lower():
-                        machine_exist = True
-                if machine_exist == True:
-                    success_servers.append(li['server_fqdn'])
-                    serverattr = {"migration_status": "CE Agent Install - Success"}
-                else:
-                    failed_servers.append(li['server_fqdn'])
-                    serverattr = {"migration_status": "CE Agent Install - Failed"}
-                update_l = requests.put(UserHOST + serverendpoint + '/' + li['server_id'], headers=auth, data=json.dumps(serverattr))
-    if len(success_servers) > 0:
-        print("***** CE Agent installed successfully on the following servers *****")
-        for s in success_servers:
-            print("  " + s)
-        print("")
-    if len(failed_servers) > 0:
-        print("##### CE Agent install failed on the following servers #####")
-        for s in failed_servers:
-            print("  " + s)
-
-def main(arguments):
-    AgentCheck(Projects,token, UserHOST)
-
-    config_loader = ConfigLoader()
-    notifier = Notifier(config_loader.get_notifications_config())
-    notifier.notify(Notifier.AGENT_INSTALLED, Notifier.AGENT_INSTALLED_MESSAGE.format(project['ProjectName']))
+         for server in _server_list:
+				for i in range(1,5):
+                    if self._cloud_endure_requester.get_machine(self.arguments.wave_name, server[MfField.SERVER_FQDN]) is not None:
+                        self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(server[MfField.SERVER_ID]), data=json.dumps({"migration_status": "CE Agent Install - Success"}))
+                        print("“{}”: ✔ Sucess".format(server[MfField.SERVER_FQDN]))
+                        if self._arguments.notifier:
+                            self._notifier.notify(Notifier.AGENT_INSTALLED, Notifier.AGENT_INSTALLED_MESSAGE.format(server[MfField.SERVER_FQDN], self.arguments.wave_name))
+                        break
+                    # Expotential backoff algorithm
+                     logging.getLogger('root').debug(
+                         self.__class__.__name__ + ': Retry “{}”/4'.format(i)
+                    )
+                    time.sleep(ceil(((2**i) - 1) /2)*5)
+                self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(server[MfField.SERVER_ID]), data=json.dumps({"migration_status": "CE Agent Install - Failed"}))
+                print("“{}”: ✗ Failed".format(server[MfField.SERVER_FQDN]))
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    ce_agent_installer = CeAgentInstaller()
+    ce_agent_installer.install()
