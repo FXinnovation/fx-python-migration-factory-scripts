@@ -1,3 +1,11 @@
+## 9.0.0
+
+* feat (BREAKING): (mf_install_ce_agent) Use wave name instad of wave id
+* feat (BREAKING): (mf_install_ce_agent) Use kebab-case for arguments
+* feat: (mf_install_ce_agent) Use class
+* feat: (CloudEndureRequester) Add get_machine method
+* fix: (Notifier) Change message for `AGENT_INSTALLED_MESSAGE` constant
+
 ## 8.0.0
 
 * feat: (AWSServiceAccessor) Add `describe_ec2_instance` method
