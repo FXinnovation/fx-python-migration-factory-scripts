@@ -405,6 +405,7 @@ class MigrationFactoryRequester:
     URI_USER_APP = '/prod/user/apps/{}'
     URI_USER_WAVE = '/prod/user/waves/{}'
     URI_USER_WAVE_LIST = '/prod/user/waves'
+    URI_TOOL_CLOUDENDURE = '/prod/cloudendure'
 
     _migration_factory_authenticator = None
     _endpoints_loader = None
@@ -503,6 +504,10 @@ class MigrationFactoryRequester:
             if wave[MfField.WAVE_NAME] == wave_name:
                 return wave
 
+        logging.getLogger('root').error('{}: wave “{}” not found'.format(
+            self.__class__.__name__, wave_name
+        ))
+
         return None
 
     def get_user_server_by_name(self, server_name):
@@ -590,6 +595,34 @@ class MigrationFactoryRequester:
                     _server_selected_list_id.append(server)
 
         return _server_selected_list_id
+
+    def launch_target(self, wave_name, cloudendure_api_token, dry_run=True, for_testing=False, relaunch=False):
+        wave = self.get_user_wave_by_name(wave_name)
+
+        apps = self.get_user_apps_by_wave_id(wave[MfField.WAVE_ID])
+
+        if apps == []:
+            logging.getLogger('root').error('{}: There is no apps in wave “{}”'.format(
+                self.__class__.__name__, wave_name
+            ))
+
+        request_data = {
+            "userapitoken": cloudendure_api_token,
+            "launchtype": "cutover" if not for_testing else "test",
+            "waveid": wave[MfField.WAVE_ID]
+        }
+
+        if dry_run:
+            request_data["dryrun"] = "Yes"
+
+        if relaunch and not dry_run:
+            request_data["relaunch"] = True
+
+        for app in apps:
+            request_data["projectname"] = app[MfField.CLOUDENDURE_PROJECT_NAME]
+
+            request_result = self.post(self.URI_TOOL_CLOUDENDURE, data=json.dump(request_data))
+            print(request_result)
 
     def _guess_url(self, uri):
         if self._has_user_uri(uri):

@@ -18,18 +18,16 @@ class LaunchTargetInstances:
 
     _arguments = []
     _environment_variable_fetcher = None
-    _mf_login_username = ''
-    _mf_login_password = ''
-    _ce_user_api_token = ''
     _endpoints_loader = None
+    _migration_factory_requester = None
+    _ce_api_token = ""
 
     def __init__(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable debug outputs')
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
-        parser.add_argument('--wave-id', required=True, help='ID of the wave to prepare')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to act on')
         parser.add_argument('--dry-run', action='store_true', help='Run in dry-run mode')
-        parser.add_argument('--cloudendure-project-name', required=True, help='Name of the CloudEndure project')
         parser.add_argument('--cutover', action='store_true', help='Perform a cutover. WARNING !! This can affect your production !')
         parser.add_argument('--relaunch', action='store_true', help='Relaunch the target even if it was already launch')
         parser.add_argument(
@@ -45,77 +43,30 @@ class LaunchTargetInstances:
 
         mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
 
-        self._mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
-        self._mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
-        self._ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
-
         self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
+
+        self._migration_factory_requester = MigrationFactoryRequester(
+            self._endpoints_loader
+        )
+
+        self._ce_api_token = EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CloudEndure API token'
+        )
 
     def is_cutover(self):
         return self._arguments.cutover
 
     def launch_test(self):
         if not self._arguments.dry_run:
-           logging.debug(self._launch(dry_run=True, for_testing=True))
+           logging.debug(self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=True, for_testing=True))
 
-        return self._launch(self._arguments.dry_run, True, relaunch=self._arguments.relaunch)
+        return self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, self._arguments.dry_run, True, relaunch=self._arguments.relaunch)
 
     def launch_cutover(self):
         if not self._arguments.dry_run:
-           logging.debug(self._launch(dry_run=True, for_testing=False))
+           logging.debug(self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=True, for_testing=False))
 
-        return self._launch(dry_run=self._arguments.dry_run, for_testing=False, relaunch=self._arguments.relaunch)
-
-    def _launch(self, dry_run=True, for_testing=False, relaunch=False):
-        # This is a legacy code, will be migrated once MF library will be updated
-
-        request_data = {
-            "userapitoken": self._ce_user_api_token,
-            "projectname": self._arguments.cloudendure_project_name,
-            "launchtype": "cutover" if not for_testing else "test",
-            "waveid": self._arguments.wave_id
-        }
-
-        if dry_run:
-            request_data["dryrun"] = "Yes"
-
-        if relaunch and not dry_run:
-            request_data["relaunch"] = True
-
-        try:
-            login_data = {
-                "username": self._mf_login_username,
-                "password": self._mf_login_password
-            }
-
-
-            r = requests.post(self._endpoints_loader.get_login_api_url() + '/prod/login',
-                          data=json.dumps(login_data))
-            if r.status_code != 200:
-                raise Exception(
-                    'ERROR: Incorrect username of password'
-                )
-
-            logging.debug("Migration Factory : You have successfully logged in")
-            token = str(json.loads(r.text))
-            auth = {"Authorization": token}
-            logging.debug("Migration factory token: " + token)
-
-            r = requests.post(self._endpoints_loader.get_tools_api_url() + '/prod/cloudendure', headers=auth, data=json.dumps(request_data))
-
-            if r.status_code != 200:
-                raise Exception(
-                    'ERROR: launch failed: ' + str(r.status_code) + ': ' + r.text
-                )
-
-            logging.info(r.text)
-            print(r.text)
-
-            return
-
-        except:
-            logging.error("Error: " + str(sys.exc_info()))
-            raise
+        return self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=self._arguments.dry_run, for_testing=False, relaunch=self._arguments.relaunch)
 
 
 if __name__ == '__main__':
