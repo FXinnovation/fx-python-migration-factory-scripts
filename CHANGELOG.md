@@ -1,3 +1,11 @@
+## 11.0.0
+
+* fix: (estimation script) fixes documentation for wave-name
+* feat: adds SSHConnector class to the library to handle SSH connections
+* refactor(BREAKING): renames mf_windows_file_copy to mf_file_copy
+* refactor(BREAKING): remove mf_linux_file_copy
+* refactor(BREAKING): merges linux and windows features for file copy in mf_file_copy
+
 ## 10.1.1
 
 * fix: (mf_launch_target) Wrong message display for cutover mode.
