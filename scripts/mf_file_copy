@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import argparse
+import glob
 import logging
 import os
 from threading import Thread
@@ -11,21 +12,26 @@ import mf
 from mf.config_loaders import EndpointsLoader, ConfigLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.notification import Notifier
+from mf.ssh import SSHConnector
 from mf.utils import EnvironmentVariableFetcher, PowershellRunner
 
 
 class PostLaunchFileCopier:
     """ Copy post-launch files from to the source servers (Windows only) """
 
-    WINDOWS_POST_LAUNCH_DESTINATION = 'c:\Program Files (x86)\CloudEndure\post_launch'
+    WINDOWS_POST_LAUNCH_DESTINATION = 'c:\\Program Files (x86)\\CloudEndure\\post_launch'
 
     _arguments = []
     _endpoints_loader = {}
     _migration_factory_requester = None
     _path_wave_post_launch = None
-    _domain_password = None
+    _windows_password = None
     _notifier = None
     _config_loader = None
+    _ssh_connector = None
+
+    _create_destination_tasks = []
+    _copy_files_tasks = []
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -46,8 +52,8 @@ class PostLaunchFileCopier:
             help="Generic post-launch files to copy (.exe, .bat of .sh)."
                  " Defaults to {}."
                  " Specific post-launch files will be fetched in wave directory dynamically.".format(
-                     mf.PATH_DEFAULT_POST_LAUNCH
-                 )
+                mf.PATH_DEFAULT_POST_LAUNCH
+            )
         )
         parser.add_argument(
             '--windows-username',
@@ -56,6 +62,43 @@ class PostLaunchFileCopier:
                 default=''
             ),
             help="The windows username. Will fetch {} by default".format(', '.join(mf.ENV_VAR_WINDOWS_USERNAME))
+        )
+        parser.add_argument(
+            '--linux-username',
+            default=EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_USERNAME,
+                default=''
+            ),
+            help="The linux username. "
+                 "Will fetch {} by default. "
+                 "Not setting this username means private will be used for linux servers instead.".format(
+                ', '.join(mf.ENV_VAR_LINUX_USERNAME)
+            )
+        )
+        parser.add_argument(
+            '--linux-password',
+            default=EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_PASSWORD,
+                default='',
+                sensitive=True
+            ),
+            help="The linux password associated with the username."
+        )
+        parser.add_argument(
+            '--linux-ssh-private-key-file',
+            default=EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_FILE,
+                default=''
+            ),
+            help="Path and filename to the linux private key file for SSH. Ignored if linux username is set."
+        )
+        parser.add_argument(
+            '--linux-ssh-private-key-passphrase',
+            default=EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_PASSPHRASE,
+                default=None
+            ),
+            help="The linux passphrase for the private key file for SSH. Ignored if linux username is set."
         )
 
         self._arguments = parser.parse_args()
@@ -71,12 +114,20 @@ class PostLaunchFileCopier:
         self._notifier = Notifier(self._config_loader.get_notifications_config())
 
         if self._has_windows_user():
-            self._domain_password = EnvironmentVariableFetcher.fetch(
+            self._windows_password = EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
                 env_var_description='Windows password',
-                default='',
                 sensitive=True
             )
+
+        if self._has_linux_user():
+            self._linux_password = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_PASSWORD,
+                env_var_description='Linux password',
+                sensitive=True
+            )
+
+        self._ssh_connector = SSHConnector(user=self._arguments.linux_username, hostname='', port=22)
 
     def copy(self):
         if not os.path.exists(self._arguments.source):
@@ -94,60 +145,32 @@ class PostLaunchFileCopier:
 
         print('### Copying post-launch files to post-launch folder in source servers…')
 
-        create_destination_tasks = []
-        copy_files_tasks = []
         for server in servers:
             server_fqdn = server[MfField.SERVER_FQDN].strip()
-            create_path_command = f'Invoke-Command -ComputerName {server_fqdn} -ScriptBlock {{if (!(Test-path "{self.WINDOWS_POST_LAUNCH_DESTINATION}")) {{New-Item -Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}" -ItemType directory}}}}'
 
-            if self._has_windows_user():
-                create_path_command = PowershellRunner.authenticate_command(
-                    create_path_command,
-                    self._arguments.windows_username,
-                    self._domain_password
-                )
+            if "windows" in server[MfField.SERVER_OS].lower():
+                self._start_copy_for_windows(server_fqdn)
+            elif "linux" in server[MfField.SERVER_OS].lower():
+                self._start_copy_for_linux(server_fqdn)
 
-            create_destination_task = Thread(
-                target=self._do_run_powershell,
-                args=[create_path_command],
-                name=server_fqdn
-            )
-            create_destination_tasks.append(create_destination_task)
+        for task in self._create_destination_tasks:
+            task.join()
+            print('# ✔ Done: {} '.format(task.getName()))
 
-            for task in create_destination_tasks:
-                print("# Creating post-launch directory on server “{}”…".format(task.getName()))
-                task.start()
-
-            for task in create_destination_tasks:
-                task.join()
-                print('# ✔ Done: {} '.format(task.getName()))
-
-            all_scripts_pathes = self._find_all_windows_scripts(self._arguments.source)
-            all_scripts_pathes.extend(self._find_all_windows_scripts(self._path_wave_post_launch))
-
-            for script_path in all_scripts_pathes:
-                copy_task = Thread(
-                    target=self._do_run_powershell,
-                    args=[self._get_copy_command(script_path, server_fqdn)],
-                    name='from “{}” to “{}”'.format(script_path, server_fqdn)
-                )
-                copy_task.getName()
-                copy_files_tasks.append(copy_task)
-
-        for task in copy_files_tasks:
+        for task in self._copy_files_tasks:
             print("# Copying files {}…".format(task.getName()))
             task.start()
 
-        for task in copy_files_tasks:
+        for task in self._copy_files_tasks:
             task.join()
             print('# ✔ Done: {}'.format(task.getName()))
 
         print('### ✔ Done')
 
-        print('### …')
-
         print('### Notifying…', end='', flush=True)
 
+        # Currently not possible to notify conditionally of the Threads executions before.
+        # It would need to use another Threading implementation that returns results (threading.Thread don't)
         self._notifier.notify(
             Notifier.POST_LAUNCH_SCRIPTS_UPDATED,
             Notifier.POST_LAUNCH_SCRIPTS_UPDATED_MESSAGE.format(self._arguments.wave_name)
@@ -155,7 +178,64 @@ class PostLaunchFileCopier:
 
         print(' ✔ Done')
 
-    def _find_all_windows_scripts(self, basepath: str) -> list:
+    def _start_copy_for_linux(self, server_fqdn: str):
+        sftp_client = None
+
+        self._ssh_connector.set_hostname(server_fqdn)
+        if self._has_linux_user():
+            ssh_client = self._ssh_connector.connect_with_password()
+        else:
+            ssh_client = self._ssh_connector.connect_with_private_key(
+                self._arguments.linux_ssh_private_key_file,
+                self._arguments.linux_ssh_private_key_passphrase,
+            )
+
+        sftp_client = ssh_client.open_sftp()
+
+        sftp_client.mkdir('/boot/post_launch', 755)
+        ssh_client.exec_command("sudo mkdir /boot/post_launch")
+
+        try:
+            for file_path in self._find_all_linux_scripts(self._path_wave_post_launch):
+                for filename in glob.glob(file_path):
+                    sftp_client.put('/boot/post_launch', filename)
+        except Exception as e:
+            error = "Copying " + file_path + " to " + \
+                    "/boot/post_launch" + " on host " + self._ssh_connector.get_hostname() + " failed due to " + \
+                    str(e)
+            print(error)
+        finally:
+            if sftp_client is not None:
+                sftp_client.close()
+            if ssh_client is not None:
+                ssh_client.close()
+
+    def _start_copy_for_windows(self, server_fqdn: str):
+        create_destination_task = Thread(
+            target=self._do_run_powershell,
+            args=[self._get_windows_create_path_command(server_fqdn)],
+            name=server_fqdn
+        )
+        self._create_destination_tasks.append(create_destination_task)
+
+        for task in self._create_destination_tasks:
+            print("# Creating post-launch directory on server “{}”…".format(task.getName()))
+            task.start()
+
+        all_scripts_pathes = self._find_all_windows_scripts(self._arguments.source)
+        all_scripts_pathes.extend(self._find_all_windows_scripts(self._path_wave_post_launch))
+
+        for script_path in all_scripts_pathes:
+            copy_task = Thread(
+                target=self._do_run_powershell,
+                args=[self._get_windows_copy_command(script_path, server_fqdn)],
+                name='from “{}” to “{}”'.format(script_path, server_fqdn)
+            )
+            copy_task.getName()
+            self._copy_files_tasks.append(copy_task)
+
+    @classmethod
+    def _find_all_windows_scripts(cls, basepath: str) -> list:
         return [
             f'{basepath}/*.bat',
             f'{basepath}/*.exe',
@@ -163,12 +243,28 @@ class PostLaunchFileCopier:
             f'{basepath}/*.ps1',
         ]
 
-    def _find_all_linux_scripts(self, basepath: str) -> list:
+    @classmethod
+    def _find_all_linux_scripts(cls, basepath: str) -> list:
         return [
             f'{basepath}/*.sh',
         ]
 
-    def _get_copy_command(self, filepath: str, server_fqdn: str, ) -> str:
+    def _get_windows_create_path_command(self, server_fqdn: str) -> str:
+        create_path_command = f'Invoke-Command -ComputerName {server_fqdn} ' \
+                              f'-ScriptBlock {{if (!(Test-path "{self.WINDOWS_POST_LAUNCH_DESTINATION}")) {{' \
+                              f'New-Item -Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}" -ItemType directory}}' \
+                              f'}}'
+
+        if self._has_windows_user():
+            create_path_command = PowershellRunner.authenticate_command(
+                create_path_command,
+                self._arguments.windows_username,
+                self._windows_password
+            )
+
+        return create_path_command
+
+    def _get_windows_copy_command(self, filepath: str, server_fqdn: str, ) -> str:
         copy_command = 'Copy-Item "{}" "{}" -ToSession (New-PSSession -ComputerName "{}" %s) | Out-Null'.format(
             filepath,
             self.WINDOWS_POST_LAUNCH_DESTINATION,
@@ -180,7 +276,7 @@ class PostLaunchFileCopier:
             copy_command = PowershellRunner.insert_authenthication_arguments(
                 copy_command,
                 self._arguments.windows_username,
-                self._domain_password
+                self._windows_password
             )
         else:
             copy_command = copy_command % ''
@@ -196,6 +292,9 @@ class PostLaunchFileCopier:
 
     def _has_windows_user(self):
         return self._arguments.windows_username != ""
+
+    def _has_linux_user(self):
+        return self._arguments.linux_username != ""
 
 
 if __name__ == '__main__':
