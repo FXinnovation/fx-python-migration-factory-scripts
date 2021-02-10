@@ -9,7 +9,7 @@ import requests
 
 import mf
 from mf.utils import Utils
-from mf.utils import EnvironmentVariableFetcher
+from mf.utils import EnvironmentVariableFetcher, UserManualConfirmation
 from mf.config_loaders import EndpointsLoader
 
 
@@ -30,6 +30,7 @@ class LaunchTargetInstances:
         parser.add_argument('--dry-run', action='store_true', help='Run in dry-run mode')
         parser.add_argument('--cutover', action='store_true', help='Perform a cutover. WARNING !! This can affect your production !')
         parser.add_argument('--relaunch', action='store_true', help='Relaunch the target even if it was already launch')
+        parser.add_argument('-y', action='store_true', help='Auto confirm dangerous action')
         parser.add_argument(
             '--config-file-endpoints',
             default=EnvironmentVariableFetcher.fetch(
@@ -66,7 +67,10 @@ class LaunchTargetInstances:
         if not self._arguments.dry_run:
            logging.debug(self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=True, for_testing=False))
 
-        return self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=self._arguments.dry_run, for_testing=False, relaunch=self._arguments.relaunch)
+        if self._arguments.cutover or UserManualConfirmaion.ask("You are about to deploy machines that may affect production systems. Do you want to continue?", "continue"):
+            return self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=self._arguments.dry_run, for_testing=False, relaunch=self._arguments.relaunch)
+
+         return "Abort by user. Nothing was done"
 
 
 if __name__ == '__main__':

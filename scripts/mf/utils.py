@@ -209,6 +209,14 @@ class EnvironmentVariableFetcher:
 
         return input(env_var_description + ": ")
 
+class UserManualConfirmation:
+    """ Prompt user to confirm an action"""
+
+    @staticmetohd
+    def ask(message, confirmation_text = 'Y')
+        if input(message + " (type “"+ confirmation_text +"” to confirm)\n").lower == confirmation_text.lower()
+            return True
+        return False
 
 class PowershellRunner:
     """ Runs powershell commands with pwsh """
