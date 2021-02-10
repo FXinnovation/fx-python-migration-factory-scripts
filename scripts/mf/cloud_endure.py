@@ -170,15 +170,16 @@ class CloudEndureRequester:
 
         return machines
 
-    def get_machine(self, project_name, machine_name):
+    def get_machine(self, project_name: str, machine_name: str):
         machines = self.get_machines(project_name)
 
         if not machines:
+            logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project ") + project_name + str(" has no machine")
             return None
 
         for machine in machines['items']:
-            if machine_name.lower() ==  machine['sourceProperties']['name'].lower():
-                logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project") + project_name + str(" has a machine ") + machine['sourceProperties']['name'])
+            if machine_name.lower() == machine['sourceProperties']['name'].lower():
+                logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project ") + project_name + str(" has a machine ") + machine['sourceProperties']['name'])
                 return machine
 
         return None
@@ -197,10 +198,15 @@ class CloudEndureRequester:
         return list(map(lambda project: project['name'], response['items']))
 
     def get_api_token(self, project_name: str):
-        project = self.get_project_by_name(project_name = project_name)
+        project = self.get_project_by_name(project_name)
 
         if not project:
             return False
+
+        if 'agentInstallationToken' not in project:
+            logging.getLogger('root').error("{}: {} didn't have installation token".format(
+                self.__class__.__name__, project_name
+            ))
 
         return project['agentInstallationToken']
 

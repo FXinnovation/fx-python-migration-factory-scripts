@@ -26,7 +26,6 @@ import mf_install_linux_package
 
 class CeAgentInstaller:
 
-
     _path = None
     _domain_password = None
     _cloud_endure_requester = None
@@ -40,8 +39,8 @@ class CeAgentInstaller:
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable info outputs')
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
-        parser.add_argument('--notify', action='store_true', help='Whether or not to notify the results')
-        parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
+        parser.add_argument('--skip-notify', action='store_true', help='Whether or not to notify the results')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to act on')
         parser.add_argument('--windows-username', default =
             EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
@@ -54,14 +53,14 @@ class CeAgentInstaller:
                 env_var_names=mf.ENV_VAR_LINUX_USERNAME,
                 default=''
             ),
-            help= "The windows username"
+            help= "The linux username"
         )
         parser.add_argument('--linux-private-key-file', default =
             EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_FILE,
                 default=''
             ),
-            help= "The windows username"
+            help= "The linux private key file"
         )
         parser.add_argument(
             '--config-file-endpoints',
@@ -181,20 +180,23 @@ class CeAgentInstaller:
     def _has_windows_user(self):
         return self._arguments.windows_username != ""
 
+   def _is_server_in_cloudendure_by_name(self, wave_name: str, server_name: str):
+       return self._cloud_endure_requester.get_machine(wave_name, server_name) is not None
+
     def _agent_check(self):
          _server_list = self._migration_factory_requester.get_user_servers_by_wave(filter_wave_name = self._arguments.wave_name)
 
          for server in _server_list:
              is_agent_installed = False
              for i in range(1,5):
-                 if self._cloud_endure_requester.get_machine(self._arguments.wave_name, server[MfField.SERVER_FQDN]) is not None or self._cloud_endure_requester.get_machine(self._arguments.wave_name, server[MfField.SERVER_NAME]) is not None:
+                 if self._is_server_in_cloudendure_by_name(self._arguments.wave_name, server[MfField.SERVER_FQDN]) or self._is_server_in_cloudendure_by_name(self._arguments.wave_name, server[MfField.SERVER_NAME]):
                      self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(server[MfField.SERVER_ID]), data=json.dumps({"migration_status": "CE Agent Install - Success"}))
                      print("{} ✔ Success".format(server[MfField.SERVER_FQDN]))
-                     if self._arguments.notify:
+                     if not self._arguments.skip_notify:
                          self._notifier.notify(Notifier.AGENT_INSTALLED, Notifier.AGENT_INSTALLED_MESSAGE.format(server[MfField.SERVER_FQDN], self.arguments.wave_name))
                      is_agent_installed = True
                      break
-                 # Expotential backoff algorithm
+                 # exponential backoff algorithm
                  logging.getLogger('root').debug(
                      self.__class__.__name__ + ': Retry “{}”/4'.format(i)
                  )
