@@ -11,6 +11,7 @@ import mf
 from mf.utils import Utils
 from mf.utils import EnvironmentVariableFetcher, UserManualConfirmation
 from mf.config_loaders import EndpointsLoader
+from mf.migration_factory import MigrationFactoryRequester, MfField
 
 
 class LaunchTargetInstances:
@@ -67,10 +68,10 @@ class LaunchTargetInstances:
         if not self._arguments.dry_run:
            logging.debug(self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=True, for_testing=False))
 
-        if self._arguments.cutover or UserManualConfirmaion.ask("You are about to deploy machines that may affect production systems. Do you want to continue?", "continue"):
+        if self._arguments.y or UserManualConfirmation.ask("You are about to deploy machines that may affect production systems. Do you want to continue?", "continue"):
             return self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=self._arguments.dry_run, for_testing=False, relaunch=self._arguments.relaunch)
 
-         return "Abort by user. Nothing was done"
+        print("Abort by user. Nothing was done")
 
 
 if __name__ == '__main__':

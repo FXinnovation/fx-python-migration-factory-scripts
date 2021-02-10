@@ -618,13 +618,12 @@ class MigrationFactoryRequester:
         if relaunch and not dry_run:
             request_data["relaunch"] = True
 
-        request_result = []
         for app in apps:
             request_data["projectname"] = app[MfField.CLOUDENDURE_PROJECT_NAME]
 
-            request_result.append(self.post(self.URI_TOOL_CLOUDENDURE, data=json.dump(request_data)))
+            print(self.post(self.URI_TOOL_CLOUDENDURE, data=json.dumps(request_data), response_type=Requester.RESPONSE_TYPE_TEXT))
 
-        return request_result
+        return
 
     def _guess_url(self, uri):
         if self._has_user_uri(uri):
