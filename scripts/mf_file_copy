@@ -38,6 +38,7 @@ class PostLaunchFileCopier:
         parser.add_argument('-v', action='store_true', help='Enable info outputs')
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
         parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
+        parser.add_argument('--skip-notify', action='store_true', help='Do not notify at the end of the copy')
         parser.add_argument(
             '--config-file-endpoints',
             default=EnvironmentVariableFetcher.fetch(
@@ -96,7 +97,7 @@ class PostLaunchFileCopier:
             '--linux-ssh-private-key-passphrase',
             default=EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_PASSPHRASE,
-                default=None
+                default=''
             ),
             help="The linux passphrase for the private key file for SSH. Ignored if linux username is set."
         )
@@ -126,6 +127,9 @@ class PostLaunchFileCopier:
                 env_var_description='Linux password',
                 sensitive=True
             )
+
+        if self._arguments.linux_ssh_private_key_passphrase == '':
+            self._arguments.linux_ssh_private_key_passphrase = None
 
         self._ssh_connector = SSHConnector(user=self._arguments.linux_username, hostname='', port=22)
 
@@ -166,6 +170,9 @@ class PostLaunchFileCopier:
             print('# ✔ Done: {}'.format(task.getName()))
 
         print('### ✔ Done')
+
+        if self._arguments.skip_notify:
+            return
 
         print('### Notifying…', end='', flush=True)
 
