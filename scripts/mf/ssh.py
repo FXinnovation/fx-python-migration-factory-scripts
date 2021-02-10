@@ -52,6 +52,8 @@ class SSHConnector:
             ))
             quit(1)
 
+        return ssh
+
     def connect_with_private_key(self, key_file_path: str, key_passphrase: str = None):
         try:
             private_key = paramiko.PKey.from_private_key_file(key_file_path, key_passphrase)
@@ -93,6 +95,14 @@ class SSHConnector:
                 self.__class__.__name__, self._hostname, exception
             ))
             quit(1)
+
+        return ssh
+
+    def set_hostname(self, hostname: str):
+        self._hostname = hostname
+
+    def get_hostname(self):
+        return self._hostname
 
 
 if __name__ == '__main__':
