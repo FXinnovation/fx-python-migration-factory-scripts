@@ -596,7 +596,7 @@ class MigrationFactoryRequester:
 
         return _server_selected_list_id
 
-    def launch_target(self, wave_name, cloudendure_api_token, dry_run=True, for_testing=False, relaunch=False):
+    def launch_target(self, wave_name: str, cloudendure_api_token: str, dry_run: bool = True, for_testing: bool = False, relaunch: bool = False):
         wave = self.get_user_wave_by_name(wave_name)
 
         apps = self.get_user_apps_by_wave_id(wave[MfField.WAVE_ID])
@@ -621,7 +621,7 @@ class MigrationFactoryRequester:
         for app in apps:
             request_data["projectname"] = app[MfField.CLOUDENDURE_PROJECT_NAME]
 
-            print(self.post(self.URI_TOOL_CLOUDENDURE, data=json.dumps(request_data), response_type=Requester.RESPONSE_TYPE_TEXT))
+            logging.getLogger('root').info(self.post(self.URI_TOOL_CLOUDENDURE, data=json.dumps(request_data), response_type=Requester.RESPONSE_TYPE_TEXT))
 
         return
 

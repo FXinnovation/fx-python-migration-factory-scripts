@@ -213,8 +213,8 @@ class UserManualConfirmation:
     """ Prompt user to confirm an action"""
 
     @staticmethod
-    def ask(message, confirmation_text = 'Y'):
-        return input(message + " (type “"+ confirmation_text +"” to confirm)\n").lower() == confirmation_text.lower()
+    def ask(message: str, confirmation_text: str = 'Y') -> bool:
+        return input(message + " (type “"+ confirmation_text +"” to confirm)\n") == confirmation_text
 
 class PowershellRunner:
     """ Runs powershell commands with pwsh """

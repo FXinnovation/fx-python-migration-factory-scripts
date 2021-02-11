@@ -1,3 +1,13 @@
+## 10.0.0
+
+* feat (BREAKING): (mf_launch_target) Use wave name instad of wave id
+* feat (BREAKING): (mf_launch_target) Auto fetch cloud endure project name
+* feat (BREAKING): (mf_launch_target) Rename `mf_launch_target_test` to `mf_launch_target`
+* feat: (mf_launch_target) Add confirmation for cutover mode
+* feat: (UserManualConfirmation) Add `ask` method
+* feat: (MigrationFactoryRequester) Add `launch_target` method
+* fix: (MigrationFactoryRequester) Raise an error when wave is not found
+
 ## 9.1.0
 
 * revert: (mf_install_ce_agent) Use the old installation script, due to an issue with cloudendure.

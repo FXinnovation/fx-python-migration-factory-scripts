@@ -14,7 +14,7 @@ from mf.config_loaders import EndpointsLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
 
 
-class LaunchTargetInstances:
+class TargetInstanceLauncher:
     """ Launch target instances """
 
     _arguments = []
@@ -29,7 +29,7 @@ class LaunchTargetInstances:
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
         parser.add_argument('--wave-name', required=True, help='Name of the wave to act on')
         parser.add_argument('--dry-run', action='store_true', help='Run in dry-run mode')
-        parser.add_argument('--cutover', action='store_true', help='Perform a cutover. WARNING !! This can affect your production !')
+        parser.add_argument('--cutover', action='store_true', help='Perform a cutover. WARNING!! This can affect your production!')
         parser.add_argument('--relaunch', action='store_true', help='Relaunch the target even if it was already launch')
         parser.add_argument('-y', action='store_true', help='Auto confirm dangerous action')
         parser.add_argument(
@@ -60,25 +60,25 @@ class LaunchTargetInstances:
 
     def launch_test(self):
         if not self._arguments.dry_run:
-           logging.debug(self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=True, for_testing=True))
+           logging.getLogger('root').info(self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=True, for_testing=True))
 
         return self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, self._arguments.dry_run, True, relaunch=self._arguments.relaunch)
 
     def launch_cutover(self):
         if not self._arguments.dry_run:
-           logging.debug(self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=True, for_testing=False))
+           logging.getLogger('root').info(self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=True, for_testing=False))
 
         if self._arguments.y or UserManualConfirmation.ask("You are about to deploy machines that may affect production systems. Do you want to continue?", "continue"):
             return self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=self._arguments.dry_run, for_testing=False, relaunch=self._arguments.relaunch)
 
-        print("Abort by user. Nothing was done")
+        print("Aborted by user. Nothing was done")
 
 
 if __name__ == '__main__':
-    launch_target_instances = LaunchTargetInstances()
+    target_instance_launcher = TargetInstanceLauncher()
 
-    if launch_target_instances.is_cutover():
-        launch_target_instances.launch_cutover()
+    if target_instance_launcher.is_cutover():
+        target_instance_launcher.launch_cutover()
         sys.exit(0)
 
-    launch_target_instances.launch_test()
+    target_instance_launcher.launch_test()
