@@ -180,7 +180,7 @@ class CeAgentInstaller:
     def _has_windows_user(self):
         return self._arguments.windows_username != ""
 
-   def _is_server_in_cloudendure_by_name(self, wave_name: str, server_name: str):
+    def _is_server_in_cloudendure_by_name(self, wave_name: str, server_name: str):
        return self._cloud_endure_requester.get_machine(wave_name, server_name) is not None
 
     def _agent_check(self):
@@ -193,7 +193,7 @@ class CeAgentInstaller:
                      self._migration_factory_requester.put(MigrationFactoryRequester.URI_USER_SERVER.format(server[MfField.SERVER_ID]), data=json.dumps({"migration_status": "CE Agent Install - Success"}))
                      print("{} ✔ Success".format(server[MfField.SERVER_FQDN]))
                      if not self._arguments.skip_notify:
-                         self._notifier.notify(Notifier.AGENT_INSTALLED, Notifier.AGENT_INSTALLED_MESSAGE.format(server[MfField.SERVER_FQDN], self.arguments.wave_name))
+                         self._notifier.notify(Notifier.AGENT_INSTALLED, Notifier.AGENT_INSTALLED_MESSAGE.format(server[MfField.SERVER_FQDN], self._arguments.wave_name))
                      is_agent_installed = True
                      break
                  # exponential backoff algorithm

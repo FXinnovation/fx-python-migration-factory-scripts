@@ -1,3 +1,8 @@
+## 9.0.1
+
+* fix: (mf_install_ce_agent) Now support drive mount as folder without letter
+* fix: (mf_install_ce_agent) Various typo fixes
+
 ## 9.0.0
 
 * feat (BREAKING): (mf_install_ce_agent) Use wave name instad of wave id

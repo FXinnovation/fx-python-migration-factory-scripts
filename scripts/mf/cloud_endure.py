@@ -174,7 +174,7 @@ class CloudEndureRequester:
         machines = self.get_machines(project_name)
 
         if not machines:
-            logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project ") + project_name + str(" has no machine")
+            logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project ") + project_name + str(" has no machine"))
             return None
 
         for machine in machines['items']:
