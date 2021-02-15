@@ -569,7 +569,7 @@ class MigrationFactoryRequester:
             wave = self.get(self.URI_USER_WAVE.format(app[MfField.APP_ID]))
             if wave is None:
                 logging.getLogger('root').warning('{}: server id “{}” app is orphan of any wave…'.format(
-                    self.__class__.__name__, server[MfField.SERVER_ID], filter_wave_name
+                    self.__class__.__name__, server[MfField.SERVER_ID]
                 ))
                 continue
 

@@ -5,6 +5,7 @@ from __future__ import print_function
 import argparse
 import glob
 import logging
+import ntpath
 import os
 from threading import Thread
 
@@ -29,9 +30,11 @@ class PostLaunchFileCopier:
     _notifier = None
     _config_loader = None
     _ssh_connector = None
+    _ssh_client = None
 
     _create_destination_tasks = []
     _copy_files_tasks = []
+    _cleanup_tasks = []
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -60,7 +63,7 @@ class PostLaunchFileCopier:
             '--windows-username',
             default=EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
-                default=''
+                default_is_none=True
             ),
             help="The windows username. Will fetch {} by default".format(', '.join(mf.ENV_VAR_WINDOWS_USERNAME))
         )
@@ -68,7 +71,7 @@ class PostLaunchFileCopier:
             '--linux-username',
             default=EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_LINUX_USERNAME,
-                default=''
+                default_is_none=True
             ),
             help="The linux username. "
                  "Will fetch {} by default. "
@@ -80,7 +83,7 @@ class PostLaunchFileCopier:
             '--linux-password',
             default=EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_LINUX_PASSWORD,
-                default='',
+                default_is_none=True,
                 sensitive=True
             ),
             help="The linux password associated with the username."
@@ -89,7 +92,7 @@ class PostLaunchFileCopier:
             '--linux-ssh-private-key-file',
             default=EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_FILE,
-                default=''
+                default_is_none=True
             ),
             help="Path and filename to the linux private key file for SSH. Ignored if linux username is set."
         )
@@ -97,7 +100,7 @@ class PostLaunchFileCopier:
             '--linux-ssh-private-key-passphrase',
             default=EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_PASSPHRASE,
-                default=''
+                default_is_none=True
             ),
             help="The linux passphrase for the private key file for SSH. Ignored if linux username is set."
         )
@@ -121,15 +124,12 @@ class PostLaunchFileCopier:
                 sensitive=True
             )
 
-        if self._has_linux_user():
+        if self._has_linux_user() and not self._has_linux_password() and not self._has_linux_private_key():
             self._linux_password = EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_LINUX_PASSWORD,
                 env_var_description='Linux password',
                 sensitive=True
             )
-
-        if self._arguments.linux_ssh_private_key_passphrase == '':
-            self._arguments.linux_ssh_private_key_passphrase = None
 
         self._ssh_connector = SSHConnector(user=self._arguments.linux_username, hostname='', port=22)
 
@@ -139,13 +139,17 @@ class PostLaunchFileCopier:
                 self.__class__.__name__, self._arguments.source
             ))
         print('### Fetching servers list…', end='', flush=True)
-        servers = self._migration_factory_requester.get_user_servers_by_wave_and_os(
-            self._arguments.wave_name, 'windows'
+        servers = self._migration_factory_requester.get_user_servers_by_wave(
+            self._arguments.wave_name
         )
         logging.getLogger('root').debug(
             self.__class__.__name__ + ":Found servers: \n “{}”".format(servers)
         )
         print(' ✔ Done')
+
+        if servers is []:
+            print('### No servers found in the {} wave…').format(self._arguments.wave_name)
+            quit(0)
 
         print('### Copying post-launch files to post-launch folder in source servers…')
 
@@ -158,16 +162,31 @@ class PostLaunchFileCopier:
                 self._start_copy_for_linux(server_fqdn)
 
         for task in self._create_destination_tasks:
+            print("# Creating post-launch directory on server: “{}”…".format(task.getName()))
+            task.start()
+
+        for task in self._create_destination_tasks:
             task.join()
             print('# ✔ Done: {} '.format(task.getName()))
 
         for task in self._copy_files_tasks:
-            print("# Copying files {}…".format(task.getName()))
+            print("# Copying files: {}…".format(task.getName()))
             task.start()
 
         for task in self._copy_files_tasks:
             task.join()
             print('# ✔ Done: {}'.format(task.getName()))
+
+        for task in self._cleanup_tasks:
+            print("# Cleanup task: {}…".format(task.getName()))
+            task.start()
+
+        for task in self._cleanup_tasks:
+            task.join()
+            print('# ✔ Done: {}'.format(task.getName()))
+
+        if self._ssh_client is not None:
+            self._ssh_client.close()
 
         print('### ✔ Done')
 
@@ -186,60 +205,49 @@ class PostLaunchFileCopier:
         print(' ✔ Done')
 
     def _start_copy_for_linux(self, server_fqdn: str):
-        sftp_client = None
-
         self._ssh_connector.set_hostname(server_fqdn)
-        if self._has_linux_user():
-            ssh_client = self._ssh_connector.connect_with_password()
-        else:
-            ssh_client = self._ssh_connector.connect_with_private_key(
-                self._arguments.linux_ssh_private_key_file,
-                self._arguments.linux_ssh_private_key_passphrase,
-            )
+        self._ssh_client = self._ssh_connector.connect(
+            key_file_path=self._arguments.linux_ssh_private_key_file,
+            key_passphrase=self._arguments.linux_ssh_private_key_passphrase,
+            password=self._arguments.linux_password,
+        )
 
-        sftp_client = ssh_client.open_sftp()
+        self._create_destination_tasks.append(Thread(
+            target=self._ssh_client.execute,
+            args=[self._get_linux_create_path_command()],
+            name=server_fqdn
+        ))
 
-        sftp_client.mkdir('/boot/post_launch', 755)
-        ssh_client.exec_command("sudo mkdir /boot/post_launch")
+        for file_path in self._find_all_linux_scripts(self._path_wave_post_launch):
+            for filename in glob.glob(file_path):
+                self._copy_files_tasks.append(Thread(
+                    target=self._ssh_client.sftp_put,
+                    args=[filename, '/boot/post_launch/' + ntpath.basename(filename)],
+                    name=server_fqdn
+                ))
 
-        try:
-            for file_path in self._find_all_linux_scripts(self._path_wave_post_launch):
-                for filename in glob.glob(file_path):
-                    sftp_client.put('/boot/post_launch', filename)
-        except Exception as e:
-            error = "Copying " + file_path + " to " + \
-                    "/boot/post_launch" + " on host " + self._ssh_connector.get_hostname() + " failed due to " + \
-                    str(e)
-            print(error)
-        finally:
-            if sftp_client is not None:
-                sftp_client.close()
-            if ssh_client is not None:
-                ssh_client.close()
+        self._cleanup_tasks.append(Thread(
+            target=self._ssh_client.execute,
+            args=["sudo chmod -R 0755 /boot/post_launch"],
+            name='fixing permissions on post_launch on {}'.format(server_fqdn)
+        ))
 
     def _start_copy_for_windows(self, server_fqdn: str):
-        create_destination_task = Thread(
+        self._create_destination_tasks.append(Thread(
             target=self._do_run_powershell,
             args=[self._get_windows_create_path_command(server_fqdn)],
             name=server_fqdn
-        )
-        self._create_destination_tasks.append(create_destination_task)
-
-        for task in self._create_destination_tasks:
-            print("# Creating post-launch directory on server “{}”…".format(task.getName()))
-            task.start()
+        ))
 
         all_scripts_pathes = self._find_all_windows_scripts(self._arguments.source)
         all_scripts_pathes.extend(self._find_all_windows_scripts(self._path_wave_post_launch))
 
         for script_path in all_scripts_pathes:
-            copy_task = Thread(
+            self._copy_files_tasks.append(Thread(
                 target=self._do_run_powershell,
                 args=[self._get_windows_copy_command(script_path, server_fqdn)],
                 name='from “{}” to “{}”'.format(script_path, server_fqdn)
-            )
-            copy_task.getName()
-            self._copy_files_tasks.append(copy_task)
+            ))
 
     @classmethod
     def _find_all_windows_scripts(cls, basepath: str) -> list:
@@ -271,6 +279,9 @@ class PostLaunchFileCopier:
 
         return create_path_command
 
+    def _get_linux_create_path_command(self) -> str:
+        return "sudo mkdir -p /boot/post_launch && sudo chmod 0777 /boot/post_launch"
+
     def _get_windows_copy_command(self, filepath: str, server_fqdn: str, ) -> str:
         copy_command = 'Copy-Item "{}" "{}" -ToSession (New-PSSession -ComputerName "{}" %s) | Out-Null'.format(
             filepath,
@@ -298,10 +309,16 @@ class PostLaunchFileCopier:
         PowershellRunner.run(command)
 
     def _has_windows_user(self):
-        return self._arguments.windows_username != ""
+        return self._arguments.windows_username is not None
 
     def _has_linux_user(self):
-        return self._arguments.linux_username != ""
+        return self._arguments.linux_username is not None
+
+    def _has_linux_private_key(self):
+        return self._arguments.linux_ssh_private_key_file is not None
+
+    def _has_linux_password(self):
+        return self._arguments.linux_password is not None
 
 
 if __name__ == '__main__':
