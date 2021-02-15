@@ -553,35 +553,32 @@ class MigrationFactoryRequester:
 
         return _server_selected_list_id
 
-    def get_user_servers_by_wave(self, filter_wave_name=None):
+    def get_user_servers_by_wave(self, filter_wave_name: str):
         _server_list = self.get(self.URI_USER_SERVER_LIST)
 
         _server_selected_list_id = []
 
         for server in _server_list:
-            if filter_wave_name:
-                app = self.get(self.URI_USER_APP.format(server[MfField.APP_ID]))
-                if app is None:
-                    logging.getLogger('root').debug('{}: server id “{}” filtered (not in wave {})'.format(
-                        self.__class__.__name__, server[MfField.SERVER_ID], filter_wave_name
-                    ))
-                    continue
+            app = self.get(self.URI_USER_APP.format(server[MfField.APP_ID]))
+            if app is None:
+                logging.getLogger('root').debug('{}: server id “{}” filtered (not in wave {})'.format(
+                    self.__class__.__name__, server[MfField.SERVER_ID], filter_wave_name
+                ))
+                continue
 
-                wave = self.get(self.URI_USER_WAVE.format(app[MfField.WAVE_ID]))
-                if wave is None:
-                    logging.getLogger('root').debug('{}: server id “{}” filtered (not in wave {})'.format(
-                        self.__class__.__name__, server[MfField.SERVER_ID], filter_wave_name
-                    ))
-                    continue
+            wave = self.get(self.URI_USER_WAVE.format(app[MfField.APP_ID]))
+            if wave is None:
+                logging.getLogger('root').debug('{}: server id “{}” filtered (not in wave {})'.format(
+                    self.__class__.__name__, server[MfField.SERVER_ID], filter_wave_name
+                ))
+                continue
 
-                if MfField.WAVE_NAME in wave and wave[MfField.WAVE_NAME] == filter_wave_name:
-                    _server_selected_list_id.append(server)
-                else:
-                    logging.getLogger('root').debug('{}: server id “{}” filtered (not in wave {})'.format(
-                        self.__class__.__name__, server[MfField.SERVER_ID], filter_wave_name
-                    ))
-            else:
+            if MfField.WAVE_NAME in wave and wave[MfField.WAVE_NAME] == filter_wave_name:
                 _server_selected_list_id.append(server)
+            else:
+                logging.getLogger('root').debug('{}: server id “{}” filtered (not in wave {})'.format(
+                    self.__class__.__name__, server[MfField.SERVER_ID], filter_wave_name
+                ))
 
         return _server_selected_list_id
 
