@@ -62,14 +62,14 @@ class TargetInstanceLauncher:
         if not self._arguments.dry_run:
            logging.getLogger('root').info(self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=True, for_testing=True))
 
-        return self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, self._arguments.dry_run, True, relaunch=self._arguments.relaunch)
+        print(self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, self._arguments.dry_run, True, relaunch=self._arguments.relaunch))
 
     def launch_cutover(self):
         if not self._arguments.dry_run:
            logging.getLogger('root').info(self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=True, for_testing=False))
 
         if self._arguments.y or UserManualConfirmation.ask("You are about to deploy machines that may affect production systems. Do you want to continue?", "continue"):
-            return self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=self._arguments.dry_run, for_testing=False, relaunch=self._arguments.relaunch)
+            print(self._migration_factory_requester.launch_target(self._arguments.wave_name, self._ce_api_token, dry_run=self._arguments.dry_run, for_testing=False, relaunch=self._arguments.relaunch))
 
         print("Aborted by user. Nothing was done")
 

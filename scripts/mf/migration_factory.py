@@ -621,7 +621,7 @@ class MigrationFactoryRequester:
         for app in apps:
             request_data["projectname"] = app[MfField.CLOUDENDURE_PROJECT_NAME]
 
-            logging.getLogger('root').info(self.post(self.URI_TOOL_CLOUDENDURE, data=json.dumps(request_data), response_type=Requester.RESPONSE_TYPE_TEXT))
+            return self.post(self.URI_TOOL_CLOUDENDURE, data=json.dumps(request_data), response_type=Requester.RESPONSE_TYPE_TEXT)
 
         return
 
