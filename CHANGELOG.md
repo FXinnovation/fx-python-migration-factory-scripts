@@ -1,3 +1,7 @@
+## 10.0.1
+
+* fix: (MigrationFactory) Method `get_user_servers_by_wave` was fetching `app_id` instad of `wave_id`
+
 ## 10.0.0
 
 * feat (BREAKING): (mf_launch_target) Use wave name instad of wave id
