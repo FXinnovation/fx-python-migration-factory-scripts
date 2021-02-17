@@ -1,3 +1,7 @@
+## 9.1.0
+
+* revert: (mf_install_ce_agent) Use the old installation script, due to an issue with cloudendure.
+
 ## 9.0.1
 
 * fix: (mf_install_ce_agent) Now support drive mount as folder without letter
