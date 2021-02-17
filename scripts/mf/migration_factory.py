@@ -567,7 +567,7 @@ class MigrationFactoryRequester:
                     ))
                     continue
 
-                wave = self.get(self.URI_USER_WAVE.format(app[MfField.APP_ID]))
+                wave = self.get(self.URI_USER_WAVE.format(app[MfField.WAVE_ID]))
                 if wave is None:
                     logging.getLogger('root').debug('{}: server id “{}” filtered (not in wave {})'.format(
                         self.__class__.__name__, server[MfField.SERVER_ID], filter_wave_name
