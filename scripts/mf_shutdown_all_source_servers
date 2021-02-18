@@ -12,194 +12,237 @@ import os
 
 import mf
 from mf.utils import EnvironmentVariableFetcher
-from mf.config_loaders import EndpointsLoader
+from mf.config_loaders import EndpointsLoader, ConfigLoader
+from mf.migration_factory import MigrationFactoryRequester, MfField, MigrationFactoryAuthenticator
+from mf.cloud_endure import CloudEndureRequester
+from mf.aws import AWSServiceAccessor
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
 
-def Factorylogin(username, password, LoginHOST):
-    login_data = {'username': username, 'password': password}
-    r = requests.post(LoginHOST + '/prod/login',
-                  data=json.dumps(login_data))
-    if r.status_code == 200:
-        print("Migration Factory : You have successfully logged in")
-        print("")
-        token = str(json.loads(r.text))
-        return token
-    if r.status_code == 502:
-        print("ERROR: Incorrect username or password....")
-        sys.exit(1)
-    else:
-        print(r.text)
-        sys.exit(2)
+class Shutdown:
 
-def ServerList(waveid, token, UserHOST, serverendpoint, appendpoint):
-# Get all Apps and servers from migration factory
-    auth = {"Authorization": token}
-    servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
-    #print(servers)
-    apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
-    #print(apps)
+    _path = None
+    _domain_password = None
+    _cloud_endure_requester = None
+    _migration_factory_requester = None
+    _config_loader = None
+    _endpoints_loader = None
 
-    # Get App list
-    applist = []
-    for app in apps:
-        if 'wave_id' in app:
-            if str(app['wave_id']) == str(waveid):
-                applist.append(app['app_id'])
+    def __init__(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-v', action='store_true', help='Enable info outputs')
+        parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to act on')
+        parser.add_argument('--windows-username', default =
+            EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
+                default=''
+            ),
+            help= "The windows username"
+        )
+        parser.add_argument('--linux-username', default =
+            EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_USERNAME,
+                default=''
+            ),
+            help= "The linux username"
+        )
+        parser.add_argument('--linux-private-key-file', default =
+            EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_FILE,
+                default=''
+            ),
+            help= "The linux private key file"
+        )
+        parser.add_argument(
+            '--config-file-endpoints',
+            default=EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+                default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+            ),
+            help='Configuration file containing the Migration Factory endpoint URLs'
+        )
 
-    # Get Server List
-    winServerlist = []
-    linuxServerlist = []
-    for app in applist:
-        for server in servers:
-            if app == server['app_id']:
-                if 'server_os' in server:
-                    if 'server_fqdn' in server:
-                        if server['server_os'].lower() == "windows":
-                            winServerlist.append(server['server_fqdn'])
-                        elif server['server_os'].lower() == 'linux':
-                            linuxServerlist.append(server['server_fqdn'])
-                    else:
-                        print("ERROR: server_fqdn for server: " + server['server_name'] + " doesn't exist")
-    if len(winServerlist) == 0 and len(linuxServerlist) == 0:
-        print("ERROR: Serverlist for wave: " + waveid + " is empty....")
-        print("")
-    else:
-        return winServerlist, linuxServerlist
+        self._arguments = parser.parse_args()
 
-def open_ssh(host, username, key_pwd, using_key):
-    ssh = None
-    try:
-        if using_key:
-            private_key = paramiko.RSAKey.from_private_key_file(key_pwd)
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(hostname=host, username=username, pkey=private_key)
+        mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
+
+        self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
+        self._migration_factory_requester = MigrationFactoryRequester(
+            self._endpoints_loader
+        )
+        self._cloud_endure_requester = CloudEndureRequester()
+
+        self._aws_service_accessor = AWSServiceAccessor()
+
+        if self._has_windows_user():
+            self._domain_password = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
+                env_var_description='Windows password',
+                default='',
+                sensitive=True
+            )
+
+        self._config_loader = ConfigLoader()
+
+    def ServerList(waveid, token, UserHOST, serverendpoint, appendpoint):
+    # Get all Apps and servers from migration factory
+        auth = {"Authorization": token}
+        servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
+        #print(servers)
+        apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
+        #print(apps)
+
+        # Get App list
+        applist = []
+        for app in apps:
+            if 'wave_id' in app:
+                if str(app['wave_id']) == str(waveid):
+                    applist.append(app['app_id'])
+
+        # Get Server List
+        winServerlist = []
+        linuxServerlist = []
+        for app in applist:
+            for server in servers:
+                if app == server['app_id']:
+                    if 'server_os' in server:
+                        if 'server_fqdn' in server:
+                            if server['server_os'].lower() == "windows":
+                                winServerlist.append(server['server_fqdn'])
+                            elif server['server_os'].lower() == 'linux':
+                                linuxServerlist.append(server['server_fqdn'])
+                        else:
+                            print("ERROR: server_fqdn for server: " + server['server_name'] + " doesn't exist")
+        if len(winServerlist) == 0 and len(linuxServerlist) == 0:
+            print("ERROR: Serverlist for wave: " + waveid + " is empty....")
+            print("")
         else:
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(hostname=host, username=username, password=key_pwd)
-    except IOError as io_error:
-        error = "Unable to connect to host " + host + " with username " + \
-                username + " due to " + str(io_error)
-        print(error)
-    except paramiko.SSHException as ssh_exception:
-        error = "Unable to connect to host " + host + " with username " + \
-                username + " due to " + str(ssh_exception)
-        print(error)
-    return ssh
+            return winServerlist, linuxServerlist
 
-
-def execute_cmd(host, username, key, cmd, using_key):
-    output = ''
-    error = ''
-    ssh = None
-    try:
-        ssh = open_ssh(host, username, key, using_key)
-        if ssh is None:
-            error = "Not able to get the SSH connection for the host " + host
+    def open_ssh(host, username, key_pwd, using_key):
+        ssh = None
+        try:
+            if using_key:
+                private_key = paramiko.RSAKey.from_private_key_file(key_pwd)
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh.connect(hostname=host, username=username, pkey=private_key)
+            else:
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh.connect(hostname=host, username=username, password=key_pwd)
+        except IOError as io_error:
+            error = "Unable to connect to host " + host + " with username " + \
+                    username + " due to " + str(io_error)
             print(error)
-        else:
-            stdin, stdout, stderr = ssh.exec_command(cmd)
-            for line in stdout.readlines():
-                output = output + line
-            for line in stderr.readlines():
-                error = error + line
-    except IOError as io_error:
-        error = "Unable to execute the command " + cmd + " on " +host+ " due to " + \
-                str(io_error)
-        print(error)
-    except paramiko.SSHException as ssh_exception:
-        error = "Unable to execute the command " + cmd + " on " +host+ " due to " + \
-                str(ssh_exception)
-        print(error)
-    except Exception as e:
-        error = "Unable to execute the command " + cmd + " on " +host+ " due to " + str(e)
-        print(error)
-    finally:
-        if ssh is not None:
-            ssh.close()
-    return output, error
+        except paramiko.SSHException as ssh_exception:
+            error = "Unable to connect to host " + host + " with username " + \
+                    username + " due to " + str(ssh_exception)
+            print(error)
+        return ssh
 
 
-def main(arguments):
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--Waveid', required=True)
-    parser.add_argument('--WindowsUser', default =
-        EnvironmentVariableFetcher.fetch(
-            env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
-            default=''
-        ),
-        help= "The windows username"
-    )
-    parser.add_argument(
-           '--config-file-endpoints',
-           default=EnvironmentVariableFetcher.fetch(
-               env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
-               default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
-           ),
-           help='Configuration file containing the Migration Factory endpoint URLs'
-       )
+    def execute_cmd(host, username, key, cmd, using_key):
+        output = ''
+        error = ''
+        ssh = None
+        try:
+            ssh = open_ssh(host, username, key, using_key)
+            if ssh is None:
+                error = "Not able to get the SSH connection for the host " + host
+                print(error)
+            else:
+                stdin, stdout, stderr = ssh.exec_command(cmd)
+                for line in stdout.readlines():
+                    output = output + line
+                for line in stderr.readlines():
+                    error = error + line
+        except IOError as io_error:
+            error = "Unable to execute the command " + cmd + " on " +host+ " due to " + \
+                    str(io_error)
+            print(error)
+        except paramiko.SSHException as ssh_exception:
+            error = "Unable to execute the command " + cmd + " on " +host+ " due to " + \
+                    str(ssh_exception)
+            print(error)
+        except Exception as e:
+            error = "Unable to execute the command " + cmd + " on " +host+ " due to " + str(e)
+            print(error)
+        finally:
+            if ssh is not None:
+                ssh.close()
+        return output, error
 
-    args = parser.parse_args(arguments)
+    def ping_servers(server_list):
+        for server in server_list:
+            ping_result[server] = subprocess.Popen(['ping', '-n', '-w5', '-c3', ip], stdout=subprocess.DEVNULL)
 
-    _endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
-    LoginHOST = _endpoints_loader.get_login_api_url()
-    UserHOST = _endpoints_loader.get_user_api_url()
+        while ping_result:
+            for server, proc in ping_result.items():
+                if proc.poll() is not None: # ping finished
+                    del p[server]
+                    if proc.returncode == 0:
+                        print('%s remain active' % server)
+                    elif proc.returncode == 1:
+                        print('%s is shutdown' % server)
+                    else:
+                        print('%s error' % server)
+                    break
 
-    Domain_User = args.WindowsUser
-    print("****************************")
-    print("*Login to Migration factory*")
-    print("****************************")
-    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
-    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
-
-    token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
-
-    winServers, linuxServers = ServerList(args.Waveid, token, UserHOST,
-                                   serverendpoint, appendpoint)
-    if len(winServers) > 0:
+    def main(self):
+       
+        Domain_User = self._arguments.windows_username
         print("****************************")
-        print("*Shutting down Windows servers*")
+        print("*Login to Migration factory*")
         print("****************************")
-        if Domain_User != "":
-            Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
-        for s in winServers:
-            command = "Invoke-Command -ComputerName " + s + " -ScriptBlock {Stop-Computer -Force}"
+
+        token = MigrationFactoryAuthenticator.get_authorization_token
+
+        winServers, linuxServers = ServerList(args.Waveid, token, UserHOST,
+                                    serverendpoint, appendpoint)
+        if len(winServers) > 0:
+            print("****************************")
+            print("*Shutting down Windows servers*")
+            print("****************************")
             if Domain_User != "":
-              command += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
-            print("Shutting down server: " + s)
-            p = subprocess.Popen(["pwsh", "-Command", command], stdout=sys.stdout)
-            p.communicate()
-    if len(linuxServers) > 0:
-        print("")
-        print("****************************")
-        print("*Shutting down Linux servers*")
-        print("****************************")
-        print("")
-        user_name = input("Linux Username: ")
-        has_key = input("If you use a private key to login, press [Y] or if use password press [N]: ")
-        if has_key.lower() in 'y':
-            pass_key = getpass.getpass('Private Key: ')
-        else:
-            pass_key_first = getpass.getpass('Linux Password: ')
-            pass_key_second = getpass.getpass('Re-enter Password: ')
-            while(pass_key_first != pass_key_second):
-                print("Password mismatch, please try again!")
+                Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
+            for s in winServers:
+                command = "Invoke-Command -ComputerName " + s + " -ScriptBlock {Stop-Computer -Force}"
+                if Domain_User != "":
+                command += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
+                print("Shutting down server: " + s)
+                p = subprocess.Popen(["pwsh", "-Command", command], stdout=sys.stdout)
+                p.communicate()
+        if len(linuxServers) > 0:
+            print("")
+            print("****************************")
+            print("*Shutting down Linux servers*")
+            print("****************************")
+            print("")
+            user_name = input("Linux Username: ")
+            has_key = input("If you use a private key to login, press [Y] or if use password press [N]: ")
+            if has_key.lower() in 'y':
+                pass_key = getpass.getpass('Private Key: ')
+            else:
                 pass_key_first = getpass.getpass('Linux Password: ')
                 pass_key_second = getpass.getpass('Re-enter Password: ')
-            pass_key = pass_key_second
-        print("")
-        for s in linuxServers:
-            output, error = execute_cmd(s, user_name, pass_key, "sudo shutdown now", has_key in 'y')
-            if not error:
-                print("Shutdown successful on " + s)
-            else:
-                print("unable to shutdown server " + s + " due to " + error)
+                while(pass_key_first != pass_key_second):
+                    print("Password mismatch, please try again!")
+                    pass_key_first = getpass.getpass('Linux Password: ')
+                    pass_key_second = getpass.getpass('Re-enter Password: ')
+                pass_key = pass_key_second
             print("")
+            for s in linuxServers:
+                output, error = execute_cmd(s, user_name, pass_key, "sudo shutdown now", has_key in 'y')
+                if not error:
+                    print("Shutdown successful on " + s)
+                else:
+                    print("unable to shutdown server " + s + " due to " + error)
+                print("")
 
 if __name__ == '__main__':
+    Shutdown_execution = Shutdown()
+    Shutdown_execution.main
     sys.exit(main(sys.argv[1:]))
