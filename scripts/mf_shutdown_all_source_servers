@@ -110,12 +110,12 @@ class Shutdown:
             print("###Shutting down Linux servers…")
             print("")
             user_name = self._arguments.linux_username if self._arguments.linux_username.lower().strip() != '' else EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_LINUX_USERNAME, env_var_description='Linux username')
-        has_key = self._arguments.linux_private_key_file.lower().strip() != ''
-        if has_key:
-            pass_key = self._arguments.linux_private_key_file
-        else:
-            pass_key = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_LINUX_PASSWORD, env_var_description='Linux password', sensitive=True)
-            print("")
+            has_key = self._arguments.linux_private_key_file.lower().strip() != ''
+            if has_key:
+                pass_key = self._arguments.linux_private_key_file
+            else:
+                pass_key = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_LINUX_PASSWORD, env_var_description='Linux password', sensitive=True)
+                print("")
             for s in linuxServers:
                 output, error = execute_cmd(s, user_name, pass_key, "sudo shutdown now", has_key in 'y')
                 if not error:
