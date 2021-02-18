@@ -109,25 +109,19 @@ class Shutdown:
             print("")
             print("###Shutting down Linux servers…")
             print("")
-            user_name = input("Linux Username: ")
-            has_key = input("If you use a private key to login, press [Y] or if use password press [N]: ")
-            if has_key.lower() in 'y':
-                pass_key = getpass.getpass('Private Key: ')
-            else:
-                pass_key_first = getpass.getpass('Linux Password: ')
-                pass_key_second = getpass.getpass('Re-enter Password: ')
-                while(pass_key_first != pass_key_second):
-                    print("Password mismatch, please try again!")
-                    pass_key_first = getpass.getpass('Linux Password: ')
-                    pass_key_second = getpass.getpass('Re-enter Password: ')
-                pass_key = pass_key_second
+            user_name = self._arguments.linux_username if self._arguments.linux_username.lower().strip() != '' else EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_LINUX_USERNAME, env_var_description='Linux username')
+        has_key = self._arguments.linux_private_key_file.lower().strip() != ''
+        if has_key:
+            pass_key = self._arguments.linux_private_key_file
+        else:
+            pass_key = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_LINUX_PASSWORD, env_var_description='Linux password', sensitive=True)
             print("")
             for s in linuxServers:
                 output, error = execute_cmd(s, user_name, pass_key, "sudo shutdown now", has_key in 'y')
                 if not error:
                     print("#####Shutdown successful on " + s)
                 else:
-                    print("!!!!U nable to shutdown server " + s + " due to " + error)
+                    print("!!!! Unable to shutdown server " + s + " due to " + error)
                 print("")
 
     def open_ssh(host, username, key_pwd, using_key):
@@ -186,7 +180,7 @@ class Shutdown:
 
     def ping_servers(server_list):
         for server in server_list:
-            ping_result[server] = subprocess.Popen(['ping', '-n', '-w5', '-c3', ip], stdout=subprocess.DEVNULL)
+            ping_result[server] = subprocess.Popen(['ping', '-n', '-w5', '-c3', server], stdout=subprocess.DEVNULL)
 
         while ping_result:
             for server, proc in ping_result.items():
