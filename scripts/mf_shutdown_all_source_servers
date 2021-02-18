@@ -86,40 +86,49 @@ class Shutdown:
 
         self._config_loader = ConfigLoader()
 
-    def ServerList(waveid, token, UserHOST, serverendpoint, appendpoint):
-    # Get all Apps and servers from migration factory
-        auth = {"Authorization": token}
-        servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
-        #print(servers)
-        apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
-        #print(apps)
+    def main(self):
 
-        # Get App list
-        applist = []
-        for app in apps:
-            if 'wave_id' in app:
-                if str(app['wave_id']) == str(waveid):
-                    applist.append(app['app_id'])
+        domain_user = self._arguments.windows_username
+        print("#######################")
+        print("#Login to Migration factory…")
+        print("##Get servers list…")
 
-        # Get Server List
-        winServerlist = []
-        linuxServerlist = []
-        for app in applist:
-            for server in servers:
-                if app == server['app_id']:
-                    if 'server_os' in server:
-                        if 'server_fqdn' in server:
-                            if server['server_os'].lower() == "windows":
-                                winServerlist.append(server['server_fqdn'])
-                            elif server['server_os'].lower() == 'linux':
-                                linuxServerlist.append(server['server_fqdn'])
-                        else:
-                            print("ERROR: server_fqdn for server: " + server['server_name'] + " doesn't exist")
-        if len(winServerlist) == 0 and len(linuxServerlist) == 0:
-            print("ERROR: Serverlist for wave: " + waveid + " is empty....")
+        winServers = self._migration_factory_requester.get_user_servers_by_wave_and_os(filter_wave_name = self._arguments.wave_name, filter_os = 'windows')
+        linuxServers = self._migration_factory_requester.get_user_servers_by_wave_and_os(filter_wave_name = self._arguments.wave_name, filter_os = 'linux')
+
+        if len(winServers) > 0:
+            print("###Shutting down Windows servers…")
+            for s in winServers:
+                command = "Invoke-Command -ComputerName " + s + " -ScriptBlock {Stop-Computer -Force}"
+                if domain_user != "":
+                command += " -Credential (New-Object System.Management.Automation.PSCredential('" + domain_user + "', (ConvertTo-SecureString '" + self._domain_password + "' -AsPlainText -Force))) -Authentication Negotiate"
+                print("Shutting down server: " + s)
+                p = subprocess.Popen(["pwsh", "-Command", command], stdout=sys.stdout)
+                p.communicate()
+        if len(linuxServers) > 0:
             print("")
-        else:
-            return winServerlist, linuxServerlist
+            print("###Shutting down Linux servers…")
+            print("")
+            user_name = input("Linux Username: ")
+            has_key = input("If you use a private key to login, press [Y] or if use password press [N]: ")
+            if has_key.lower() in 'y':
+                pass_key = getpass.getpass('Private Key: ')
+            else:
+                pass_key_first = getpass.getpass('Linux Password: ')
+                pass_key_second = getpass.getpass('Re-enter Password: ')
+                while(pass_key_first != pass_key_second):
+                    print("Password mismatch, please try again!")
+                    pass_key_first = getpass.getpass('Linux Password: ')
+                    pass_key_second = getpass.getpass('Re-enter Password: ')
+                pass_key = pass_key_second
+            print("")
+            for s in linuxServers:
+                output, error = execute_cmd(s, user_name, pass_key, "sudo shutdown now", has_key in 'y')
+                if not error:
+                    print("#####Shutdown successful on " + s)
+                else:
+                    print("!!!!U nable to shutdown server " + s + " due to " + error)
+                print("")
 
     def open_ssh(host, username, key_pwd, using_key):
         ssh = None
@@ -190,57 +199,6 @@ class Shutdown:
                     else:
                         print('%s error' % server)
                     break
-
-    def main(self):
-       
-        Domain_User = self._arguments.windows_username
-        print("****************************")
-        print("*Login to Migration factory*")
-        print("****************************")
-
-        token = MigrationFactoryAuthenticator.get_authorization_token
-
-        winServers, linuxServers = ServerList(args.Waveid, token, UserHOST,
-                                    serverendpoint, appendpoint)
-        if len(winServers) > 0:
-            print("****************************")
-            print("*Shutting down Windows servers*")
-            print("****************************")
-            if Domain_User != "":
-                Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
-            for s in winServers:
-                command = "Invoke-Command -ComputerName " + s + " -ScriptBlock {Stop-Computer -Force}"
-                if Domain_User != "":
-                command += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
-                print("Shutting down server: " + s)
-                p = subprocess.Popen(["pwsh", "-Command", command], stdout=sys.stdout)
-                p.communicate()
-        if len(linuxServers) > 0:
-            print("")
-            print("****************************")
-            print("*Shutting down Linux servers*")
-            print("****************************")
-            print("")
-            user_name = input("Linux Username: ")
-            has_key = input("If you use a private key to login, press [Y] or if use password press [N]: ")
-            if has_key.lower() in 'y':
-                pass_key = getpass.getpass('Private Key: ')
-            else:
-                pass_key_first = getpass.getpass('Linux Password: ')
-                pass_key_second = getpass.getpass('Re-enter Password: ')
-                while(pass_key_first != pass_key_second):
-                    print("Password mismatch, please try again!")
-                    pass_key_first = getpass.getpass('Linux Password: ')
-                    pass_key_second = getpass.getpass('Re-enter Password: ')
-                pass_key = pass_key_second
-            print("")
-            for s in linuxServers:
-                output, error = execute_cmd(s, user_name, pass_key, "sudo shutdown now", has_key in 'y')
-                if not error:
-                    print("Shutdown successful on " + s)
-                else:
-                    print("unable to shutdown server " + s + " due to " + error)
-                print("")
 
 if __name__ == '__main__':
     Shutdown_execution = Shutdown()
