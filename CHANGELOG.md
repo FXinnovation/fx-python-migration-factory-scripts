@@ -1,3 +1,7 @@
+## 10.1.1
+
+* fix: (mf_launch_target) Wrong message display for cutover mode.
+
 ## 10.1.0
 
 * feat: (mf_install_ce_agent) Now support drive mount as folder without letter (cancel `10.0.1`)
