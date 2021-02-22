@@ -151,7 +151,7 @@ class SSHConnector:
                 quit(1)
         except BadHostKeyException:
             logging.getLogger('root').error(
-                '{}: Connection to host “{}” failed. Hostname has a different key that the one saved locally!'.format(
+                '{}: Connection to host “{}” failed. This host has a different key that the one saved locally!'.format(
                     self.__class__.__name__, self._hostname
                 ))
             quit(1)

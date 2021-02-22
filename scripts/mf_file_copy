@@ -26,7 +26,10 @@ class PostLaunchFileCopier:
     _endpoints_loader = {}
     _migration_factory_requester = None
     _path_wave_post_launch = None
+    _windows_user = None
     _windows_password = None
+    _linux_user = None
+    _linux_password = None
     _notifier = None
     _config_loader = None
     _ssh_connector = None
@@ -40,8 +43,8 @@ class PostLaunchFileCopier:
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', action='store_true', help='Enable info outputs')
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
-        parser.add_argument('--wave-name', required=True, help='Name of the wave to delete')
-        parser.add_argument('--skip-notify', action='store_true', help='Do not notify at the end of the copy')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to act on')
+        parser.add_argument('--skip-notify', action='store_true', help='Do not notify at the of the copy')
         parser.add_argument(
             '--config-file-endpoints',
             default=EnvironmentVariableFetcher.fetch(
@@ -51,11 +54,11 @@ class PostLaunchFileCopier:
             help='Configuration file containing the Migration Factory endpoint URLs'
         )
         parser.add_argument(
-            '--source',
+            '--generic-post-launch-directory',
             default=mf.PATH_DEFAULT_POST_LAUNCH,
-            help="Generic post-launch files to copy (.exe, .bat of .sh)."
-                 " Defaults to {}."
-                 " Specific post-launch files will be fetched in wave directory dynamically.".format(
+            help="Generic post-launch files to copy (.exe, .bat or .sh)."
+                 " Defaults to env var {}."
+                 " Specific post-launch files will ALWAYS be fetched in wave directory dynamically.".format(
                 mf.PATH_DEFAULT_POST_LAUNCH
             )
         )
@@ -65,7 +68,21 @@ class PostLaunchFileCopier:
                 env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
                 default_is_none=True
             ),
-            help="The windows username. Will fetch {} by default".format(', '.join(mf.ENV_VAR_WINDOWS_USERNAME))
+            help="The Windows username for the remote session to Windows machines. "
+                 "Defaults to env {}.".format(mf.ENV_VAR_WINDOWS_USERNAME[0])
+        )
+        parser.add_argument(
+            '--windows-password',
+            default=EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
+                default_is_none=True,
+                sensitive=True
+            ),
+            help="The Windows password associated with the Windows username. "
+                 "Defaults to env {}."
+                 "Using this parameter with a cleartext password is NOT recommended.".format(
+                mf.ENV_VAR_WINDOWS_PASSWORD[0]
+            )
         )
         parser.add_argument(
             '--linux-username',
@@ -73,11 +90,8 @@ class PostLaunchFileCopier:
                 env_var_names=mf.ENV_VAR_LINUX_USERNAME,
                 default_is_none=True
             ),
-            help="The linux username. "
-                 "Will fetch {} by default. "
-                 "Not setting this username means private will be used for linux servers instead.".format(
-                ', '.join(mf.ENV_VAR_LINUX_USERNAME)
-            )
+            help="The Linux username for Linux Machines. "
+                 "Defaults to env var {}. ".format(mf.ENV_VAR_LINUX_USERNAME[0])
         )
         parser.add_argument(
             '--linux-password',
@@ -86,7 +100,12 @@ class PostLaunchFileCopier:
                 default_is_none=True,
                 sensitive=True
             ),
-            help="The linux password associated with the username."
+            help="The Linux password associated with the Linux username."
+                 "Defaults to env var {}."
+                 "The password is ignored if SSH private key file is set."
+                 "Using this parameter with a cleartext password is NOT recommended.".format(
+                mf.ENV_VAR_LINUX_PASSWORD[0]
+            )
         )
         parser.add_argument(
             '--linux-ssh-private-key-file',
@@ -94,7 +113,7 @@ class PostLaunchFileCopier:
                 env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_FILE,
                 default_is_none=True
             ),
-            help="Path and filename to the linux private key file for SSH. Ignored if linux username is set."
+            help="Complete filename to the linux private key file for Linux machines."
         )
         parser.add_argument(
             '--linux-ssh-private-key-passphrase',
@@ -102,7 +121,7 @@ class PostLaunchFileCopier:
                 env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_PASSPHRASE,
                 default_is_none=True
             ),
-            help="The linux passphrase for the private key file for SSH. Ignored if linux username is set."
+            help="The passphrase for the SSH private key file for the linux machines."
         )
 
         self._arguments = parser.parse_args()
@@ -116,28 +135,31 @@ class PostLaunchFileCopier:
         )
         self._config_loader = ConfigLoader()
         self._notifier = Notifier(self._config_loader.get_notifications_config())
+        self._windows_user = self._arguments.windows_username
+        self._windows_password = self._arguments.windows_password
+        self._linux_user = self._arguments.linux_username
+        self._linux_password = self._arguments.linux_password
 
-        if self._has_windows_user():
+        if self._has_windows_user() and not self._has_windows_password():
             self._windows_password = EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
-                env_var_description='Windows password',
+                env_var_description='Windows password for remote session',
                 sensitive=True
             )
 
         if self._has_linux_user() and not self._has_linux_password() and not self._has_linux_private_key():
             self._linux_password = EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_LINUX_PASSWORD,
-                env_var_description='Linux password',
+                env_var_description='Linux password for SSH',
                 sensitive=True
             )
 
-        self._ssh_connector = SSHConnector(user=self._arguments.linux_username, hostname='', port=22)
-
     def copy(self):
-        if not os.path.exists(self._arguments.source):
-            logging.error('{}: “{}” directory does not exists.'.format(
-                self.__class__.__name__, self._arguments.source
+        if not os.path.exists(self._arguments.generic_post_launch_directory):
+            logging.error('{}: “{}” directory (for generic post launch files) does not exists.'.format(
+                self.__class__.__name__, self._arguments.generic_post_launch_directory
             ))
+
         print('### Fetching servers list…', end='', flush=True)
         servers = self._migration_factory_requester.get_user_servers_by_wave(
             self._arguments.wave_name
@@ -205,11 +227,17 @@ class PostLaunchFileCopier:
         print(' ✔ Done')
 
     def _start_copy_for_linux(self, server_fqdn: str):
-        self._ssh_connector.set_hostname(server_fqdn)
-        self._ssh_client = self._ssh_connector.connect(
+        if not self._has_linux_user():
+            self._linux_user = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_USERNAME,
+                env_var_description='Linux username for SSH',
+            )
+
+        self._get_ssh_connector().set_hostname(server_fqdn)
+        self._ssh_client = self._get_ssh_connector().connect(
             key_file_path=self._arguments.linux_ssh_private_key_file,
             key_passphrase=self._arguments.linux_ssh_private_key_passphrase,
-            password=self._arguments.linux_password,
+            password=self._linux_password,
         )
 
         self._create_destination_tasks.append(Thread(
@@ -233,13 +261,19 @@ class PostLaunchFileCopier:
         ))
 
     def _start_copy_for_windows(self, server_fqdn: str):
+        if not self._has_windows_user():
+            self._windows_user = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
+                env_var_description='Windows username for remote session',
+            )
+
         self._create_destination_tasks.append(Thread(
             target=self._do_run_powershell,
             args=[self._get_windows_create_path_command(server_fqdn)],
             name=server_fqdn
         ))
 
-        all_scripts_pathes = self._find_all_windows_scripts(self._arguments.source)
+        all_scripts_pathes = self._find_all_windows_scripts(self._arguments.generic_post_launch_directory)
         all_scripts_pathes.extend(self._find_all_windows_scripts(self._path_wave_post_launch))
 
         for script_path in all_scripts_pathes:
@@ -273,7 +307,7 @@ class PostLaunchFileCopier:
         if self._has_windows_user():
             create_path_command = PowershellRunner.authenticate_command(
                 create_path_command,
-                self._arguments.windows_username,
+                self._windows_user,
                 self._windows_password
             )
 
@@ -293,7 +327,7 @@ class PostLaunchFileCopier:
         if self._has_windows_user():
             copy_command = PowershellRunner.insert_authenthication_arguments(
                 copy_command,
-                self._arguments.windows_username,
+                self._windows_user,
                 self._windows_password
             )
         else:
@@ -308,17 +342,26 @@ class PostLaunchFileCopier:
 
         PowershellRunner.run(command)
 
+    def _get_ssh_connector(self):
+        if self._ssh_connector is None:
+            self._ssh_connector = SSHConnector(user=self._linux_user, hostname='', port=22)
+
+        return self._ssh_connector
+
     def _has_windows_user(self):
-        return self._arguments.windows_username is not None
+        return self._windows_user is not None
+
+    def _has_windows_password(self):
+        return self._windows_password is not None
 
     def _has_linux_user(self):
-        return self._arguments.linux_username is not None
+        return self._linux_user is not None
+
+    def _has_linux_password(self):
+        return self._linux_password is not None
 
     def _has_linux_private_key(self):
         return self._arguments.linux_ssh_private_key_file is not None
-
-    def _has_linux_password(self):
-        return self._arguments.linux_password is not None
 
 
 if __name__ == '__main__':
