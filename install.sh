@@ -53,6 +53,14 @@ install_without_override() {
   fi
 }
 
+actions_for_deprecated_scripts() {
+  # Commands to remove after some times: around may 2021
+  rm /usr/local/bin/mf_linux_file_copy
+  rm /usr/local/bin/mf_windows_file_copy
+  # Commands to remove once no scripts uses "endpoints.json" anymore
+  install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/endpoints.json"
+}
+
 check_arguments "$@"
 
 cd "$DIR"
@@ -73,8 +81,7 @@ install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/$ENDP
 install_without_override "config/$DEFAULTS_FILE" "$CONFIG_DESTINATION_PATH/$DEFAULTS_FILE"
 install_without_override "config/$CONFIG_FILE" "$CONFIG_DESTINATION_PATH/$CONFIG_FILE"
 
-# Deprecated - To remove once no scripts uses "endpoints.json" anymore
-install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/endpoints.json"
+actions_for_deprecated_scripts
 
 sudo mkdir -p "$TEMPLATES_PATH"
 sudo cp config/*.csv "$TEMPLATES_PATH"
