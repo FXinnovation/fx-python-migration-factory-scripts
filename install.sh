@@ -55,8 +55,8 @@ install_without_override() {
 
 actions_for_deprecated_scripts() {
   # Commands to remove after some times: around may 2021
-  rm /usr/local/bin/mf_linux_file_copy
-  rm /usr/local/bin/mf_windows_file_copy
+  rm /usr/local/bin/mf_linux_file_copy || echo 'done'
+  rm /usr/local/bin/mf_windows_file_copy || echo 'done'
   # Commands to remove once no scripts uses "endpoints.json" anymore
   install_without_override "config/$ENDPOINT_FILE" "$CONFIG_DESTINATION_PATH/endpoints.json"
 }
