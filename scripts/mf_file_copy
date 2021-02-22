@@ -18,9 +18,10 @@ from mf.utils import EnvironmentVariableFetcher, PowershellRunner
 
 
 class PostLaunchFileCopier:
-    """ Copy post-launch files from to the source servers (Windows only) """
+    """ Copy post-launch files from to the source servers """
 
     WINDOWS_POST_LAUNCH_DESTINATION = 'c:\\Program Files (x86)\\CloudEndure\\post_launch'
+    LINUX_POST_LAUNCH_DESTINATION = '/boot/post_launch'
 
     _arguments = []
     _endpoints_loader = {}
@@ -243,13 +244,13 @@ class PostLaunchFileCopier:
             for filename in glob.glob(file_path):
                 self._copy_files_tasks.append(Thread(
                     target=self._ssh_client.sftp_put,
-                    args=[filename, '/boot/post_launch/' + ntpath.basename(filename)],
+                    args=[filename, self.LINUX_POST_LAUNCH_DESTINATION + ntpath.basename(filename)],
                     name=server_fqdn
                 ))
 
         self._cleanup_tasks.append(Thread(
             target=self._ssh_client.execute,
-            args=["sudo chmod -R 0755 /boot/post_launch"],
+            args=["sudo chmod -R 0755 {}".format(self.LINUX_POST_LAUNCH_DESTINATION)],
             name='fixing permissions on post_launch on {}'.format(server_fqdn)
         ))
 
@@ -314,7 +315,9 @@ class PostLaunchFileCopier:
         return create_path_command
 
     def _get_linux_create_path_command(self) -> str:
-        return "sudo mkdir -p /boot/post_launch && sudo chmod 0777 /boot/post_launch"
+        return "sudo mkdir -p {} && sudo chmod 0777 {}".format(
+            self.LINUX_POST_LAUNCH_DESTINATION, self.LINUX_POST_LAUNCH_DESTINATION
+        )
 
     def _get_windows_copy_command(self, filepath: str, server_fqdn: str, ) -> str:
         copy_command = 'Copy-Item "{}" "{}" -ToSession (New-PSSession -ComputerName "{}" %s) | Out-Null'.format(
