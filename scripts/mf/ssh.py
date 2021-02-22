@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
+import base64
 import logging
-
+import os
 import subprocess
+from binascii import hexlify
+
 import paramiko
-from paramiko import AuthenticationException, BadHostKeyException, SSHException, PasswordRequiredException
+from paramiko import AuthenticationException, BadHostKeyException, SSHException, PasswordRequiredException, \
+    MissingHostKeyPolicy
 
 import mf
-from mf.utils import EnvironmentVariableFetcher
+from mf.utils import EnvironmentVariableFetcher, UserManualConfirmation
 
 
 class SSHConnector:
@@ -26,7 +30,8 @@ class SSHConnector:
         self._hostname = hostname
         self._port = port
 
-    def connect(self, key_file_path: str = None, key_passphrase: str = None, password: str = None, retry_count: int = 0):
+    def connect(self, key_file_path: str = None, key_passphrase: str = None, password: str = None,
+                retry_count: int = 0):
         ssh_client = None
         try:
             logging.getLogger('root').debug(
@@ -42,7 +47,8 @@ class SSHConnector:
             )
 
             ssh_client = SSHClient(self._user, self._hostname, self._port)
-            ssh_client.set_missing_host_key_policy(paramiko.WarningPolicy())
+            ssh_client.set_missing_host_key_policy(AskingPolicy())
+            ssh_client.load_system_host_keys()
             ssh_client.connect(
                 port=self._port,
                 hostname=self._hostname,
@@ -77,19 +83,21 @@ class SSHConnector:
                 print('Wrong password. Try again.')
                 password = EnvironmentVariableFetcher.fetch(
                     env_var_names=mf.ENV_VAR_LINUX_PASSWORD,
-                    env_var_description='Linux user “{}” password for hostname “{}”: '.format(self._user, self._hostname),
+                    env_var_description='Linux user “{}” password for hostname “{}”: '.format(self._user,
+                                                                                              self._hostname),
                     sensitive=True
                 )
-                self.connect(password=password, retry_count=retry_count+1)
+                self.connect(password=password, retry_count=retry_count + 1)
             else:
                 logging.getLogger('root').error('{}: Connection to host “{}” failed with error “{}”.'.format(
                     self.__class__.__name__, self._hostname, exception
                 ))
                 quit(1)
         except BadHostKeyException:
-            logging.getLogger('root').error('{}: Connection to host “{}” failed. Host is not in the known hosts.'.format(
-                self.__class__.__name__, self._hostname
-            ))
+            logging.getLogger('root').error(
+                '{}: Connection to host “{}” failed. Host is not in the known hosts.'.format(
+                    self.__class__.__name__, self._hostname
+                ))
             quit(1)
         except SSHException as exception:
             logging.getLogger('root').error(
@@ -111,11 +119,11 @@ class SSHConnector:
         # This is because paramiko does not offer any reliable way to guess a SSH private key type
         # Thus: this is not compatible on Windows (and this is why no specific class for running local bash was created)
 
-        COMMAND_KEYGEN =  "ssh-keygen -l -f {}".format(key_file_path)
-        COMMAND_AWK = "| awk '{ print $NF }'"
-        COMMAND_TR = "| tr -d '()'"
+        command_keygen = "ssh-keygen -l -f {}".format(key_file_path)
+        command_awk = "| awk '{ print $NF }'"
+        command_tr = "| tr -d '()'"
         key_type_process_out, key_type_process_err = subprocess.Popen(
-            COMMAND_KEYGEN + COMMAND_AWK + COMMAND_TR,
+            command_keygen + command_awk + command_tr,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True
@@ -123,7 +131,7 @@ class SSHConnector:
 
         if key_type_process_err.decode() != '':
             logging.getLogger('root').debug("{}: Error while running command: \n\n{}".format(
-                self.__class__.__name__,  key_type_process_err.decode()
+                self.__class__.__name__, key_type_process_err.decode()
             ))
 
         return key_type_process_out.decode()
@@ -178,42 +186,41 @@ class SSHClient(paramiko.SSHClient):
         super(SSHClient, self).close()
 
 
-class AskingPolicy(paramiko.MissingHostKeyPolicy):
+class AskingPolicy(MissingHostKeyPolicy):
     """
         Policy for asking to add the hostname key to the
         local `.HostKeys` object, and saving it.  This is used by `.SSHClient`.
     """
 
     def missing_host_key(self, client, hostname, key):
+        if (not UserManualConfirmation.ask(
+                'Key {} {} (MD5) is MISSING from local known hosts. MITM MAY BE HAPPENING! Save & proceed? [Y]'.format(
+                    key.get_name(),
+                    hexlify(key.get_fingerprint()).decode('utf-8')
+                ),
+        )):
+            logging.getLogger('root').error(
+                "{}: Server key fingerprint {} {} (MD5) rejected. Aborting.".format(
+                    self.__class__.__name__,
+                    key.get_name(),
+                    hexlify(key.get_fingerprint()).decode('utf-8')
+                ),
+            )
+            quit(1)
 
-
+        # We are force to use private attribute of the client object.
+        # This is because paramiko itself does not respect their own encapsulation, forcing us to do that.
+        # Instead, the HostKeys data object should be retrieved by using a getter if they change that in the future.
+        client._host_keys_filename = os.path.expanduser("~/.ssh/known_hosts")
         client._host_keys.add(hostname, key.get_name(), key)
-        if client._host_keys_filename is not None:
-            client.save_host_keys(client._host_keys_filename)
-        client._log(
-            DEBUG,
-            "Adding {} host key for {}: {}".format(
-                key.get_name(), hostname, hexlify(key.get_fingerprint())
+        client.save_host_keys(client._host_keys_filename)
+
+        logging.getLogger('root').info(
+            "{}: Adding {} host key for {}: {}".format(
+                self.__class__.__name__, key.get_name(), hostname, hexlify(key.get_fingerprint()).decode('utf-8')
             ),
         )
 
-
-class RejectPolicy(MissingHostKeyPolicy):
-    """
-    Policy for automatically rejecting the unknown hostname & key.  This is
-    used by `.SSHClient`.
-    """
-
-    def missing_host_key(self, client, hostname, key):
-        client._log(
-            DEBUG,
-            "Rejecting {} host key for {}: {}".format(
-                key.get_name(), hostname, hexlify(key.get_fingerprint())
-            ),
-        )
-        raise SSHException(
-            "Server {!r} not found in known_hosts".format(hostname)
-        )
 
 if __name__ == '__main__':
     print("This file is a library file. It cannot be called directly.")
