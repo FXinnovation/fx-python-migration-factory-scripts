@@ -140,20 +140,6 @@ class PostLaunchFileCopier:
         self._linux_user = self._arguments.linux_username
         self._linux_password = self._arguments.linux_password
 
-        if self._has_windows_user() and not self._has_windows_password():
-            self._windows_password = EnvironmentVariableFetcher.fetch(
-                env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
-                env_var_description='Windows password for remote session',
-                sensitive=True
-            )
-
-        if self._has_linux_user() and not self._has_linux_password() and not self._has_linux_private_key():
-            self._linux_password = EnvironmentVariableFetcher.fetch(
-                env_var_names=mf.ENV_VAR_LINUX_PASSWORD,
-                env_var_description='Linux password for SSH',
-                sensitive=True
-            )
-
     def copy(self):
         if not os.path.exists(self._arguments.generic_post_launch_directory):
             logging.error('{}: “{}” directory (for generic post launch files) does not exists.'.format(
@@ -233,6 +219,13 @@ class PostLaunchFileCopier:
                 env_var_description='Linux username for SSH',
             )
 
+        if self._has_linux_user() and not self._has_linux_password() and not self._has_linux_private_key():
+            self._linux_password = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_PASSWORD,
+                env_var_description='Linux password for SSH',
+                sensitive=True
+            )
+
         self._get_ssh_connector().set_hostname(server_fqdn)
         self._ssh_client = self._get_ssh_connector().connect(
             key_file_path=self._arguments.linux_ssh_private_key_file,
@@ -265,6 +258,13 @@ class PostLaunchFileCopier:
             self._windows_user = EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
                 env_var_description='Windows username for remote session',
+            )
+
+        if self._has_windows_user() and not self._has_windows_password():
+            self._windows_password = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
+                env_var_description='Windows password for remote session',
+                sensitive=True
             )
 
         self._create_destination_tasks.append(Thread(
