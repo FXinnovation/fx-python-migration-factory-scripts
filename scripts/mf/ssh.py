@@ -206,12 +206,8 @@ class AskingPolicy(MissingHostKeyPolicy):
             )
             quit(1)
 
-        # We are force to use private attribute of the client object.
-        # This is because paramiko itself does not respect their own encapsulation, forcing us to do that.
-        # Instead, the HostKeys data object should be retrieved by using a getter if they change that in the future.
-        client._host_keys_filename = os.path.expanduser("~/.ssh/known_hosts")
-        client._host_keys.add(hostname, key.get_name(), key)
-        client.save_host_keys(client._host_keys_filename)
+        client.get_host_keys().add(hostname, key.get_name(), key)
+        client.save_host_keys(os.path.expanduser("~/.ssh/known_hosts"))
 
         logging.getLogger('root').info(
             "{}: Adding {} host key for {}: {}".format(
