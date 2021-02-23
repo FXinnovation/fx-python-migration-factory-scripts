@@ -112,14 +112,16 @@ class SSHConnector:
                 passphrase=key_passphrase,
             )
         except PasswordRequiredException:
-            if key_passphrase is None:
+            if key_passphrase is None and retry_count < 2:
                 key_passphrase = EnvironmentVariableFetcher.fetch(
                     env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_PASSPHRASE,
                     env_var_description='Linux key passphrase (for hostname “{}”): '.format(self._hostname),
                     sensitive=True
                 )
                 ssh_client.close()
-                return self.connect(key_file_path=key_file_path, key_passphrase=key_passphrase)
+                return self.connect(
+                    key_file_path=key_file_path, key_passphrase=key_passphrase, retry_count=retry_count + 1
+                )
             else:
                 logging.getLogger('root').error('{}: Cannot prepare SSH key file “{}”. Passphrase is wrong.'.format(
                     self.__class__.__name__, self._hostname
