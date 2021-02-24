@@ -157,7 +157,7 @@ class PostLaunchFileCopier:
         print(' ✔ Done')
 
         if servers is []:
-            print('### No servers found in the {} wave…').format(self._arguments.wave_name)
+            print('### No servers found in the {} wave…'.format(self._arguments.wave_name))
             quit(0)
 
         print('### Copying post-launch files to post-launch folder in source servers…')
@@ -242,7 +242,9 @@ class PostLaunchFileCopier:
 
         all_scripts_pathes = self._find_all_linux_scripts(self._arguments.generic_post_launch_directory)
         all_scripts_pathes.extend(self._find_all_linux_scripts(self._path_wave_post_launch))
-        all_scripts_pathes.extend(self._find_all_linux_scripts(self._find_server_specific_post_launch_path()))
+        all_scripts_pathes.extend(
+            self._find_all_linux_scripts(self._find_server_specific_post_launch_path(server_fqdn))
+        )
 
         for file_path in all_scripts_pathes:
             for filename in glob.glob(file_path):
@@ -280,7 +282,9 @@ class PostLaunchFileCopier:
 
         all_scripts_pathes = self._find_all_windows_scripts(self._arguments.generic_post_launch_directory)
         all_scripts_pathes.extend(self._find_all_windows_scripts(self._path_wave_post_launch))
-        all_scripts_pathes.extend(self._find_all_windows_scripts(self._find_server_specific_post_launch_path()))
+        all_scripts_pathes.extend(
+            self._find_all_windows_scripts(self._find_server_specific_post_launch_path(server_fqdn))
+        )
 
         for script_path in all_scripts_pathes:
             self._copy_files_tasks.append(Thread(
