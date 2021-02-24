@@ -240,7 +240,11 @@ class PostLaunchFileCopier:
             name=server_fqdn
         ))
 
-        for file_path in self._find_all_linux_scripts(self._path_wave_post_launch):
+        all_scripts_pathes = self._find_all_linux_scripts(self._arguments.generic_post_launch_directory)
+        all_scripts_pathes.extend(self._find_all_linux_scripts(self._path_wave_post_launch))
+        all_scripts_pathes.extend(self._find_all_linux_scripts(self._find_server_specific_post_launch_path()))
+
+        for file_path in all_scripts_pathes:
             for filename in glob.glob(file_path):
                 self._copy_files_tasks.append(Thread(
                     target=self._ssh_client.sftp_put,
@@ -276,6 +280,7 @@ class PostLaunchFileCopier:
 
         all_scripts_pathes = self._find_all_windows_scripts(self._arguments.generic_post_launch_directory)
         all_scripts_pathes.extend(self._find_all_windows_scripts(self._path_wave_post_launch))
+        all_scripts_pathes.extend(self._find_all_windows_scripts(self._find_server_specific_post_launch_path()))
 
         for script_path in all_scripts_pathes:
             self._copy_files_tasks.append(Thread(
@@ -298,6 +303,9 @@ class PostLaunchFileCopier:
         return [
             f'{basepath}/*.sh',
         ]
+
+    def _find_server_specific_post_launch_path(self, server_fqdn: str) -> str:
+        return os.path.join(self._path_wave_post_launch, server_fqdn)
 
     def _get_windows_create_path_command(self, server_fqdn: str) -> str:
         create_path_command = f'Invoke-Command -ComputerName {server_fqdn} ' \
