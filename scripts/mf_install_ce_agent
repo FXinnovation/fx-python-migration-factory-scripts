@@ -104,8 +104,9 @@ class CeAgentInstaller:
 
         _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(filter_wave_name = self._arguments.wave_name, filter_os = 'windows')
 
-        if _server_list is None:
+        if _server_list == []:
             print('✔ No Windows server in this wave. Nothing to do')
+            return
 
         _api_tokens = self._get_api_tokens()
 
@@ -135,8 +136,9 @@ class CeAgentInstaller:
 
         _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(filter_wave_name = self._arguments.wave_name, filter_os = 'linux')
 
-        if _server_list is None:
+        if _server_list == []:
             print('✔ No Linux server in this wave. Nothing to do')
+            return
 
         _api_tokens = self._get_api_tokens()
 
