@@ -315,8 +315,12 @@ class PostLaunchFileCopier:
         zip_file = zipfile.ZipFile(
             os.path.join(mf.PATH_HOME, self._arguments.wave_name) + server_fqdn + '.zip', 'w'
         )
-        for filename in glob.glob(all_scripts_pathes):
-            zip_file.write(filename)
+
+        print(all_scripts_pathes)
+        for file_path in all_scripts_pathes:
+            for filename in glob.glob(file_path):
+                print(filename)
+                zip_file.write(filename, os.path.basename(filename))
 
         zip_file.close()
 
