@@ -18,7 +18,16 @@ from mf.utils import EnvironmentVariableFetcher, PowershellRunner
 
 
 class PostLaunchFileCopier:
-    """ Copy post-launch files from to the source servers """
+    """
+        Copy post-launch scripts from the current machine to the source machines
+        By default, this script searches valid files in 3 locations. The last overriding the first:
+         - Generic: ~/migrations/post-launch
+         - Wave-specific: ~/migrations/WAVE/post-launch
+         - Server-specific: ~/migrations/WAVE/post-launch/SERVER.FQDN
+
+        This script works with Linux and Windows source machines.
+        Each machine tasks will be run in parallel.
+    """
 
     WINDOWS_POST_LAUNCH_DESTINATION = 'c:\\Program Files (x86)\\CloudEndure\\post_launch'
     LINUX_POST_LAUNCH_DESTINATION = '/boot/post_launch'
@@ -37,6 +46,7 @@ class PostLaunchFileCopier:
     _ssh_client = None
 
     _preparation_tasks = []
+    _post_copy_tasks = []
     _copy_files_tasks = []
     _cleanup_tasks = []
 
@@ -57,9 +67,9 @@ class PostLaunchFileCopier:
         parser.add_argument(
             '--generic-post-launch-directory',
             default=mf.PATH_DEFAULT_POST_LAUNCH,
-            help="Generic post-launch files to copy (.exe, .bat or .sh)."
+            help="Generic post-launch files to copy (.exe, .bat, .cmd or .sh)."
                  " Defaults to env var {}."
-                 " Specific post-launch files will ALWAYS be fetched in wave directory dynamically.".format(
+                 " Other specific post-launch files will ALWAYS be fetched in wave directory dynamically.".format(
                 mf.PATH_DEFAULT_POST_LAUNCH
             )
         )
@@ -148,53 +158,48 @@ class PostLaunchFileCopier:
             ))
 
         print('### Fetching servers list…', end='', flush=True)
+
         servers = self._migration_factory_requester.get_user_servers_by_wave(
             self._arguments.wave_name
         )
         logging.getLogger('root').debug(
             self.__class__.__name__ + ":Found servers: \n “{}”".format(servers)
         )
+
         print(' ✔ Done')
 
         if servers is []:
             print('### No servers found in the {} wave…'.format(self._arguments.wave_name))
             quit(0)
 
-        print('### Copying post-launch files to post-launch folder in source servers…')
+        print('### Running tasks to copy post-launch files to post-launch folder in source servers…')
 
         for server in servers:
             server_fqdn = server[MfField.SERVER_FQDN].strip()
 
             if "windows" in server[MfField.SERVER_OS].lower():
-                self._start_copy_for_windows(server_fqdn)
+                if not self._has_windows_user():
+                    self._windows_user = EnvironmentVariableFetcher.fetch(
+                        env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
+                        env_var_description='Windows username for remote session',
+                    )
+
+                if self._has_windows_user() and not self._has_windows_password():
+                    self._windows_password = EnvironmentVariableFetcher.fetch(
+                        env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
+                        env_var_description='Windows password for remote session',
+                        sensitive=True
+                    )
+                self._create_tasks_for_windows(server_fqdn)
             elif "linux" in server[MfField.SERVER_OS].lower():
-                self._start_copy_for_linux(server_fqdn)
+                self._create_tasks_for_linux(server_fqdn)
 
-        for task in self._preparation_tasks:
-            print("# Preparing server tasks: “{}”…".format(task.getName()))
-            task.start()
-
-        for task in self._preparation_tasks:
-            task.join()
-            print('# ✔ Done: {} '.format(task.getName()))
-
-        quit(0)
-
-        for task in self._copy_files_tasks:
-            print("# Copying files: {}…".format(task.getName()))
-            task.start()
-
-        for task in self._copy_files_tasks:
-            task.join()
-            print('# ✔ Done: {}'.format(task.getName()))
-
-        for task in self._cleanup_tasks:
-            print("# Cleanup task: {}…".format(task.getName()))
-            task.start()
-
-        for task in self._cleanup_tasks:
-            task.join()
-            print('# ✔ Done: {}'.format(task.getName()))
+        self._run_all_tasks([
+            self._preparation_tasks,
+            self._copy_files_tasks,
+            self._post_copy_tasks,
+            self._cleanup_tasks,
+        ])
 
         if self._ssh_client is not None:
             self._ssh_client.close()
@@ -215,7 +220,19 @@ class PostLaunchFileCopier:
 
         print(' ✔ Done')
 
-    def _start_copy_for_linux(self, server_fqdn: str):
+    def _run_all_tasks(self, ordered_tasks_lists: list):
+        for task_list in ordered_tasks_lists:
+            for task in task_list:
+                print("# {}…".format(task.getName()))
+                task.start()
+
+            for task in task_list:
+                task.join()
+                print('# ✔ Done: {} '.format(task.getName()))
+
+            print('')
+
+    def _create_tasks_for_linux(self, server_fqdn: str):
         if not self._has_linux_user():
             self._linux_user = EnvironmentVariableFetcher.fetch(
                 env_var_names=mf.ENV_VAR_LINUX_USERNAME,
@@ -239,7 +256,7 @@ class PostLaunchFileCopier:
         self._preparation_tasks.append(Thread(
             target=self._ssh_client.execute,
             args=[self._get_linux_create_path_command()],
-            name=server_fqdn
+            name='Create destination directory on {}'.format(server_fqdn)
         ))
 
         all_scripts_pathes = self._find_all_linux_scripts(self._arguments.generic_post_launch_directory)
@@ -253,87 +270,36 @@ class PostLaunchFileCopier:
                 self._copy_files_tasks.append(Thread(
                     target=self._ssh_client.sftp_put,
                     args=[filename, self.LINUX_POST_LAUNCH_DESTINATION + ntpath.basename(filename)],
-                    name=server_fqdn
+                    name='Copy “{}” to {}'.format(filename, server_fqdn)
                 ))
 
         self._cleanup_tasks.append(Thread(
             target=self._ssh_client.execute,
             args=["sudo chmod -R 0755 {}".format(self.LINUX_POST_LAUNCH_DESTINATION)],
-            name='fixing permissions on post_launch on {}'.format(server_fqdn)
+            name='Fix permissions on post_launch directory on {}'.format(server_fqdn)
         ))
 
-    def _start_copy_for_windows(self, server_fqdn: str):
-        if not self._has_windows_user():
-            self._windows_user = EnvironmentVariableFetcher.fetch(
-                env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
-                env_var_description='Windows username for remote session',
-            )
-
-        if self._has_windows_user() and not self._has_windows_password():
-            self._windows_password = EnvironmentVariableFetcher.fetch(
-                env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
-                env_var_description='Windows password for remote session',
-                sensitive=True
-            )
-
-        self._preparation_tasks.append(Thread(
-            target=self._do_run_powershell,
-            args=[self._get_windows_create_path_command(server_fqdn)],
-            name='create destination dir on ' + server_fqdn
-        ))
-
-        self._preparation_tasks.append(Thread(
-            target=self._zip_all_windows_scripts,
-            args=[server_fqdn],
-            name='zip scripts for ' + server_fqdn
-        ))
-
-        all_scripts_pathes = self._find_all_windows_scripts(self._arguments.generic_post_launch_directory)
-        all_scripts_pathes.extend(self._find_all_windows_scripts(self._path_wave_post_launch))
-        all_scripts_pathes.extend(
-            self._find_all_windows_scripts(self._find_server_specific_post_launch_path(server_fqdn))
+    def _create_tasks_for_windows(self, server_fqdn: str):
+        windows_host = WindowsHost(
+            server_fqdn,
+            self._arguments.wave_name,
+            self._path_wave_post_launch,
+            self._arguments.generic_post_launch_directory,
+            self._windows_user,
+            self._windows_password
         )
 
-        for script_path in all_scripts_pathes:
-            self._copy_files_tasks.append(Thread(
-                target=self._do_run_powershell,
-                args=[self._get_windows_copy_command(script_path, server_fqdn)],
-                name='from “{}” to “{}”'.format(script_path, server_fqdn)
-            ))
+        for task in windows_host.get_pre_copy_tasks():
+            self._preparation_tasks.append(task)
 
-    def _zip_all_windows_scripts(self, server_fqdn: str) -> str:
-        os.makedirs(name=self._arguments.generic_post_launch_directory, exist_ok=True)
-        os.makedirs(name=self._path_wave_post_launch, exist_ok=True)
-        os.makedirs(name=self._find_server_specific_post_launch_path(server_fqdn), exist_ok=True)
+        for task in windows_host.get_copy_tasks():
+            self._copy_files_tasks.append(task)
 
-        all_scripts_pathes = self._find_all_windows_scripts(self._arguments.generic_post_launch_directory)
-        all_scripts_pathes.extend(self._find_all_windows_scripts(self._path_wave_post_launch))
-        all_scripts_pathes.extend(
-            self._find_all_windows_scripts(self._find_server_specific_post_launch_path(server_fqdn))
-        )
+        for task in windows_host.get_post_copy_tasks():
+            self._post_copy_tasks.append(task)
 
-        zip_file = zipfile.ZipFile(
-            os.path.join(mf.PATH_HOME, self._arguments.wave_name) + server_fqdn + '.zip', 'w'
-        )
-
-        print(all_scripts_pathes)
-        for file_path in all_scripts_pathes:
-            for filename in glob.glob(file_path):
-                print(filename)
-                zip_file.write(filename, os.path.basename(filename))
-
-        zip_file.close()
-
-        return zip_file.filename
-
-    @classmethod
-    def _find_all_windows_scripts(cls, basepath: str) -> list:
-        return [
-            f'{basepath}/*.bat',
-            f'{basepath}/*.exe',
-            f'{basepath}/*.cmd',
-            f'{basepath}/*.ps1',
-        ]
+        for task in windows_host.get_cleanup_tasks():
+            self._cleanup_tasks.append(task)
 
     @classmethod
     def _find_all_linux_scripts(cls, basepath: str) -> list:
@@ -344,51 +310,10 @@ class PostLaunchFileCopier:
     def _find_server_specific_post_launch_path(self, server_fqdn: str) -> str:
         return os.path.join(self._path_wave_post_launch, server_fqdn)
 
-    def _get_windows_create_path_command(self, server_fqdn: str) -> str:
-        create_path_command = f'Invoke-Command -ComputerName {server_fqdn} ' \
-                              f'-ScriptBlock {{if (!(Test-path "{self.WINDOWS_POST_LAUNCH_DESTINATION}")) {{' \
-                              f'New-Item -Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}" -ItemType directory}}' \
-                              f'}}'
-
-        if self._has_windows_user():
-            create_path_command = PowershellRunner.authenticate_command(
-                create_path_command,
-                self._windows_user,
-                self._windows_password
-            )
-
-        return create_path_command
-
     def _get_linux_create_path_command(self) -> str:
         return "sudo mkdir -p {} && sudo chmod 0777 {}".format(
             self.LINUX_POST_LAUNCH_DESTINATION, self.LINUX_POST_LAUNCH_DESTINATION
         )
-
-    def _get_windows_copy_command(self, filepath: str, server_fqdn: str, ) -> str:
-        copy_command = 'Copy-Item "{}" "{}" -ToSession (New-PSSession -ComputerName "{}" %s) | Out-Null'.format(
-            filepath,
-            self.WINDOWS_POST_LAUNCH_DESTINATION,
-            server_fqdn,
-            '{}',
-        )
-
-        if self._has_windows_user():
-            copy_command = PowershellRunner.insert_authenthication_arguments(
-                copy_command,
-                self._windows_user,
-                self._windows_password
-            )
-        else:
-            copy_command = copy_command % ''
-
-        return copy_command
-
-    def _do_run_powershell(self, command: str):
-        logging.getLogger('root').info(
-            self.__class__.__name__ + ':Running “{}”'.format(command)
-        )
-
-        PowershellRunner.run(command)
 
     def _get_ssh_connector(self):
         if self._ssh_connector is None:
@@ -410,6 +335,199 @@ class PostLaunchFileCopier:
 
     def _has_linux_private_key(self):
         return self._arguments.linux_ssh_private_key_file is not None
+
+
+class Host:
+    _server_fqdn = ''
+    _wave_name = ''
+    _zip_filename = ''
+    _path_generic_post_launch = ''
+    _path_wave_post_launch = ''
+    _path_server_post_launch = ''
+
+    def __init__(
+            self,
+            _server_fqdn: str,
+            _wave_name: str,
+            _path_wave_post_launch: str,
+            _path_generic_post_launch: str
+    ):
+        self._server_fqdn = _server_fqdn
+        self._wave_name = _wave_name
+        self._zip_filename = os.path.join(mf.PATH_HOME, _wave_name, _server_fqdn + '.zip')
+        self._path_generic_post_launch = _path_generic_post_launch
+        self._path_wave_post_launch = _path_wave_post_launch
+        self._path_server_post_launch = os.path.join(self._path_wave_post_launch, _server_fqdn)
+
+    def get_valid_post_launch_file_extensions(self, basepath: str) -> list:
+        pass
+
+    def find_all_post_launch_scripts(self) -> list:
+        os.makedirs(name=self._path_generic_post_launch, exist_ok=True)
+        os.makedirs(name=self._path_wave_post_launch, exist_ok=True)
+        os.makedirs(name=self._path_server_post_launch, exist_ok=True)
+
+        all_scripts_pathes = self.get_valid_post_launch_file_extensions(self._path_generic_post_launch)
+        all_scripts_pathes.extend(self.get_valid_post_launch_file_extensions(self._path_wave_post_launch))
+        all_scripts_pathes.extend(self.get_valid_post_launch_file_extensions(self._path_server_post_launch))
+
+        post_launch_files = []
+        for file_path in all_scripts_pathes:
+            for filename in glob.glob(file_path):
+                post_launch_files.append(filename)
+
+        return post_launch_files
+
+    def get_create_destination_path_command(self) -> str:
+        pass
+
+    def get_copy_command(self, filepath: str) -> str:
+        pass
+
+    def get_pre_copy_tasks(self) -> list:
+        pass
+
+    def get_copy_tasks(self) -> list:
+        pass
+
+    def get_post_copy_tasks(self) -> list:
+        pass
+
+    def get_cleanup_tasks(self) -> list:
+        pass
+
+    def _zip_all_post_launch_scripts(self):
+        zip_file = zipfile.ZipFile(self._zip_filename, 'w')
+
+        for filename in self.find_all_post_launch_scripts():
+            zip_file.write(filename, os.path.basename(filename))
+
+        zip_file.close()
+
+    def _delete_post_launch_zip(self):
+        if os.path.exists(self._zip_filename):
+            os.remove(self._zip_filename)
+
+
+class WindowsHost(Host):
+    WINDOWS_POST_LAUNCH_DESTINATION = 'c:\\Program Files (x86)\\CloudEndure\\post_launch'
+
+    _username = ''
+    _password = ''
+
+    def __init__(
+            self,
+            _server_fqdn: str,
+            _wave_name: str,
+            _path_wave_post_launch: str,
+            _path_generic_post_launch: str,
+            _username: str,
+            _password: str = None
+    ):
+        self._username = _username
+        self._password = _password
+
+        super(WindowsHost, self).__init__(_server_fqdn, _wave_name, _path_wave_post_launch, _path_generic_post_launch)
+
+    def get_create_destination_path_command(self) -> str:
+        create_path_command = f'Invoke-Command -ComputerName {self._server_fqdn} ' \
+                              f'-ScriptBlock {{if (!(Test-path "{self.WINDOWS_POST_LAUNCH_DESTINATION}")) {{' \
+                              f'New-Item -Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}" -ItemType directory}}' \
+                              f'}}'
+
+        if self._password is not None:
+            create_path_command = PowershellRunner.authenticate_command(
+                create_path_command,
+                self._username,
+                self._password
+            )
+
+        return create_path_command
+
+    def get_copy_command(self, filepath: str) -> str:
+        copy_command = 'Copy-Item "{}" "{}" -ToSession (New-PSSession -ComputerName "{}" %s) | Out-Null'.format(
+            filepath,
+            self.WINDOWS_POST_LAUNCH_DESTINATION,
+            self._server_fqdn,
+            '{}',
+        )
+
+        if self._password is not None:
+            copy_command = PowershellRunner.insert_authenthication_arguments(
+                copy_command,
+                self._username,
+                self._password
+            )
+        else:
+            copy_command = copy_command % ''
+
+        return copy_command
+
+    def get_valid_post_launch_file_extensions(self, basepath: str) -> list:
+        return [
+            f'{basepath}/*.bat',
+            f'{basepath}/*.exe',
+            f'{basepath}/*.cmd',
+            f'{basepath}/*.ps1',
+        ]
+
+    def get_pre_copy_tasks(self) -> list:
+        return [Thread(
+            target=self._do_run_powershell,
+            args=[self.get_create_destination_path_command()],
+            name='Create destination post-launch dir on ' + self._server_fqdn
+        ), Thread(
+            target=self._zip_all_post_launch_scripts,
+            args=[],
+            name='Zip post-launch scripts for {}'.format(self._server_fqdn)
+        )]
+
+    def get_copy_tasks(self) -> list:
+        return [Thread(
+            target=self._do_run_powershell,
+            args=[self.get_copy_command(self._zip_filename)],
+            name='Copy “{}” to “{}”'.format(self._zip_filename, self._server_fqdn)
+        )]
+
+    def get_post_copy_tasks(self) -> list:
+        return []
+
+    def get_cleanup_tasks(self) -> list:
+        return [Thread(
+            target=self._delete_post_launch_zip,
+            args=[],
+            name='Remove zip archive “{}” '.format(self._zip_filename)
+        )]
+
+    def _do_run_powershell(self, command: str):
+        logging.getLogger('root').info(
+            self.__class__.__name__ + ':Running “{}”'.format(command)
+        )
+
+        PowershellRunner.run(command)
+
+
+class LinuxHost(Host):
+    LINUX_POST_LAUNCH_DESTINATION = '/boot/post_launch'
+
+    def get_create_path_command(self) -> str:
+        return "sudo mkdir -p {} && sudo chmod 0777 {}".format(
+            self.LINUX_POST_LAUNCH_DESTINATION, self.LINUX_POST_LAUNCH_DESTINATION
+        )
+
+    def get_valid_post_launch_file_extensions(self, basepath: str) -> list:
+        return [
+            f'{basepath}/*.sh',
+        ]
+
+    def get_copy_command(self, filepath: str) -> str:
+        pass
+
+    def _get_ssh_connector(self):
+        if self._ssh_connector is None:
+            self._ssh_connector = SSHConnector(user=self._linux_user, hostname='', port=22)
+
+        return self._ssh_connector
 
 
 if __name__ == '__main__':
