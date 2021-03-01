@@ -1,6 +1,7 @@
 ## 11.1.0
 
 * feat: (copyScripts) Create a .zip file to copy instead of copying files one by one for Windows
+* fix: (copyScripts) Creates post-launch scripts directories if they does not exist.
 
 ## 11.0.0
 
