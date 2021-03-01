@@ -410,7 +410,7 @@ class Host:
 
 
 class WindowsHost(Host):
-    WINDOWS_POST_LAUNCH_DESTINATION = 'c:\\Program Files (x86)\\CloudEndure\\post_launch'
+    WINDOWS_POST_LAUNCH_DESTINATION = 'c:\\Program Files (x86)\\CloudEndure\\post_launch\\'
 
     _username = ''
     _password = ''
@@ -490,7 +490,11 @@ class WindowsHost(Host):
         )]
 
     def get_post_copy_tasks(self) -> list:
-        return []
+        return [Thread(
+            target=self._do_run_powershell,
+            args=[self._get_unzip_command()],
+            name='Unzip “{}.zip” on server'.format(self._server_fqdn)
+        )]
 
     def get_cleanup_tasks(self) -> list:
         return [Thread(
@@ -505,6 +509,21 @@ class WindowsHost(Host):
         )
 
         PowershellRunner.run(command)
+
+    def _get_unzip_command(self):
+        command = f'Invoke-Command -ComputerName {self._server_fqdn} ' \
+                  f'-ScriptBlock {{Expand-Archive -Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}{self._server_fqdn}.zip" ' \
+                  f'-Force -DestinationPath "{self.WINDOWS_POST_LAUNCH_DESTINATION}"'\
+                  f'}}'
+
+        if self._password is not None:
+            command = PowershellRunner.authenticate_command(
+                command,
+                self._username,
+                self._password
+            )
+
+        return command
 
 
 class LinuxHost(Host):

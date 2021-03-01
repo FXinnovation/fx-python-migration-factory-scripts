@@ -224,7 +224,7 @@ class PowershellRunner:
 
     @classmethod
     def run(cls, command: str):
-        process = subprocess.Popen(["pwsh", "-Command", command, " > /dev/null"], stdout=sys.stdout)
+        process = subprocess.Popen(["pwsh", "-Command", command], stdout=sys.stdout)
         return process.communicate()
 
     @classmethod
