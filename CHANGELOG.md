@@ -1,3 +1,7 @@
+## 11.1.0
+
+* feat: (copyScripts) Create a .zip file to copy instead of copying files one by one for Windows
+
 ## 11.0.0
 
 * feat: adds SSHConnector class to the library to handle SSH connections

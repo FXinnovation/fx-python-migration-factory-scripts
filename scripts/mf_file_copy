@@ -8,7 +8,7 @@ import logging
 import ntpath
 import os
 from threading import Thread
-
+import zipfile
 import mf
 from mf.config_loaders import EndpointsLoader, ConfigLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
@@ -36,7 +36,7 @@ class PostLaunchFileCopier:
     _ssh_connector = None
     _ssh_client = None
 
-    _create_destination_tasks = []
+    _preparation_tasks = []
     _copy_files_tasks = []
     _cleanup_tasks = []
 
@@ -170,11 +170,11 @@ class PostLaunchFileCopier:
             elif "linux" in server[MfField.SERVER_OS].lower():
                 self._start_copy_for_linux(server_fqdn)
 
-        for task in self._create_destination_tasks:
+        for task in self._preparation_tasks:
             print("# Creating post-launch directory on server: “{}”…".format(task.getName()))
             task.start()
 
-        for task in self._create_destination_tasks:
+        for task in self._preparation_tasks:
             task.join()
             print('# ✔ Done: {} '.format(task.getName()))
 
@@ -234,7 +234,7 @@ class PostLaunchFileCopier:
             password=self._linux_password,
         )
 
-        self._create_destination_tasks.append(Thread(
+        self._preparation_tasks.append(Thread(
             target=self._ssh_client.execute,
             args=[self._get_linux_create_path_command()],
             name=server_fqdn
@@ -274,10 +274,16 @@ class PostLaunchFileCopier:
                 sensitive=True
             )
 
-        self._create_destination_tasks.append(Thread(
+        self._preparation_tasks.append(Thread(
             target=self._do_run_powershell,
             args=[self._get_windows_create_path_command(server_fqdn)],
-            name=server_fqdn
+            name='create dir ' + server_fqdn
+        ))
+
+        self._preparation_tasks.append(Thread(
+            target=self._zip_all_windows_scripts,
+            args=[server_fqdn],
+            name='zip ' + server_fqdn
         ))
 
         all_scripts_pathes = self._find_all_windows_scripts(self._arguments.generic_post_launch_directory)
@@ -292,6 +298,25 @@ class PostLaunchFileCopier:
                 args=[self._get_windows_copy_command(script_path, server_fqdn)],
                 name='from “{}” to “{}”'.format(script_path, server_fqdn)
             ))
+
+    def _zip_all_windows_scripts(self, server_fqdn: str) -> str:
+        os.makedirs(self._arguments.generic_post_launch_directory)
+        os.makedirs(self._path_wave_post_launch)
+        os.makedirs(self._find_server_specific_post_launch_path(server_fqdn))
+
+        all_scripts_pathes = self._find_all_windows_scripts(self._arguments.generic_post_launch_directory)
+        all_scripts_pathes.extend(self._find_all_windows_scripts(self._path_wave_post_launch))
+        all_scripts_pathes.extend(
+            self._find_all_windows_scripts(self._find_server_specific_post_launch_path(server_fqdn))
+        )
+
+        zip_file = zipfile.ZipFile(server_fqdn + '.zip', 'w')
+        for filename in glob.glob(all_scripts_pathes):
+            zip_file.write(filename)
+
+        zip_file.close()
+
+        return zip_file.filename
 
     @classmethod
     def _find_all_windows_scripts(cls, basepath: str) -> list:
