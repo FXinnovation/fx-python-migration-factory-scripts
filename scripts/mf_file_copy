@@ -55,12 +55,13 @@ class Host:
         all_scripts_pathes.extend(self.get_valid_post_launch_file_extensions(self._path_wave_post_launch))
         all_scripts_pathes.extend(self.get_valid_post_launch_file_extensions(self._path_server_post_launch))
 
-        post_launch_files = []
+        post_launch_files = {}
         for file_path in all_scripts_pathes:
             for filename in glob.glob(file_path):
-                post_launch_files.append(filename)
+                basename = ntpath.basename(filename)
+                post_launch_files[basename] = filename
 
-        return post_launch_files
+        return post_launch_files.values()
 
     def get_pre_copy_tasks(self) -> list:
         pass
