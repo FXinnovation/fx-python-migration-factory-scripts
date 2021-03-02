@@ -3,10 +3,8 @@
 from __future__ import print_function
 import sys
 import argparse
-import requests
-import json
 import subprocess
-import getpass
+import logging
 
 import mf
 from mf.utils import EnvironmentVariableFetcher
@@ -32,27 +30,27 @@ class WindowsProxyAdder:
                ),
                help='Configuration file containing the Migration Factory endpoint URLs'
            )
-        self._arguments = parser.parse_args(arguments)
+        self._arguments = parser.parse_args(parser)
 
-        self._endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
+        self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
         self._migration_factory_requester = MigrationFactoryRequester(self._endpoints_loader)
 
         logging.getLogger('root').debug(self._arguments)
 
-    def add_proxy():
+    def add_proxy(self):
         server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(filter_wave_name = self._arguments.wave_name, filter_os = 'windows')
 
-            for server in server_list:
-                command1 = "Invoke-Command -ComputerName " + server[MfField.SERVER_FQDN] + " -ScriptBlock {[Environment]::SetEnvironmentVariable('https_proxy', 'https://" + self._arguments.proxy_server_address + "/', 'Machine')}"
-                command2 = "Invoke-Command -ComputerName " + server[MfField.SERVER_FQDN] + " -ScriptBlock {Set-ItemProperty -path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' ProxyEnable -value 1}"
-                command3 = "Invoke-Command -ComputerName " + server[MfField.SERVER_FQDN] + " -ScriptBlock {Set-ItemProperty -path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' ProxyServer -value " + self._arguments.proxy_server_address + "}"
-                p1 = subprocess.Popen(["powershell.exe", command1], stdout=sys.stdout)
-                p1.communicate()
-                p2 = subprocess.Popen(["powershell.exe", command2], stdout=sys.stdout)
-                p2.communicate()
-                p3 = subprocess.Popen(["powershell.exe", command3], stdout=sys.stdout)
-                p3.communicate()
-                print("Proxy server added for server: " + server)
+        for server in server_list:
+            command1 = "Invoke-Command -ComputerName " + server[MfField.SERVER_FQDN] + " -ScriptBlock {[Environment]::SetEnvironmentVariable('https_proxy', 'https://" + self._arguments.proxy_server_address + "/', 'Machine')}"
+            command2 = "Invoke-Command -ComputerName " + server[MfField.SERVER_FQDN] + " -ScriptBlock {Set-ItemProperty -path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' ProxyEnable -value 1}"
+            command3 = "Invoke-Command -ComputerName " + server[MfField.SERVER_FQDN] + " -ScriptBlock {Set-ItemProperty -path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' ProxyServer -value " + self._arguments.proxy_server_address + "}"
+            p1 = subprocess.Popen(["powershell.exe", command1], stdout=sys.stdout)
+            p1.communicate()
+            p2 = subprocess.Popen(["powershell.exe", command2], stdout=sys.stdout)
+            p2.communicate()
+            p3 = subprocess.Popen(["powershell.exe", command3], stdout=sys.stdout)
+            p3.communicate()
+            print("Proxy server added for server: " + server)
 
 
 if __name__ == '__main__':
