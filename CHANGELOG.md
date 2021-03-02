@@ -1,8 +1,9 @@
 ## 11.1.0
 
-* feat: (copyScripts) Create a .zip file to copy instead of copying files one by one for Windows
+* feat: (copyScripts) Create a .zip file to copy instead of copying files one by one for Windows, drastically improving speed
 * refactor: (copyScripts) uses a better way to handle Windows/Linux differences with a template pattern
 * fix: (copyScripts) Creates post-launch scripts directories if they does not exist.
+* fix: (copyScripts) Fixes issue making multiple Linux servers copy fails.
 
 ## 11.0.0
 
