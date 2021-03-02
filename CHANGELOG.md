@@ -1,3 +1,9 @@
+## 12.0.0
+
+* refactor(BREAKING): uses --wave-name instead of --WaveId in all scripts
+* refactor(BREAKING): uses --kebab-case instead of --CamelCase for all arguments of all scripts
+* fix: basic python fixes on mf_add_windows_proxy script (yet not tested)
+
 ## 11.1.0
 
 * feat: (copyScripts) Create a .zip file to copy instead of copying files one by one for Windows, drastically improving speed

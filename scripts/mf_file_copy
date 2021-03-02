@@ -319,6 +319,9 @@ class PostLaunchFileCopier:
 
         This script works with Linux and Windows source machines.
         Each machine tasks will be run in parallel.
+
+        Example:
+            mf_file_copy --wave-name MyWave --skip-notify --linux-ssh-private-key-file ~/.ssh/id_server
     """
 
     _arguments = []
@@ -338,7 +341,7 @@ class PostLaunchFileCopier:
     _cleanup_tasks = []
 
     def __init__(self):
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(description=__doc__)
         parser.add_argument('-v', action='store_true', help='Enable info outputs')
         parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
         parser.add_argument('--wave-name', required=True, help='Name of the wave to act on')

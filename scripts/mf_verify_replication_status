@@ -12,6 +12,7 @@ import time
 import os
 
 import mf
+from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader
 
@@ -238,7 +239,7 @@ def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--Waveid', required=True)
+    parser.add_argument('--wave-name', required=True)
     parser.add_argument(
            '--config-file-endpoints',
            default=EnvironmentVariableFetcher.fetch(
@@ -251,6 +252,11 @@ def main(arguments):
 
     global LoginHOST,UserHOST
     _endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
+    _migration_factory_requester = MigrationFactoryRequester(
+        _endpoints_loader
+    )
+    wave_id = _migration_factory_requester.get_user_wave_by_name(args.wave_name)[MfField.WAVE_ID]
+
     LoginHOST = _endpoints_loader.get_login_api_url()
     UserHOST = _endpoints_loader.get_user_api_url()
 
@@ -274,7 +280,7 @@ def main(arguments):
     print("***********************")
     print("* Getting Server List *")
     print("***********************")
-    Projects = ProjectList(args.Waveid, token, UserHOST, serverendpoint, appendpoint)
+    Projects = ProjectList(wave_id, token, UserHOST, serverendpoint, appendpoint)
     print("")
     for project in Projects:
         print("***** Servers for CE Project: " + project['ProjectName'] + " *****")

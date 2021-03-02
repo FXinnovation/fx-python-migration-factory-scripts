@@ -6,9 +6,9 @@ import json
 import requests
 import getpass
 import paramiko
-import os
 
 import mf
+from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader
 
@@ -203,8 +203,8 @@ def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--Waveid', required=True)
-    parser.add_argument('--CloudEndureProjectName', default="")
+    parser.add_argument('--wave-name', required=True)
+    parser.add_argument('--cloudendure-project-name', default="")
     parser.add_argument(
            '--config-file-endpoints',
            default=EnvironmentVariableFetcher.fetch(
@@ -217,6 +217,10 @@ def main(arguments):
     args = parser.parse_args(arguments)
 
     _endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
+    _migration_factory_requester = MigrationFactoryRequester(
+        _endpoints_loader
+    )
+    wave_id = _migration_factory_requester.get_user_wave_by_name(args.wave_name)[MfField.WAVE_ID]
     LoginHOST = _endpoints_loader.get_login_api_url()
     UserHOST = _endpoints_loader.get_user_api_url()
 
@@ -241,13 +245,12 @@ def main(arguments):
     _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
     _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
 
-    token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST
+    token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
     print("****************************")
     print("*** Getting Server List ****")
     print("****************************")
-    linux_servers = ServerList(args.Waveid, token, UserHOST,
-                                                args.CloudEndureProjectName)
+    linux_servers = ServerList(wave_id, token, UserHOST, args.cloudendure_project_name)
 
     if len(linux_servers) > 0:
         print("******************************************")

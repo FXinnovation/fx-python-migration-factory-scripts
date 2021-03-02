@@ -11,6 +11,7 @@ import paramiko
 import os
 
 import mf
+from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader
 
@@ -127,8 +128,8 @@ def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--Waveid', required=True)
-    parser.add_argument('--WindowsUser', default =
+    parser.add_argument('--wave-name', required=True)
+    parser.add_argument('--windows-user', default =
         EnvironmentVariableFetcher.fetch(
             env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
             default=''
@@ -147,10 +148,14 @@ def main(arguments):
     args = parser.parse_args(arguments)
 
     _endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
+    _migration_factory_requester = MigrationFactoryRequester(
+        _endpoints_loader
+    )
+    wave_id = _migration_factory_requester.get_user_wave_by_name(args.wave_name)[MfField.WAVE_ID]
     LoginHOST = _endpoints_loader.get_login_api_url()
     UserHOST = _endpoints_loader.get_user_api_url()
 
-    Domain_User = args.WindowsUser
+    Domain_User = args.windows_user
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
@@ -159,7 +164,7 @@ def main(arguments):
 
     token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
-    winServers, linuxServers = ServerList(args.Waveid, token, UserHOST,
+    winServers, linuxServers = ServerList(wave_id, token, UserHOST,
                                    serverendpoint, appendpoint)
     if len(winServers) > 0:
         print("****************************")

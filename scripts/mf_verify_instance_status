@@ -12,6 +12,7 @@ import time
 import os
 
 import mf
+from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader
 
@@ -299,8 +300,8 @@ def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--CloudEndureProjectName', required=True)
-    parser.add_argument('--Waveid', required=True)
+    parser.add_argument('--cloudendure-project-name', required=True)
+    parser.add_argument('--wave-name', required=True)
     parser.add_argument(
            '--config-file-endpoints',
            default=EnvironmentVariableFetcher.fetch(
@@ -314,6 +315,11 @@ def main(arguments):
 
     global LoginHOST, UserHOST
     _endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
+    _migration_factory_requester = MigrationFactoryRequester(
+        _endpoints_loader
+    )
+    wave_id = _migration_factory_requester.get_user_wave_by_name(args.wave_name)[MfField.WAVE_ID]
+
     LoginHOST = _endpoints_loader.get_login_api_url()
     UserHOST = _endpoints_loader.get_user_api_url()
 
@@ -334,13 +340,13 @@ def main(arguments):
     r = CElogin(_ce_user_api_token, endpoint)
     if r is not None and "ERROR" in r:
         print(r)
-    project_id = GetCEProject(args.CloudEndureProjectName, session, headers, endpoint, HOST)
+    project_id = GetCEProject(args.cloudendure_project_name, session, headers, endpoint, HOST)
     region_id = GetRegion(project_id)
     print("***********************")
     print("* Getting Server List *")
     print("***********************")
 
-    serverlist = GetServerList(args.CloudEndureProjectName, args.Waveid, token)
+    serverlist = GetServerList(args.cloudendure_project_name, wave_id, token)
     for server in serverlist:
         print(server['server_name'])
     print("")
