@@ -287,12 +287,11 @@ class LinuxHost(Host):
         )]
 
     def get_post_copy_tasks(self) -> list:
-        # return [Thread(
-        #     target=self._ssh_client.execute,
-        #     args=["sudo chmod -R 0755 {}".format(self.LINUX_POST_LAUNCH_DESTINATION)],
-        #     name='Fix post_launch directory permissions on {}'.format(self._server_fqdn)
-        # )]
-        return []
+        return [Thread(
+            target=self._ssh_client.execute,
+            args=["sudo chmod -R 0755 {}".format(self.LINUX_POST_LAUNCH_DESTINATION)],
+            name='Fix post_launch directory permissions on {}'.format(self._server_fqdn)
+        )]
 
     def get_cleanup_tasks(self) -> list:
         return [Thread(
@@ -309,7 +308,7 @@ class LinuxHost(Host):
     def _sftp_copy(self):
         for filename in self.find_all_post_launch_scripts():
             self._ssh_client.sftp_put(
-                filename, self.LINUX_POST_LAUNCH_DESTINATION + ntpath.basename(filename)
+                filename, os.path.join(self.LINUX_POST_LAUNCH_DESTINATION, ntpath.basename(filename))
             )
 
     def _close_ssh_client(self):

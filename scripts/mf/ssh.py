@@ -59,9 +59,9 @@ class SSHClient(paramiko.SSHClient):
             )
         except Exception as exception:
             logging.getLogger('root').error(
-                "Copying files from “" + filename + "” to " +
-                "/boot/post_launch" + " on host " + self._hostname + " failed due to; \n" +
-                str(exception)
+                "Copy file “{}” to “{}” on host “{}” failed du to: \n {}".format(
+                    filename, destination, self._hostname, str(exception)
+                )
             )
 
     def close(self):
