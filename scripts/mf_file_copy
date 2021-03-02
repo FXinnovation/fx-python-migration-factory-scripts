@@ -239,10 +239,6 @@ class LinuxHost(Host):
     LINUX_POST_LAUNCH_DESTINATION = '/boot/post_launch'
 
     _ssh_client = None
-    _username = ''
-    _password = ''
-    _ssh_key_file = ''
-    _ssh_key_passphrase = ''
 
     def __init__(
             self,
@@ -255,14 +251,11 @@ class LinuxHost(Host):
             _ssh_key_passphrase: str = None,
             _password: str = None
     ):
-        self._username = _username
-        self._password = _password
-
         _ssh_connector = SSHConnector(user=self._username, hostname=_server_fqdn, port=22)
         self._ssh_client = _ssh_connector.connect(
             key_file_path=_ssh_key_file,
             key_passphrase=_ssh_key_passphrase,
-            password=self._password,
+            password=_password,
         )
 
         super(LinuxHost, self).__init__(_server_fqdn, _wave_name, _path_wave_post_launch, _path_generic_post_launch)
@@ -327,9 +320,6 @@ class PostLaunchFileCopier:
         This script works with Linux and Windows source machines.
         Each machine tasks will be run in parallel.
     """
-
-    WINDOWS_POST_LAUNCH_DESTINATION = 'c:\\Program Files (x86)\\CloudEndure\\post_launch'
-    LINUX_POST_LAUNCH_DESTINATION = '/boot/post_launch'
 
     _arguments = []
     _endpoints_loader = {}
