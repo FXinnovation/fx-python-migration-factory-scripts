@@ -215,7 +215,8 @@ class WindowsHost(Host):
 
     def _get_remove_zip_command(self) -> str:
         create_path_command = f'Invoke-Command -ComputerName {self._server_fqdn} ' \
-                              f'-ScriptBlock {{Remove-Item -Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}"' \
+                              f'-ScriptBlock {{Remove-Item -Force ' \
+                              f'-Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}{self._server_fqdn}.zip" ' \
                               f'}}'
 
         if self._password is not None:
