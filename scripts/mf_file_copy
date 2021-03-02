@@ -251,7 +251,7 @@ class LinuxHost(Host):
             _ssh_key_passphrase: str = None,
             _password: str = None
     ):
-        _ssh_connector = SSHConnector(user=self._username, hostname=_server_fqdn, port=22)
+        _ssh_connector = SSHConnector(user=_username, hostname=_server_fqdn, port=22)
         self._ssh_client = _ssh_connector.connect(
             key_file_path=_ssh_key_file,
             key_passphrase=_ssh_key_passphrase,
