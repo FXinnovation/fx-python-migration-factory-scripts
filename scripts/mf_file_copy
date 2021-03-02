@@ -61,7 +61,7 @@ class Host:
                 basename = ntpath.basename(filename)
                 post_launch_files[basename] = filename
 
-        return post_launch_files.values()
+        return list(post_launch_files.values())
 
     def get_pre_copy_tasks(self) -> list:
         pass
@@ -167,7 +167,8 @@ class WindowsHost(Host):
 
     def _get_unzip_command(self):
         command = f'Invoke-Command -ComputerName {self._server_fqdn} ' \
-                  f'-ScriptBlock {{Expand-Archive -Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}{self._server_fqdn}.zip" ' \
+                  f'-ScriptBlock {{' \
+                  f'Expand-Archive -Path "{self.WINDOWS_POST_LAUNCH_DESTINATION}{self._server_fqdn}.zip" ' \
                   f'-Force -DestinationPath "{self.WINDOWS_POST_LAUNCH_DESTINATION}"' \
                   f'}}'
 
@@ -286,11 +287,12 @@ class LinuxHost(Host):
         )]
 
     def get_post_copy_tasks(self) -> list:
-        return [ Thread(
-            target=self._ssh_client.execute,
-            args=["sudo chmod -R 0755 {}".format(self.LINUX_POST_LAUNCH_DESTINATION)],
-            name='Fix post_launch directory permissions on {}'.format(self._server_fqdn)
-        )]
+        # return [Thread(
+        #     target=self._ssh_client.execute,
+        #     args=["sudo chmod -R 0755 {}".format(self.LINUX_POST_LAUNCH_DESTINATION)],
+        #     name='Fix post_launch directory permissions on {}'.format(self._server_fqdn)
+        # )]
+        return []
 
     def get_cleanup_tasks(self) -> list:
         return [Thread(
@@ -539,7 +541,8 @@ class PostLaunchFileCopier:
 
         print(' ✔ Done')
 
-    def _run_all_tasks(self, ordered_tasks_lists: list):
+    @classmethod
+    def _run_all_tasks(cls, ordered_tasks_lists: list):
         for task_list in ordered_tasks_lists:
             for task in task_list:
                 print("# {}…".format(task.getName()))
