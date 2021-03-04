@@ -6,9 +6,9 @@ import logging
 import os
 import re
 import subprocess
+import sys
 
 import requests
-import sys
 
 
 class MessageBag:
@@ -16,19 +16,19 @@ class MessageBag:
 
     ALLOWED_TYPES = ['error', 'warning', 'info', 'debug']
 
-    _bag = []
-    _type = None
+    _bag: list[str] = []
+    _type: str = None
 
-    def __init__(self, type_of_bag):
+    def __init__(self, type_of_bag: str):
         if type_of_bag not in self.ALLOWED_TYPES:
             logging.error('{}: “{}” is not a valid MessageBag type (allowed: “{}”)'.format(
                 self.__class__.__name__, type, self.ALLOWED_TYPES
             ))
-            exit(1)
+            sys.exit(1)
 
         self._type = type_of_bag
 
-    def add(self, element):
+    def add(self, element: str):
         self._bag.append(element)
 
     def unload(self, logger=logging):
@@ -212,12 +212,14 @@ class EnvironmentVariableFetcher:
 
         return input(env_var_description + ": ")
 
+
 class UserManualConfirmation:
     """ Prompt user to confirm an action"""
 
     @staticmethod
     def ask(message: str, confirmation_text: str = 'Y') -> bool:
-        return input(message + " (type “"+ confirmation_text +"” to confirm)\n") == confirmation_text
+        return input(message + " (type “" + confirmation_text + "” to confirm)\n") == confirmation_text
+
 
 class PowershellRunner:
     """ Runs powershell commands with pwsh """
@@ -233,7 +235,10 @@ class PowershellRunner:
 
     @classmethod
     def insert_authenthication_arguments(cls, command_with_percentage: str, user: str, password: str) -> str:
-        _credential_string = "-Credential (New-Object System.Management.Automation.PSCredential('{}', (ConvertTo-SecureString '{}' -AsPlainText -Force))) -Authentication Negotiate".format(user, password)
+        _credential_string = "-Credential (New-Object System.Management.Automation.PSCredential('{}'," \
+                             " (ConvertTo-SecureString '{}' -AsPlainText -Force))) -Authentication Negotiate".format(
+                                 user, password
+                             )
 
         return command_with_percentage % _credential_string
 

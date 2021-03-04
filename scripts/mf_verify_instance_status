@@ -24,9 +24,9 @@ serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
 
 
-def Factorylogin(username, password, LoginHOST):
+def Factorylogin(username, password, _LoginHOST):
     login_data = {'username': username, 'password': password}
-    r = requests.post(LoginHOST + '/prod/login',
+    r = requests.post(_LoginHOST + '/prod/login',
                       data=json.dumps(login_data))
     if r.status_code == 200:
         print("Migration Factory : You have successfully logged in")
@@ -39,9 +39,9 @@ def Factorylogin(username, password, LoginHOST):
         sys.exit(1)
 
 
-def CElogin(userapitoken, endpoint):
+def CElogin(userapitoken, _endpoint):
     login_data = {'userApiToken': userapitoken}
-    r = requests.post(HOST + endpoint.format('login'),
+    r = requests.post(HOST + _endpoint.format('login'),
                       data=json.dumps(login_data), headers=headers)
     if r.status_code == 200:
         print("CloudEndure : You have successfully logged in")
@@ -57,38 +57,31 @@ def CElogin(userapitoken, endpoint):
 
     # check if need to use a different API entry point
     if r.history:
-        endpoint = '/' + '/'.join(r.url.split('/')[3:-1]) + '/{}'
+        _endpoint = '/' + '/'.join(r.url.split('/')[3:-1]) + '/{}'
         r = requests.post(HOST + endpoint.format('login'),
                           data=json.dumps(login_data), headers=headers)
 
     session['session'] = r.cookies['session']
-    try:
-        headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
-    except:
-        pass
+    headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
 
 
-def GetCEProject(projectname, session, headers, endpoint, HOST):
-    r = requests.get(HOST + endpoint.format('projects'), headers=headers, cookies=session)
+def GetCEProject(projectname, _session, _headers, _endpoint, _HOST):
+    r = requests.get(_HOST + _endpoint.format('projects'), headers=_headers, cookies=_session)
     if r.status_code != 200:
         print("ERROR: Failed to fetch the project....")
         sys.exit(2)
-    try:
-        # Get Project ID
-        project_id = ""
-        projects = json.loads(r.text)["items"]
-        project_exist = False
-        for project in projects:
-            if project["name"] == projectname:
-                project_id = project["id"]
-                project_exist = True
-        if project_exist == False:
-            print("ERROR: Project Name does not exist in CloudEndure....")
-            sys.exit(3)
-        return project_id
-    except:
-        print("ERROR: Failed to fetch the project....")
-        sys.exit(4)
+    # Get Project ID
+    project_id = ""
+    projects = json.loads(r.text)["items"]
+    project_exist = False
+    for project in projects:
+        if project["name"] == projectname:
+            project_id = project["id"]
+            project_exist = True
+    if project_exist is False:
+        print("ERROR: Project Name does not exist in CloudEndure....")
+        sys.exit(3)
+    return project_id
 
 
 def GetRegion(project_id):
@@ -96,7 +89,7 @@ def GetRegion(project_id):
                        headers=headers, cookies=session)
     region = requests.get(HOST + endpoint.format('cloudCredentials/{}/regions/{}').format(
         json.loads(rep.text)['items'][0]['cloudCredentials'], json.loads(rep.text)['items'][0]['region']),
-                          headers=headers, cookies=session)
+        headers=headers, cookies=session)
     name = json.loads(region.text)['name']
     region_code = ""
     if "Northern Virginia" in name:
@@ -146,38 +139,34 @@ def GetRegion(project_id):
 
 
 def GetServerList(projectname, waveid, token):
-    try:
-        # Get all Apps and servers from migration factory
-        auth = {"Authorization": token}
-        servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
-        apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
+    # Get all Apps and servers from migration factory
+    auth = {"Authorization": token}
+    servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
+    apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
 
-        # Get App list
-        applist = []
-        for app in apps:
-            if 'wave_id' in app and 'cloudendure_projectname' in app:
-                if str(app['wave_id']) == str(waveid) and str(app['cloudendure_projectname']) == str(projectname):
-                    applist.append(app['app_id'])
-        # Get Server List
-        serverlist = []
-        for app in applist:
-            for server in servers:
-                if "app_id" in server:
-                    if app == server['app_id']:
-                        serverlist.append(server)
-        if len(serverlist) == 0:
-            print("ERROR: Serverlist for wave " + waveid + " in Migration Factory is empty....")
-            sys.exit(5)
-        return serverlist
-    except:
-        print("ERROR: Getting server list failed....")
-        sys.exit(6)
+    # Get App list
+    applist = []
+    for app in apps:
+        if 'wave_id' in app and 'cloudendure_projectname' in app:
+            if str(app['wave_id']) == str(waveid) and str(app['cloudendure_projectname']) == str(projectname):
+                applist.append(app['app_id'])
+    # Get Server List
+    serverlist = []
+    for app in applist:
+        for server in servers:
+            if "app_id" in server:
+                if app == server['app_id']:
+                    serverlist.append(server)
+    if len(serverlist) == 0:
+        print("ERROR: Serverlist for wave " + waveid + " in Migration Factory is empty....")
+        sys.exit(5)
+    return serverlist
 
 
-def GetInstanceId(project_id, serverlist, session, headers, endpoint, HOST, token):
+def GetInstanceId(project_id, serverlist, _session, _headers, _endpoint, _HOST):
     # Get Machine List from CloudEndure
-    m = requests.get(HOST + endpoint.format('projects/{}/machines').format(project_id), headers=headers,
-                     cookies=session)
+    m = requests.get(HOST + _endpoint.format('projects/{}/machines').format(project_id), headers=_headers,
+                     cookies=_session)
     if "sourceProperties" not in m.text:
         print("ERROR: Failed to fetch the machines....")
         sys.exit(11)
@@ -190,8 +179,8 @@ def GetInstanceId(project_id, serverlist, session, headers, endpoint, HOST, toke
                         InstanceInfo = {}
                         # print(machine['replica'])
                         target_replica = requests.get(
-                            HOST + endpoint.format('projects/{}/replicas').format(project_id) + '/' + machine[
-                                'replica'], headers=headers, cookies=session)
+                            _HOST + _endpoint.format('projects/{}/replicas').format(project_id) + '/' + machine[
+                                'replica'], headers=_headers, cookies=_session)
                         # print(json.loads(target_replica.text))
                         InstanceInfo['InstanceName'] = machine['sourceProperties']['name'].lower()
                         InstanceInfo['InstanceId'] = json.loads(target_replica.text)['machineCloudId']
@@ -226,7 +215,7 @@ def verify_instance_status(InstanceList, serverlist, token, access_key_id, secre
                     if status['InstanceState']['Name'] == "running":
                         if instance['InstanceId'] == status['InstanceId']:
                             if status['InstanceStatus']['Status'].lower() == "ok" and status['SystemStatus'][
-                                'Status'].lower() == "ok":
+                                    'Status'].lower() == "ok":
                                 instance['Status'] = "ok"
                             else:
                                 instance['Status'] = "failed"
@@ -258,7 +247,7 @@ def verify_instance_status(InstanceList, serverlist, token, access_key_id, secre
             print("----------------------------------------------------")
             print("- The following instances PASSED 2/2 status checks -")
             print("----------------------------------------------------")
-            for passed in server_passed.keys():
+            for passed in server_passed:
                 print(passed)
             print("")
         if len(server_failed) > 0:
@@ -266,7 +255,7 @@ def verify_instance_status(InstanceList, serverlist, token, access_key_id, secre
             print("-----------------------------------------------------------------")
             print("- WARNING: the following instances FAILED 2/2 status checks -----")
             print("-----------------------------------------------------------------")
-            for failed in server_failed.keys():
+            for failed in server_failed:
                 print(failed)
 
         # Updating migration factory migration_status attributes
@@ -331,6 +320,7 @@ def main(arguments):
     args = parser.parse_args(arguments)
 
     global LoginHOST, UserHOST
+
     _endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
     _migration_factory_requester = MigrationFactoryRequester(
         _endpoints_loader
@@ -375,7 +365,7 @@ def main(arguments):
     print("* Getting Target Instance Id *")
     print("******************************")
 
-    InstanceList = GetInstanceId(project_id, serverlist, session, headers, endpoint, HOST, token)
+    InstanceList = GetInstanceId(project_id, serverlist, session, headers, endpoint, HOST)
     for instance in InstanceList:
         print(instance['InstanceName'] + " : " + instance['InstanceId'])
     print("")

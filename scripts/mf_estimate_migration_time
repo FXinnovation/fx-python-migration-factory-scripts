@@ -4,6 +4,7 @@ import argparse
 import datetime
 import logging
 import os
+
 import pytz
 
 import mf
@@ -20,19 +21,19 @@ class WaveMigrationEstimator:
     REPLICATION_BEST_TIME_COEFFICIENT = 0.9
     REPLICATION_WORST_TIME_COEFFICIENT = 0.6
 
-    _arguments = []
-    _path_wave = None
-    _config_loader = None
-    _notifier = None
-    _default_mbps_speed = DEFAULT_MBPS_SPEED
-    _work_hours_start = None
-    _work_hours_end = None
-    _work_hours_pause_start = None
-    _work_hours_pause_end = None
-    _minimal_test_duration = None
-    _warmup_time_before_replication = None
-    _close_time_after_replication = None
-    _timezone = None
+    _arguments: argparse.Namespace = None
+    _path_wave: str = None
+    _config_loader: ConfigLoader = None
+    _notifier: Notifier = None
+    _default_mbps_speed: int = DEFAULT_MBPS_SPEED
+    _work_hours_start: int = None
+    _work_hours_end: int = None
+    _work_hours_pause_start: int = None
+    _work_hours_pause_end: int = None
+    _minimal_test_duration: int = None
+    _warmup_time_before_replication: int = None
+    _close_time_after_replication: int = None
+    _timezone: str = None
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -163,7 +164,8 @@ class WaveMigrationEstimator:
             self._timezone = estimation_config['timezone']
 
     def _get_disk_size_in_mega_bytes(self) -> int:
-        return int(self._arguments.total_disk_size) * 1000
+        _total_disk_size = self._arguments.total_disk_size
+        return int(_total_disk_size) * 1000
 
     def _get_speed_in_mega_bytes(self, coefficient: int) -> float:
         return (self._default_mbps_speed * coefficient) / 8
@@ -209,7 +211,7 @@ class WaveMigrationEstimator:
 
         return result
 
-    def _get_formatted_replication_end_date(self, replication_end_date: datetime) -> str:
+    def _get_formatted_replication_end_date(self, replication_end_date: datetime.datetime) -> str:
         result = ''
         if replication_end_date.day == self._get_now_timezoned().day:
             result += 'today'
@@ -220,7 +222,7 @@ class WaveMigrationEstimator:
 
         return result
 
-    def _get_replication_end_date(self, seconds_to_replicate: int) -> datetime:
+    def _get_replication_end_date(self, seconds_to_replicate: int) -> datetime.datetime:
         logging.getLogger('root').debug("{}: Replication time is: {}".format(
             self.__class__.__name__,
             datetime.timedelta(seconds=seconds_to_replicate)
@@ -235,7 +237,7 @@ class WaveMigrationEstimator:
 
         return replication_end_date
 
-    def _get_estimated_test_date(self, seconds_to_replicate: int) -> datetime:
+    def _get_estimated_test_date(self, seconds_to_replicate: int) -> datetime.datetime:
         test_can_be_started_date = self._get_now_timezoned() + datetime.timedelta(seconds=seconds_to_replicate)
 
         logging.getLogger('root').debug("{}: Test can be started date without delay: {}".format(
@@ -245,7 +247,7 @@ class WaveMigrationEstimator:
 
         return self._delay_date_for_working_hours(test_can_be_started_date)
 
-    def _get_estimated_cutover_date(self, test_can_be_started_date: datetime) -> datetime:
+    def _get_estimated_cutover_date(self, test_can_be_started_date: datetime.datetime) -> datetime.datetime:
         test_end_date = test_can_be_started_date + datetime.timedelta(hours=self._minimal_test_duration)
 
         logging.getLogger('root').debug("{}: Cutover can be performed date without delay: {}".format(
@@ -255,7 +257,7 @@ class WaveMigrationEstimator:
 
         return self._delay_date_for_working_hours(test_end_date)
 
-    def _delay_date_for_working_hours(self, date_to_delay: datetime) -> datetime:
+    def _delay_date_for_working_hours(self, date_to_delay: datetime.datetime) -> datetime.datetime:
         date_to_delay_day = date_to_delay.strftime('%a')
         date_to_delay_hour = int(date_to_delay.strftime('%H'))
 
@@ -271,18 +273,18 @@ class WaveMigrationEstimator:
             )
             date_to_delay_day = date_to_delay.strftime('%a')
             date_to_delay_hour = int(date_to_delay.strftime('%H'))
-        if date_to_delay_hour >= self._work_hours_pause_start and date_to_delay_hour < self._work_hours_pause_end:
+        if self._work_hours_pause_start <= date_to_delay_hour < self._work_hours_pause_end:
             date_to_delay = date_to_delay + datetime.timedelta(hours=1)
             date_to_delay_day = date_to_delay.strftime('%a')
-            date_to_delay_hour = int(date_to_delay.strftime('%H'))
+            # date_to_delay_hour = int(date_to_delay.strftime('%H'))
 
         if date_to_delay_day == 'Sat':
             date_to_delay = date_to_delay + datetime.timedelta(days=2)
-            test_can_be_started_day = date_to_delay.strftime('%a')
+            # test_can_be_started_day = date_to_delay.strftime('%a')
 
         elif date_to_delay_day == 'Sun':
             date_to_delay = date_to_delay + datetime.timedelta(days=1)
-            test_can_be_started_day = date_to_delay.strftime('%a')
+            # test_can_be_started_day = date_to_delay.strftime('%a')
 
         logging.getLogger('root').debug("{}: Delayed date: {}".format(
             self.__class__.__name__,
@@ -291,7 +293,7 @@ class WaveMigrationEstimator:
 
         return date_to_delay
 
-    def _get_now_timezoned(self) -> datetime:
+    def _get_now_timezoned(self) -> datetime.datetime:
         utc_now = pytz.utc.localize(datetime.datetime.utcnow())
         return utc_now.astimezone(pytz.timezone(self._timezone))
 

@@ -3,6 +3,7 @@
 import argparse
 import logging
 import os
+import sys
 
 import mf
 from mf.config_loaders import EndpointsLoader
@@ -13,13 +14,13 @@ from mf.utils import EnvironmentVariableFetcher, MessageBag, Utils
 class IntakeFormImporter:
     """ Validate and import CSV to create Wave, App and Servers in the Migration Factory """
 
-    _arguments = []
-    _endpoints_loader = {}
-    _migration_factory_requester = None
-    _migration_factory_data_validator = None
-    _path_wave = ''
-    _validation_error_bag = MessageBag('error')
-    _csv_content = []
+    _arguments: argparse.Namespace = None
+    _endpoints_loader: EndpointsLoader = None
+    _migration_factory_requester: MigrationFactoryRequester = None
+    _migration_factory_data_validator: MigrationFactoryDataValidator = None
+    _path_wave: str = ''
+    _validation_error_bag: MessageBag = MessageBag('error')
+    _csv_content: list[dict] = []
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -65,7 +66,7 @@ class IntakeFormImporter:
 
         if self.get_csv_content() is None:
             print('🗶 Project "{}" was not initialized.'.format(self._arguments.wave_name))
-            exit(1)
+            sys.exit(1)
 
         print('✔ Done')
 
@@ -126,7 +127,7 @@ class IntakeFormImporter:
         self._validation_error_bag.unload(logging.getLogger('root'))
 
         if not self._validation_error_bag.is_empty():
-            exit(1)
+            sys.exit(1)
 
         print('✔ Done')
 

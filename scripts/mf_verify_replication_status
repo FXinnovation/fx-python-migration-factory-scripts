@@ -24,9 +24,9 @@ serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
 
 
-def Factorylogin(username, password, LoginHOST):
+def Factorylogin(username, password, _LoginHOST):
     login_data = {'username': username, 'password': password}
-    r = requests.post(LoginHOST + '/prod/login',
+    r = requests.post(_LoginHOST + '/prod/login',
                       data=json.dumps(login_data))
     if r.status_code == 200:
         print("Migration Factory : You have successfully logged in")
@@ -39,9 +39,9 @@ def Factorylogin(username, password, LoginHOST):
         sys.exit(1)
 
 
-def CElogin(userapitoken, endpoint):
+def CElogin(userapitoken, _endpoint):
     login_data = {'userApiToken': userapitoken}
-    r = requests.post(HOST + endpoint.format('login'),
+    r = requests.post(HOST + _endpoint.format('login'),
                       data=json.dumps(login_data), headers=headers)
     if r.status_code == 200:
         print("CloudEndure : You have successfully logged in")
@@ -57,15 +57,12 @@ def CElogin(userapitoken, endpoint):
 
     # check if need to use a different API entry point
     if r.history:
-        endpoint = '/' + '/'.join(r.url.split('/')[3:-1]) + '/{}'
-        r = requests.post(HOST + endpoint.format('login'),
+        _endpoint = '/' + '/'.join(r.url.split('/')[3:-1]) + '/{}'
+        r = requests.post(HOST + _endpoint.format('login'),
                           data=json.dumps(login_data), headers=headers)
 
     session['session'] = r.cookies['session']
-    try:
-        headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
-    except:
-        pass
+    headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
 
 
 def GetCEProject(projectname):
@@ -73,30 +70,26 @@ def GetCEProject(projectname):
     if r.status_code != 200:
         print("ERROR: Failed to fetch the project....")
         sys.exit(2)
-    try:
-        # Get Project ID
-        project_id = ""
-        projects = json.loads(r.text)["items"]
-        project_exist = False
-        for project in projects:
-            if project["name"] == projectname:
-                project_id = project["id"]
-                project_exist = True
-        if project_exist == False:
-            print("ERROR: Project Name does not exist in CloudEndure....")
-            sys.exit(3)
-        return project_id
-    except:
-        print("ERROR: Failed to fetch the project....")
-        sys.exit(4)
+    # Get Project ID
+    project_id = ""
+    projects = json.loads(r.text)["items"]
+    project_exist = False
+    for project in projects:
+        if project["name"] == projectname:
+            project_id = project["id"]
+            project_exist = True
+    if project_exist is False:
+        print("ERROR: Project Name does not exist in CloudEndure....")
+        sys.exit(3)
+    return project_id
 
 
-def ProjectList(waveid, token, UserHOST, serverendpoint, appendpoint):
+def ProjectList(waveid, token, _UserHOST, _serverendpoint, _appendpoint):
     # Get all Apps and servers from migration factory
     auth = {"Authorization": token}
-    servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
+    servers = json.loads(requests.get(_UserHOST + _serverendpoint, headers=auth).text)
     # print(servers)
-    apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
+    apps = json.loads(requests.get(_UserHOST + _appendpoint, headers=auth).text)
     # print(apps)
     newapps = []
 
@@ -209,11 +202,11 @@ def verify_replication(projects, token):
                             if result > 60:
                                 hours = int(result / 60)
                                 machine_status[server["server_name"]] = "Replication lag: " + str(hours) + " Hours"
-                            elif result > 5 and result <= 60:
+                            elif 5 < result <= 60:
                                 machine_status[server["server_name"]] = "Replication lag: " + str(result) + " Minutes"
                             else:
                                 machine_status[server["server_name"]] = "Continuous Data Replication"
-                if machine_exist == False:
+                if machine_exist is False:
                     print("ERROR: Machine: " + server["server_name"] + " does not exist in CloudEndure....")
                     sys.exit(8)
             for server in serverlist:
@@ -237,7 +230,7 @@ def verify_replication(projects, token):
                     sys.exit(10)
             replication_status.append(replication_not_finished)
         for status in replication_status:
-            if status == True:
+            if status is True:
                 Not_finished = True
         if Not_finished:
             print("")

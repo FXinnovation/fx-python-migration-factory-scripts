@@ -112,7 +112,6 @@ def check_ssh_connectivity(ip, user_name, pass_key, is_key, SSHPort):
     ssh, error = open_ssh(ip, user_name, pass_key, is_key, SSHPort)
     if ssh is None or len(error) > 0:
         print(" SSH test to server " + ip + " : Fail")
-        return None
     else:
         print(" SSH test to server " + ip + " : Pass")
 
@@ -181,8 +180,6 @@ def main(arguments):
     print("****************************")
     Servers_Windows, Servers_Linux = ServerList(wave_id, token, UserHOST, args.CloudEndureProjectName)
     print("")
-    windows_results = []
-    linux_results = []
     user_name = ''
     pass_key = ''
     has_key = ''
@@ -198,7 +195,7 @@ def main(arguments):
         else:
             pass_key_first = getpass.getpass('Linux Password: ')
             pass_key_second = getpass.getpass('Re-enter Password: ')
-            while (pass_key_first != pass_key_second):
+            while pass_key_first != pass_key_second:
                 print("Password mismatch, please try again!")
                 pass_key_first = getpass.getpass('Linux Password: ')
                 pass_key_second = getpass.getpass('Re-enter Password: ')

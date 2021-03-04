@@ -1,70 +1,54 @@
 #!/usr/bin/env python3
 
 from __future__ import print_function
-import sys
-import argparse
-import requests
-import json
-import csv
-import getpass
-import os
 
-sys.path.append('scripts')
+import argparse
+import getpass
+import json
+import os
+import sys
+
+import requests
 
 import mf
-from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader
+from mf.utils import EnvironmentVariableFetcher
+
+sys.path.append('scripts')
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
 waveendpoint = '/prod/user/waves'
 
+
 def CreateServerAttributeIfNotExist(attribute_name, attribute_description, attribute_type, token):
-    try:
-        auth = {"Authorization": token}
-        apps = json.loads(requests.get(AdminHOST + '/prod/admin/schema/server', headers=auth).text)
-        attribute_found = False
-        attribute_need_update = False
-        for app in apps['attributes']:
-            if app['name'] == attribute_name:
-                attribute_found = True
-                if attribute_description != app['description']:
-                    attribute_need_update = True
-                if attribute_type != app['type']:
-                    attribute_need_update = True
-                break
+    auth = {"Authorization": token}
+    apps = json.loads(requests.get(AdminHOST + '/prod/admin/schema/server', headers=auth).text)
+    attribute_found = False
+    attribute_need_update = False
+    for app in apps['attributes']:
+        if app['name'] == attribute_name:
+            attribute_found = True
+            if attribute_description != app['description']:
+                attribute_need_update = True
+            if attribute_type != app['type']:
+                attribute_need_update = True
+            break
 
-        if attribute_found and not attribute_need_update:
-            print("Attribute " + attribute_name + " is already set")
-            return -1
+    if attribute_found and not attribute_need_update:
+        print("Attribute " + attribute_name + " is already set")
+        return -1
 
-        if attribute_found and attribute_need_update:
-            print("Attribute " + attribute_name + " already exist but need to be updated")
-            data = {
-              "event": "PUT",
-              "name": attribute_name,
-              "update": {
+    if attribute_found and attribute_need_update:
+        print("Attribute " + attribute_name + " already exist but need to be updated")
+        data = {
+            "event": "PUT",
+            "name": attribute_name,
+            "update": {
                 "name": attribute_name,
                 "description": attribute_description,
                 "type": attribute_type,
-              }
             }
-            r = requests.put(AdminHOST + '/prod/admin/schema/server', headers=auth, data=json.dumps(data))
-            if r.status_code == 200:
-                print(attribute_name + " server attribute is updated in the migration factory")
-                return 0
-            else:
-                print(attribute_name + " server attribute update failed: " + r.text + ".......")
-                return -1
-
-        print("Creating " + attribute_name + " server attribute ...")
-        data = {
-          "event": "POST",
-          "new": {
-            "name": attribute_name,
-            "description": attribute_description,
-            "type": attribute_type,
-          }
         }
         r = requests.put(AdminHOST + '/prod/admin/schema/server', headers=auth, data=json.dumps(data))
         if r.status_code == 200:
@@ -73,43 +57,57 @@ def CreateServerAttributeIfNotExist(attribute_name, attribute_description, attri
         else:
             print(attribute_name + " server attribute update failed: " + r.text + ".......")
             return -1
-    except:
-        print("ERROR: Fail to update server attribute" + attribute_name)
-        sys.exit(-1)
+
+    print("Creating " + attribute_name + " server attribute ...")
+    data = {
+        "event": "POST",
+        "new": {
+            "name": attribute_name,
+            "description": attribute_description,
+            "type": attribute_type,
+        }
+    }
+    r = requests.put(AdminHOST + '/prod/admin/schema/server', headers=auth, data=json.dumps(data))
+    if r.status_code == 200:
+        print(attribute_name + " server attribute is updated in the migration factory")
+        return 0
+    else:
+        print(attribute_name + " server attribute update failed: " + r.text + ".......")
+        return -1
+
 
 def AddServerAttributeToStage(stage_id, attribute_name, token):
-    try:
-        auth = {"Authorization": token}
+    auth = {"Authorization": token}
 
-        stage = json.loads(requests.get(AdminHOST + '/prod/admin/stage/' + stage_id, headers=auth).text)
+    stage = json.loads(requests.get(AdminHOST + '/prod/admin/stage/' + stage_id, headers=auth).text)
 
-        attribute_found = False
-        for attribute in stage['attributes']:
-            if attribute['attr_name'] == attribute_name and attribute['attr_type'] == 'server':
-                attribute_found = True
-                break
+    attribute_found = False
+    for attribute in stage['attributes']:
+        if attribute['attr_name'] == attribute_name and attribute['attr_type'] == 'server':
+            attribute_found = True
+            break
 
-        if attribute_found:
-            print("Serveur atttribute" + attribute_name + " is already set to the stage id " + stage_id)
-            return 0
+    if attribute_found:
+        print("Serveur atttribute" + attribute_name + " is already set to the stage id " + stage_id)
+        return 0
 
-        stage["attributes"].append({"attr_type": "server", "attr_name": attribute_name})
+    stage["attributes"].append({"attr_type": "server", "attr_name": attribute_name})
 
-        r = requests.put(AdminHOST + '/prod/admin/stage/' + stage_id, headers=auth, data=json.dumps(stage))
-        if r.status_code == 200:
-            print(attribute_name + " server attribute is updated to the stage " + stage_id + " in the migration factory")
-            return 0
-        else:
-            print(attribute_name + " server attribute update failed to the stage " + stage_id + ": " + r.text + ".......")
-            return -1
-    except:
-        print("ERROR: Fail to add server attribute " + attribute_name + " to stage id " + stage_id)
-        sys.exit(-1)
+    r = requests.put(AdminHOST + '/prod/admin/stage/' + stage_id, headers=auth, data=json.dumps(stage))
+    if r.status_code == 200:
+        print(
+            attribute_name + " server attribute is updated to the stage " + stage_id + " in the migration factory")
+        return 0
+    else:
+        print(
+            attribute_name + " server attribute update failed to the stage " + stage_id + ": " + r.text + ".......")
+        return -1
 
-def Factorylogin(username, password, LoginHOST):
+
+def Factorylogin(username, password, _LoginHOST):
     login_data = {'username': username, 'password': password}
-    r = requests.post(LoginHOST + '/prod/login',
-                  data=json.dumps(login_data))
+    r = requests.post(_LoginHOST + '/prod/login',
+                      data=json.dumps(login_data))
     if r.status_code == 200:
         print("Migration Factory : You have successfully logged in")
         print("")
@@ -120,18 +118,19 @@ def Factorylogin(username, password, LoginHOST):
         print("")
         sys.exit(5)
 
+
 def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
-           '--config-file-endpoints',
-           default=EnvironmentVariableFetcher.fetch(
-               env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
-               default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
-           ),
-           help='Configuration file containing the Migration Factory endpoint URLs'
-       )
+        '--config-file-endpoints',
+        default=EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+            default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+        ),
+        help='Configuration file containing the Migration Factory endpoint URLs'
+    )
     args = parser.parse_args(arguments)
 
     global LoginHOST, UserHOST, AdminHOST
@@ -162,6 +161,7 @@ def main(arguments):
 
     CreateServerAttributeIfNotExist(iam_role_attribute_name, iam_role_attribute_name, "string", token)
     AddServerAttributeToStage("1", iam_role_attribute_name, token)
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

@@ -16,11 +16,11 @@ from mf.utils import Utils
 class TemplateSecurityGroupCreator:
     """ Create copies of template security groups """
 
-    _arguments = []
-    _environments = []
-    _path_wave = ''
-    _aws_service_accessor = None
-    _defaults_loader = None
+    _arguments: argparse.Namespace = None
+    _environments: list[str] = []
+    _path_wave: str = ''
+    _aws_service_accessor: AWSServiceAccessor = None
+    _defaults_loader: DefaultsLoader = None
 
     def __init__(self):
         parser = argparse.ArgumentParser()

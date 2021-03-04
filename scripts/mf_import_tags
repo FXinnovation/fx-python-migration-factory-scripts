@@ -19,11 +19,11 @@ class TagsImporter:
 
     MANDATORY_TAGS = [TAG_NAME]
 
-    _arguments = []
-    _endpoints_loader = None
-    _migration_factory_requester = None
-    _path_wave = ''
-    _csv_content = []
+    _arguments: argparse.Namespace = None
+    _endpoints_loader: EndpointsLoader = None
+    _migration_factory_requester: MigrationFactoryRequester = None
+    _path_wave: str = ''
+    _csv_content: list[str] = []
 
     def __init__(self):
         parser = argparse.ArgumentParser()

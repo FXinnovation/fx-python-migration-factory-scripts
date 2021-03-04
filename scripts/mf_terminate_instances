@@ -22,9 +22,9 @@ serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
 
 
-def Factorylogin(username, password, LoginHOST):
+def Factorylogin(username, password, _LoginHOST):
     login_data = {'username': username, 'password': password}
-    r = requests.post(LoginHOST + '/prod/login',
+    r = requests.post(_LoginHOST + '/prod/login',
                       data=json.dumps(login_data))
     if r.status_code == 200:
         print("Migration Factory : You have successfully logged in")
@@ -37,9 +37,9 @@ def Factorylogin(username, password, LoginHOST):
         sys.exit(5)
 
 
-def CElogin(userapitoken, endpoint):
+def CElogin(userapitoken, _endpoint):
     login_data = {'userApiToken': userapitoken}
-    r = requests.post(HOST + endpoint.format('login'),
+    r = requests.post(HOST + _endpoint.format('login'),
                       data=json.dumps(login_data), headers=headers)
     if r.status_code == 200:
         print("CloudEndure : You have successfully logged in")
@@ -55,15 +55,12 @@ def CElogin(userapitoken, endpoint):
 
     # check if need to use a different API entry point
     if r.history:
-        endpoint = '/' + '/'.join(r.url.split('/')[3:-1]) + '/{}'
-        r = requests.post(HOST + endpoint.format('login'),
+        _endpoint = '/' + '/'.join(r.url.split('/')[3:-1]) + '/{}'
+        r = requests.post(HOST + _endpoint.format('login'),
                           data=json.dumps(login_data), headers=headers)
 
     session['session'] = r.cookies['session']
-    try:
-        headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
-    except:
-        pass
+    headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
 
 
 def GetCEProject(projectname):
@@ -71,30 +68,26 @@ def GetCEProject(projectname):
     if r.status_code != 200:
         print("ERROR: Failed to fetch the project....")
         sys.exit(2)
-    try:
-        # Get Project ID
-        project_id = ""
-        projects = json.loads(r.text)["items"]
-        project_exist = False
-        for project in projects:
-            if project["name"] == projectname:
-                project_id = project["id"]
-                project_exist = True
-        if project_exist == False:
-            print("ERROR: Project Name does not exist in CloudEndure....")
-            sys.exit(3)
-        return project_id
-    except:
-        print("ERROR: Failed to fetch the project....")
-        sys.exit(4)
+    # Get Project ID
+    project_id = ""
+    projects = json.loads(r.text)["items"]
+    project_exist = False
+    for project in projects:
+        if project["name"] == projectname:
+            project_id = project["id"]
+            project_exist = True
+    if project_exist is False:
+        print("ERROR: Project Name does not exist in CloudEndure....")
+        sys.exit(3)
+    return project_id
 
 
-def ProjectList(waveid, token, UserHOST):
+def ProjectList(waveid, token, _UserHOST):
     # Get all Apps and servers from migration factory
     auth = {"Authorization": token}
-    servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
+    servers = json.loads(requests.get(_UserHOST + serverendpoint, headers=auth).text)
     # print(servers)
-    apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
+    apps = json.loads(requests.get(_UserHOST + appendpoint, headers=auth).text)
     # print(apps)
     newapps = []
 
@@ -114,59 +107,56 @@ def ProjectList(waveid, token, UserHOST):
                 else:
                     print("ERROR: App " + app['app_name'] + " is not linked to any CloudEndure project....")
                     sys.exit(5)
-    Projects = GetServerList(newapps, servers, CEProjects, waveid)
+    Projects = GetServerList(newapps, servers, CEProjects)
     return Projects
 
 
-def GetServerList(apps, servers, CEProjects, waveid):
-    try:
-        serverlist = servers
-        for project in CEProjects:
-            # Get Machine List from CloudEndure
-            m = requests.get(HOST + endpoint.format('projects/{}/machines').format(project['ProjectId']),
-                             headers=headers, cookies=session)
-            if "sourceProperties" not in m.text:
-                print("ERROR: Failed to fetch the machines in Project: " + project['ProjectName'])
-                sys.exit(3)
-            ReplicaIdList = {}
-            # Get Target instance Id
-            for app in apps:
-                if str(app['cloudendure_projectname']) == project['ProjectName']:
-                    for server in serverlist:
-                        if app['app_id'] == server['app_id']:
-                            machine_exist = False
-                            for machine in json.loads(m.text)["items"]:
-                                if server["server_name"].lower() == machine['sourceProperties']['name'].lower():
-                                    machine_exist = True
-                                    if 'lastTestLaunchDateTime' in machine["lifeCycle"]:
-                                        if 'lastCutoverDateTime' not in machine["lifeCycle"]:
-                                            if 'replica' in machine:
-                                                if machine['replica'] != '':
-                                                    ReplicaIdList[machine['sourceProperties']['name']] = machine[
-                                                        'replica']
-                                                else:
-                                                    print("ERROR: Target Instance does not exist for machine: " +
-                                                          machine['sourceProperties']['name'])
-                                                    sys.exit(4)
+def GetServerList(apps, servers, CEProjects):
+    serverlist = servers
+    for project in CEProjects:
+        # Get Machine List from CloudEndure
+        m = requests.get(HOST + endpoint.format('projects/{}/machines').format(project['ProjectId']),
+                         headers=headers, cookies=session)
+        if "sourceProperties" not in m.text:
+            print("ERROR: Failed to fetch the machines in Project: " + project['ProjectName'])
+            sys.exit(3)
+        ReplicaIdList = {}
+        # Get Target instance Id
+        for app in apps:
+            if str(app['cloudendure_projectname']) == project['ProjectName']:
+                for server in serverlist:
+                    if app['app_id'] == server['app_id']:
+                        machine_exist = False
+                        for machine in json.loads(m.text)["items"]:
+                            if server["server_name"].lower() == machine['sourceProperties']['name'].lower():
+                                machine_exist = True
+                                if 'lastTestLaunchDateTime' in machine["lifeCycle"]:
+                                    if 'lastCutoverDateTime' not in machine["lifeCycle"]:
+                                        if 'replica' in machine:
+                                            if machine['replica'] != '':
+                                                ReplicaIdList[machine['sourceProperties']['name']] = machine[
+                                                    'replica']
                                             else:
                                                 print("ERROR: Target Instance does not exist for machine: " +
                                                       machine['sourceProperties']['name'])
-                                                sys.exit(8)
+                                                sys.exit(4)
                                         else:
-                                            print("ERROR: Instance can not be terminated after cutover : " +
+                                            print("ERROR: Target Instance does not exist for machine: " +
                                                   machine['sourceProperties']['name'])
                                             sys.exit(8)
                                     else:
-                                        print("ERROR: Machine has not been launched in test mode..... ")
-                                        sys.exit(9)
-                            if machine_exist == False:
-                                print("ERROR: Machine: " + server["server_name"] + " does not exist in CloudEndure....")
-                                sys.exit(10)
-            project['ReplicaIdList'] = ReplicaIdList
-        return CEProjects
-    except:
-        print("ERROR: Getting server list failed....")
-        sys.exit(7)
+                                        print("ERROR: Instance can not be terminated after cutover : " +
+                                              machine['sourceProperties']['name'])
+                                        sys.exit(8)
+                                else:
+                                    print("ERROR: Machine has not been launched in test mode..... ")
+                                    sys.exit(9)
+                        if machine_exist is False:
+                            print("ERROR: Machine: " + server["server_name"] +
+                                  " does not exist in CloudEndure....")
+                            sys.exit(10)
+        project['ReplicaIdList'] = ReplicaIdList
+    return CEProjects
 
 
 def terminate_instances(Projects):

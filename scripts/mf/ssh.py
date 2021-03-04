@@ -2,6 +2,7 @@
 
 import logging
 import os
+import sys
 from binascii import hexlify
 
 import paramiko
@@ -25,10 +26,10 @@ class SSHClient(paramiko.SSHClient):
 
     def __init__(self, hostname: str):
         self._hostname = hostname
-        super(SSHClient, self).__init__()
+        super().__init__()
 
     def execute(self, command: str):
-        stdin, stdout, stderr = self.exec_command(command)
+        _, stdout, stderr = self.exec_command(command)
 
         stdout.channel.recv_exit_status()
         lines = stdout.readlines()
@@ -41,7 +42,7 @@ class SSHClient(paramiko.SSHClient):
                     self.__class__.__name__, self._hostname, "\n".join(err_lines)
                 )
             )
-            quit(1)
+            sys.exit(1)
 
         return lines
 
@@ -68,7 +69,7 @@ class SSHClient(paramiko.SSHClient):
         if self._sftp_client is not None:
             self._sftp_client.close()
 
-        super(SSHClient, self).close()
+        super().close()
 
 
 class SSHConnector:
@@ -126,7 +127,7 @@ class SSHConnector:
                 logging.getLogger('root').error('{}: Cannot prepare SSH key file “{}”. Passphrase is wrong.'.format(
                     self.__class__.__name__, self._hostname
                 ))
-                quit(1)
+                sys.exit(1)
         except IOError as exception:
             logging.getLogger('root').error('{}: Cannot prepare SSH key file “{}”. Got this error “{}”.'.format(
                 self.__class__.__name__, key_file_path, exception
@@ -134,7 +135,7 @@ class SSHConnector:
             logging.getLogger('root').error('{}: Cannot join hostname “{}”. Got this error “{}”.'.format(
                 self.__class__.__name__, self._hostname, exception
             ))
-            quit(1)
+            sys.exit(1)
         except AuthenticationException as exception:
             if password is not None and retry_count < 2:
                 print('Wrong password. Try again.')
@@ -150,13 +151,13 @@ class SSHConnector:
                 logging.getLogger('root').error('{}: Connection to host “{}” failed with error “{}”.'.format(
                     self.__class__.__name__, self._hostname, exception
                 ))
-                quit(1)
+                sys.exit(1)
         except BadHostKeyException:
             logging.getLogger('root').error(
                 '{}: Connection to host “{}” failed. This host has a different key that the one saved locally!'.format(
                     self.__class__.__name__, self._hostname
                 ))
-            quit(1)
+            sys.exit(1)
         except SSHException as exception:
             logging.getLogger('root').error(
                 '{}: Connection to host “{}” with user "{}" on port “{}” failed with this error: “{}”.'.format(
@@ -175,7 +176,7 @@ class SSHConnector:
                         self.__class__.__name__
                     )
                 )
-            quit(1)
+            sys.exit(1)
 
         return ssh_client
 
@@ -206,7 +207,7 @@ class AskingPolicy(MissingHostKeyPolicy):
                     hexlify(key.get_fingerprint()).decode('utf-8')
                 ),
             )
-            quit(1)
+            sys.exit(1)
 
         client.get_host_keys().add(hostname, key.get_name(), key)
         client.save_host_keys(os.path.expanduser("~/.ssh/known_hosts"))

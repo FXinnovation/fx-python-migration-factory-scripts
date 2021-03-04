@@ -2,6 +2,7 @@
 
 * refactor: fixes styles of most scripts
 * refactor: removes unused imports of most scripts
+* refactor: adds mypy, autopep8 and pylint pre-commit validation
 
 ## 12.0.0
 

@@ -17,10 +17,10 @@ from mf.utils import Requester
 class WaveDeleter:
     """ Delete Migration Factory wave """
 
-    _arguments = []
-    _endpoints_loader = {}
-    _migration_factory_requester = None
-    _path_wave = None
+    _arguments: argparse.Namespace = None
+    _endpoints_loader: EndpointsLoader = None
+    _migration_factory_requester: MigrationFactoryRequester = None
+    _path_wave: str = None
 
     def __init__(self):
         parser = argparse.ArgumentParser()

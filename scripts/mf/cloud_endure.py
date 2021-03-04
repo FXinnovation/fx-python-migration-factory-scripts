@@ -145,7 +145,8 @@ class CloudEndureRequester:
                 logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str(project))
                 return project
 
-        logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project") + project_name + str(" not found"))
+        logging.getLogger('root').debug(self.__class__.__name__ + ': ' +
+                                        str("project") + project_name + str(" not found"))
 
         return False
 
@@ -166,7 +167,8 @@ class CloudEndureRequester:
         machines = self.get(self.URI_MACHINES.format(_project_id))
 
         if not machines:
-           logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project") + project_name + str(" is empty"))
+            logging.getLogger('root').debug(self.__class__.__name__ + ': ' +
+                                            str("project") + project_name + str(" is empty"))
 
         return machines
 
@@ -174,12 +176,14 @@ class CloudEndureRequester:
         machines = self.get_machines(project_name)
 
         if not machines:
-            logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project ") + project_name + str(" has no machine"))
+            logging.getLogger('root').debug(self.__class__.__name__ + ': ' +
+                                            str("project ") + project_name + str(" has no machine"))
             return None
 
         for machine in machines['items']:
             if machine_name.lower() == machine['sourceProperties']['name'].lower():
-                logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project ") + project_name + str(" has a machine ") + machine['sourceProperties']['name'])
+                logging.getLogger('root').debug(self.__class__.__name__ + ': ' + str("project ") +
+                                                project_name + str(" has a machine ") + machine['sourceProperties']['name'])
                 return machine
 
         return None

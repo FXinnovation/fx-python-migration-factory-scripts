@@ -66,7 +66,7 @@ This repository uses [pre-commit](https://pre-commit.com/) hooks.
 
 ```
 pre-commit install
-pre-commit install -t commit-msg
+pre-commit run -a
 ```
 
 ## Commit Messages

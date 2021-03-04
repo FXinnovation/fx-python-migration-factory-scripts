@@ -13,7 +13,7 @@ def execute_cmd(host, username, key, cmd, using_key):
             error = "Not able to get the SSH connection for the host " + host
             print(error)
         else:
-            stdin, stdout, stderr = ssh.exec_command(cmd)
+            _, stdout, stderr = ssh.exec_command(cmd)
             for line in stdout.readlines():
                 output = output + line
             for line in stderr.readlines():
@@ -57,8 +57,8 @@ def open_ssh(host, username, key_pwd, using_key):
 
 def find_distribution(host, username, key_pwd, using_key):
     distribution = "linux"
-    output, error = execute_cmd(host, username, key_pwd, "cat /etc/*release",
-                                using_key)
+    output, _ = execute_cmd(host, username, key_pwd, "cat /etc/*release",
+                            using_key)
     if "ubuntu" in output:
         distribution = "ubuntu"
     elif "fedora" in output:
@@ -78,16 +78,16 @@ def install_wget(host, username, key_pwd, using_key):
         ssh = open_ssh(host, username, key_pwd, using_key)
         if distribution == "ubuntu":
             ssh.exec_command("sudo apt-get update")
-            stdin, stdout, stderr = ssh.exec_command(
+            stdin, _, stderr = ssh.exec_command(
                 "sudo DEBIAN_FRONTEND=noninteractive apt-get install wget")
         elif distribution == "suse":
-            stdin, stdout, stderr = ssh.exec_command("sudo zypper install wget")
+            stdin, _, stderr = ssh.exec_command("sudo zypper install wget")
             stdin.write('Y\n')
             stdin.flush()
         else:
             # This condition works with centos, fedora and RHEL distributions
             ssh.exec_command("sudo yum update")
-            stdin, stdout, stderr = ssh.exec_command("sudo yum install wget -y")
+            stdin, _, stderr = ssh.exec_command("sudo yum install wget -y")
         # Check if there is any error while installing wget
         error = ''
         for line in stderr.readlines():
@@ -95,7 +95,7 @@ def install_wget(host, username, key_pwd, using_key):
         if not error:
             print("wget got installed successfully")
             # Execute the command wget and check if it got configured correctly
-            stdin, stdout, stderr = ssh.exec_command("wget")
+            _, _, stderr = ssh.exec_command("wget")
             error = ''
             for line in stderr.readlines():
                 error = error + line
@@ -110,8 +110,8 @@ def install_wget(host, username, key_pwd, using_key):
 
 
 def check_python(host, username, key_pwd, using_key):
-    output, error = execute_cmd(host, username, key_pwd, "python --version",
-                                using_key)
+    _, error = execute_cmd(host, username, key_pwd, "python --version",
+                           using_key)
     if error:
         return False
     else:
@@ -119,8 +119,8 @@ def check_python(host, username, key_pwd, using_key):
 
 
 def check_python3(host, username, key_pwd, using_key):
-    output, error = execute_cmd(host, username, key_pwd, "python3 --version",
-                                using_key)
+    _, error = execute_cmd(host, username, key_pwd, "python3 --version",
+                           using_key)
     if error:
         return False
     else:
@@ -139,15 +139,15 @@ def install_python3(host, username, key_pwd, using_key):
             ssh.exec_command("sudo apt-get update")
             command = "sudo DEBIAN_FRONTEND=noninteractive apt-get install " \
                       "python3"
-            stdin, stdout, stderr = ssh.exec_command(command)
+            stdin, _, stderr = ssh.exec_command(command)
             stdin.write('Y\n')
             stdin.flush()
         elif distribution == 'suse':
-            stdin, stdout, stderr = ssh.exec_command("sudo zypper install python3")
+            stdin, _, stderr = ssh.exec_command("sudo zypper install python3")
             stdin.write('Y\n')
             stdin.flush()
         elif distribution == "fedora":
-            stdin, stdout, stderr = ssh.exec_command("sudo dnf install python3")
+            stdin, _, stderr = ssh.exec_command("sudo dnf install python3")
             stdin.write('Y\n')
             stdin.flush()
         else:  # This installs on centos
@@ -155,7 +155,7 @@ def install_python3(host, username, key_pwd, using_key):
             ssh.exec_command("sudo yum install centos-release-scl")
             ssh.exec_command("sudo yum install rh-python36")
             ssh.exec_command("scl enable rh-python36 bash")
-            stdin, stdout, stderr = ssh.exec_command("python --version")
+            _, _, stderr = ssh.exec_command("python --version")
         error = ''
         for line in stderr.readlines():
             error = error + line

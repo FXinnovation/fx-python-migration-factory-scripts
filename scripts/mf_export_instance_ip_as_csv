@@ -15,6 +15,10 @@ from mf.utils import EnvironmentVariableFetcher, Utils
 
 
 class Ec2InstanceExporter:
+    """
+        Gets IPs of EC2 servers and write them in a CSV file.
+    """
+
     _cloud_endure_requester = None
     _migration_factory_requester = None
     _endpoints_loader = None

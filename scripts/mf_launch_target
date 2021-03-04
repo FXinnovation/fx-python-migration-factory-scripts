@@ -13,11 +13,10 @@ from mf.utils import EnvironmentVariableFetcher, UserManualConfirmation
 class TargetInstanceLauncher:
     """ Launch target instances """
 
-    _arguments = []
-    _environment_variable_fetcher = None
-    _endpoints_loader = None
-    _migration_factory_requester = None
-    _ce_api_token = ""
+    _arguments: argparse.Namespace = None
+    _endpoints_loader: EndpointsLoader = None
+    _migration_factory_requester: MigrationFactoryRequester = None
+    _ce_api_token: str = ''
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -30,7 +29,11 @@ class TargetInstanceLauncher:
             action='store_true',
             help='Perform a cutover. WARNING!! This can affect your production!'
         )
-        parser.add_argument('--relaunch', action='store_true', help='Relaunch the target even if it was already launch')
+        parser.add_argument(
+            '--relaunch',
+            action='store_true',
+            help='Relaunch the target even if it was already launch'
+        )
         parser.add_argument('-y', action='store_true', help='Auto confirm dangerous action')
         parser.add_argument(
             '--config-file-endpoints',

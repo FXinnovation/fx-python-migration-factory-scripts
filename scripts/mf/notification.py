@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
 import logging
-import smtplib
 import re
+import smtplib
+import time
 from abc import ABC
 from email.message import EmailMessage
 from threading import Thread
 
 import pymsteams
-import time
 import validators
 
 from mf import BRAND
@@ -16,10 +16,19 @@ from mf.utils import EnvironmentVariableFetcher
 
 
 class SendEventDecider:
-    _whitelist: [str] = None
-    _blacklist: [str] = None
+    """
+        Makes decision on whether or not a Notification should be sent.
+        Takes a whitelist and a blacklist. The following rules are applied:
 
-    def __init__(self, whitelist: [str], blacklist: [str]):
+          - Blacklisted events are never sent
+          - If whitelist is not empty, ONLY events in whitelist sent
+          - If whitelist and blacklist are both empty, events are sent
+    """
+
+    _whitelist: list[str] = None
+    _blacklist: list[str] = None
+
+    def __init__(self, whitelist: list[str], blacklist: list[str]):
         self._whitelist = whitelist
         self._blacklist = blacklist
 
@@ -52,7 +61,7 @@ class CanNotify(ABC):
 class NotifierBag:
     """ Data class containing all available Notifiers """
 
-    _bag: {str: CanNotify} = {}
+    _bag: dict[str, CanNotify] = {}
 
     def add(self, notifier: CanNotify):
         self._bag[notifier.get_name()] = notifier
@@ -94,7 +103,7 @@ class Notifier:
     }
 
     _notifier_bag: NotifierBag = None
-    _enabled_notifiers: [str] = []
+    _enabled_notifiers: list[str] = []
 
     def __init__(self, config: dict):
         # Don't forget to add any new Notifier implementation to the Notifier bag.
@@ -128,7 +137,8 @@ class Notifier:
         for task in tasks:
             task.join()
 
-    def _clean_message(self, message: str) -> str:
+    @classmethod
+    def _clean_message(cls, message: str) -> str:
         # Remove bash formatting
         return re.sub(r'\[.*?;?.*?m', '', message, re.MULTILINE)
 
@@ -155,7 +165,7 @@ class TeamsNotifier(CanNotify):
 
     NAME = 'teams'
 
-    _webook_urls: [str] = []
+    _webook_urls: list[str] = []
     _send_event_decider: SendEventDecider = None
 
     def __init__(self, config: dict):
@@ -171,7 +181,8 @@ class TeamsNotifier(CanNotify):
 
         if len(self._webook_urls) > 10:
             logging.getLogger('root').warning(
-                '{}: More than 10 webhooks were configured. Be cautious of rate limits.'.format(self.__class__.__name__)
+                '{}: More than 10 webhooks were configured. Be cautious of rate limits.'.format(
+                    self.__class__.__name__)
             )
 
         tasks = []
@@ -203,11 +214,11 @@ class SMTPNotifier(CanNotify):
 
     NAME = 'smtp'
 
-    _destination_emails: [str] = []
+    _destination_emails: list[str] = []
     _send_event_decider: SendEventDecider = None
     _needs_authentication: bool = None
-    _username: bool = None
-    _password: bool = None
+    _username: str = None
+    _password: str = None
     _host: str = None
     _port: int = None
     _tls: bool = None
@@ -250,27 +261,28 @@ class SMTPNotifier(CanNotify):
         else:
             email_message['From'] = BRAND
 
-        if self._tls:
-            smtpclient = smtplib.SMTP_SSL(self._host, self._port)
+        if not self._tls:
+            smtp_client = smtplib.SMTP(self._host, self._port)
         else:
-            smtpclient = smtplib.SMTP(self._host, self._port)
+            smtp_client = smtplib.SMTP_SSL(self._host, self._port)
 
         if self._needs_authentication:
-            smtpclient.login(self._username, self._password)
+            smtp_client.login(self._username, self._password)
 
         logging.getLogger('root').debug("{}: Sending SMTP message: {}".format(
             self.__class__.__name__, str(email_message)
         ))
 
-        smtpclient.send_message(email_message)
-        smtpclient.quit()
+        smtp_client.send_message(email_message)
+        smtp_client.quit()
 
     @classmethod
     def _get_config_value(cls, config: dict, key: str, default, env_var_name: str = None):
         value = None
         if key not in config or config[key] is None or config[key] == '':
             if env_var_name is not None:
-                value = EnvironmentVariableFetcher.fetch(env_var_names=[env_var_name], env_var_description=env_var_name)
+                value = EnvironmentVariableFetcher.fetch(
+                    env_var_names=[env_var_name], env_var_description=env_var_name)
         else:
             value = config[key]
 

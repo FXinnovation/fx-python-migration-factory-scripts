@@ -3,6 +3,8 @@
 import json
 import logging
 import re
+import sys
+from typing import Any
 
 import requests_cache
 
@@ -43,11 +45,11 @@ class MfField:
 class MigrationFactoryData:
     """ Data object representing any data in Migration Factory (superclass) """
 
-    FIELDS = {}
-    PUT_FIELDS = {}
+    FIELDS: dict[str, Any] = {}
+    PUT_FIELDS: dict[str, Any] = {}
 
-    _data = {}
-    _id = None
+    _data: dict[str, Any] = {}
+    _id: int = None
 
     def __init__(self, data: dict, identifier: int = None):
         self._data = {}
@@ -123,8 +125,8 @@ class Wave(MigrationFactoryData):
         MfField.WAVE_DESCRIPTION: str,
     }
 
-    _data = {}
-    _id = None
+    _data: dict[str, Any] = {}
+    _id: int = None
 
     def __init__(self, data: dict = None, identifier: int = None):
         if data is None:
@@ -149,9 +151,9 @@ class App(MigrationFactoryData):
         MfField.AWS_ACCOUNT_ID: str,
     }
 
-    _wave = None
-    _data = {}
-    _id = None
+    _wave: Wave = None
+    _data: dict[str, Any] = {}
+    _id: int = None
 
     def __init__(self, data: dict = None, identifier: int = None, wave: Wave = Wave()):
         if data is None:
@@ -218,9 +220,9 @@ class Server(MigrationFactoryData):
         MfField.TAGS: dict,
     }
 
-    _app = None
-    _data = {}
-    _id = None
+    _app: App = None
+    _data: dict[str, Any] = {}
+    _id: int = None
 
     def __init__(self, data: dict = None, identifier: int = None, app: App = App()):
         if data is None:
@@ -260,7 +262,7 @@ class MigrationFactoryDataValidator:
     _validation_error_bag = MessageBag(type_of_bag='error')
 
     @classmethod
-    def validate_servers_data(cls, servers: [Server], exit_on_error: bool = True):
+    def validate_servers_data(cls, servers: list[Server], exit_on_error: bool = True):
         apps = list(map(lambda x: x.get_app(), servers))
         waves = list(map(lambda x: x.get_wave(), apps))
 
@@ -314,17 +316,17 @@ class MigrationFactoryDataValidator:
         cls._validation_error_bag.unload()
 
         if not cls._validation_error_bag.is_empty() and exit_on_error:
-            exit(1)
+            sys.exit(1)
 
     @classmethod
-    def _check_dict_value_consistency(cls, objects_to_check: [MigrationFactoryData], key: str):
+    def _check_dict_value_consistency(cls, objects_to_check: list[MigrationFactoryData], key: str):
         if len(list(dict.fromkeys(map(lambda x: x.get(key).strip(), objects_to_check)))) != 1:
             cls._validation_error_bag.add('{}: “{}” key is not consistent among all servers.'.format(
                 cls.__class__.__name__, key
             ))
 
     @classmethod
-    def _check_dict_value_duplication(cls, objects_to_check: [MigrationFactoryData], key: str):
+    def _check_dict_value_duplication(cls, objects_to_check: list[Server], key: str):
         if list(map(lambda x: x.get(key).strip(), objects_to_check)).count(key) > 1:
             cls._validation_error_bag.add('{}: “{}” key is duplicated among all servers.'.format(
                 cls.__class__.__name__, key
@@ -593,7 +595,14 @@ class MigrationFactoryRequester:
 
         return _server_selected_list_id
 
-    def launch_target(self, wave_name: str, cloudendure_api_token: str, dry_run: bool = True, for_testing: bool = False, relaunch: bool = False):
+    def launch_target(
+            self,
+            wave_name: str,
+            cloudendure_api_token: str,
+            dry_run: bool = True,
+            for_testing: bool = False,
+            relaunch: bool = False
+    ):
         wave = self.get_user_wave_by_name(wave_name)
 
         apps = self.get_user_apps_by_wave_id(wave[MfField.WAVE_ID])
@@ -618,7 +627,8 @@ class MigrationFactoryRequester:
         for app in apps:
             request_data["projectname"] = app[MfField.CLOUDENDURE_PROJECT_NAME]
 
-            return self.post(self.URI_TOOL_CLOUDENDURE, data=json.dumps(request_data), response_type=Requester.RESPONSE_TYPE_TEXT)
+            return self.post(self.URI_TOOL_CLOUDENDURE, data=json.dumps(request_data),
+                             response_type=Requester.RESPONSE_TYPE_TEXT)
 
         return
 

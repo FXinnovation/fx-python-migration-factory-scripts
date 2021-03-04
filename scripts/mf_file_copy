@@ -7,8 +7,10 @@ import glob
 import logging
 import ntpath
 import os
-from threading import Thread
+import sys
 import zipfile
+from threading import Thread
+
 import mf
 from mf.config_loaders import EndpointsLoader, ConfigLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
@@ -110,7 +112,7 @@ class WindowsHost(Host):
         self._username = _username
         self._password = _password
 
-        super(WindowsHost, self).__init__(_server_fqdn, _wave_name, _path_wave_post_launch, _path_generic_post_launch)
+        super().__init__(_server_fqdn, _wave_name, _path_wave_post_launch, _path_generic_post_launch)
 
     def get_valid_post_launch_file_extensions(self, basepath: str) -> list:
         return [
@@ -186,7 +188,6 @@ class WindowsHost(Host):
             filepath,
             self.WINDOWS_POST_LAUNCH_DESTINATION,
             self._server_fqdn,
-            '{}',
         )
 
         if self._password is not None:
@@ -258,7 +259,7 @@ class LinuxHost(Host):
             password=_password,
         )
 
-        super(LinuxHost, self).__init__(_server_fqdn, _wave_name, _path_wave_post_launch, _path_generic_post_launch)
+        super().__init__(_server_fqdn, _wave_name, _path_wave_post_launch, _path_generic_post_launch)
 
     def get_valid_post_launch_file_extensions(self, basepath: str) -> list:
         return [
@@ -324,21 +325,21 @@ class PostLaunchFileCopier:
             mf_file_copy --wave-name MyWave --skip-notify --linux-ssh-private-key-file ~/.ssh/id_server
     """
 
-    _arguments = []
-    _endpoints_loader = {}
-    _migration_factory_requester = None
-    _path_wave_post_launch = None
-    _windows_user = None
-    _windows_password = None
-    _linux_user = None
-    _linux_password = None
-    _notifier = None
-    _config_loader = None
+    _arguments: argparse.Namespace = None
+    _endpoints_loader: EndpointsLoader = None
+    _migration_factory_requester: MigrationFactoryRequester = None
+    _path_wave_post_launch: str = None
+    _windows_user: str = None
+    _windows_password: str = None
+    _linux_user: str = None
+    _linux_password: str = None
+    _notifier: Notifier = None
+    _config_loader: ConfigLoader = None
 
-    _pre_copy_tasks = []
-    _post_copy_tasks = []
-    _copy_tasks = []
-    _cleanup_tasks = []
+    _pre_copy_tasks: list[Thread] = []
+    _post_copy_tasks: list[Thread] = []
+    _copy_tasks: list[Thread] = []
+    _cleanup_tasks: list[Thread] = []
 
     def __init__(self):
         parser = argparse.ArgumentParser(description=__doc__)
@@ -360,8 +361,8 @@ class PostLaunchFileCopier:
             help="Generic post-launch files to copy (.exe, .bat, .cmd or .sh)."
                  " Defaults to env var {}."
                  " Other specific post-launch files will ALWAYS be fetched in wave directory dynamically.".format(
-                mf.PATH_DEFAULT_POST_LAUNCH
-            )
+                     mf.PATH_DEFAULT_POST_LAUNCH
+                 )
         )
         parser.add_argument(
             '--windows-username',
@@ -453,9 +454,9 @@ class PostLaunchFileCopier:
 
         print(' ✔ Done')
 
-        if servers is []:
+        if not servers:
             print('### No servers found in the {} wave…'.format(self._arguments.wave_name))
-            quit(0)
+            sys.exit(0)
 
         print('### Running tasks to copy post-launch files to post-launch folder in source servers…')
 

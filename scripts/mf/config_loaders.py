@@ -96,8 +96,8 @@ class ConfigLoader:
 class DefaultsLoader:
     """ Loads default configuration values for every wave and fetch available environments """
 
-    _defaults = {}
-    _available_environments = []
+    _defaults: DefaultValues = None
+    _available_environments: list[str] = []
 
     def load(self, default_config_file, environment):
         with open(default_config_file, 'r') as stream:
@@ -113,9 +113,9 @@ class DefaultsLoader:
 
                 logging.getLogger('root').debug(self.__class__.__name__ + ':Defaults:' + str(self._defaults))
 
-                for environment, defaults in all_defaults.items():
-                    Utils.check_is_serializable_as_path(string_to_test=environment)
-                    self._available_environments.append(environment)
+                for _environment, _ in all_defaults.items():
+                    Utils.check_is_serializable_as_path(string_to_test=_environment)
+                    self._available_environments.append(_environment)
 
                 return self.get()
 
@@ -129,8 +129,7 @@ class DefaultsLoader:
         return self._available_environments
 
     def key_exists_and_not_empty(self, key: str):
-        return key in self._defaults.keys() and \
-               self._defaults[key] is not ''
+        return key in self._defaults.keys() and self._defaults[key] != ''
 
 
 class EndpointsLoader:
