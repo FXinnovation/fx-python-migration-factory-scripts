@@ -3,6 +3,7 @@
 import argparse
 import logging
 import os
+from typing import List
 
 from botocore.exceptions import ClientError
 
@@ -17,7 +18,7 @@ class TemplateSecurityGroupCreator:
     """ Create copies of template security groups """
 
     _arguments: argparse.Namespace = None
-    _environments: list[str] = []
+    _environments: List[str] = []
     _path_wave: str = ''
     _aws_service_accessor: AWSServiceAccessor = None
     _defaults_loader: DefaultsLoader = None

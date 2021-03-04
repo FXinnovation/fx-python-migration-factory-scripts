@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+from typing import List
 
 import requests
 
@@ -16,7 +17,7 @@ class MessageBag:
 
     ALLOWED_TYPES = ['error', 'warning', 'info', 'debug']
 
-    _bag: list[str] = []
+    _bag: List[str] = []
     _type: str = None
 
     def __init__(self, type_of_bag: str):

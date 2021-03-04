@@ -10,6 +10,7 @@ import os
 import sys
 import zipfile
 from threading import Thread
+from typing import List
 
 import mf
 from mf.config_loaders import EndpointsLoader, ConfigLoader
@@ -336,10 +337,10 @@ class PostLaunchFileCopier:
     _notifier: Notifier = None
     _config_loader: ConfigLoader = None
 
-    _pre_copy_tasks: list[Thread] = []
-    _post_copy_tasks: list[Thread] = []
-    _copy_tasks: list[Thread] = []
-    _cleanup_tasks: list[Thread] = []
+    _pre_copy_tasks: List[Thread] = []
+    _post_copy_tasks: List[Thread] = []
+    _copy_tasks: List[Thread] = []
+    _cleanup_tasks: List[Thread] = []
 
     def __init__(self):
         parser = argparse.ArgumentParser(description=__doc__)

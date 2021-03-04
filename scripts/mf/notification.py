@@ -7,6 +7,7 @@ import time
 from abc import ABC
 from email.message import EmailMessage
 from threading import Thread
+from typing import List
 
 import pymsteams
 import validators
@@ -25,10 +26,10 @@ class SendEventDecider:
           - If whitelist and blacklist are both empty, events are sent
     """
 
-    _whitelist: list[str] = None
-    _blacklist: list[str] = None
+    _whitelist: List[str] = None
+    _blacklist: List[str] = None
 
-    def __init__(self, whitelist: list[str], blacklist: list[str]):
+    def __init__(self, whitelist: List[str], blacklist: List[str]):
         self._whitelist = whitelist
         self._blacklist = blacklist
 
@@ -103,7 +104,7 @@ class Notifier:
     }
 
     _notifier_bag: NotifierBag = None
-    _enabled_notifiers: list[str] = []
+    _enabled_notifiers: List[str] = []
 
     def __init__(self, config: dict):
         # Don't forget to add any new Notifier implementation to the Notifier bag.
@@ -165,7 +166,7 @@ class TeamsNotifier(CanNotify):
 
     NAME = 'teams'
 
-    _webook_urls: list[str] = []
+    _webook_urls: List[str] = []
     _send_event_decider: SendEventDecider = None
 
     def __init__(self, config: dict):
@@ -214,7 +215,7 @@ class SMTPNotifier(CanNotify):
 
     NAME = 'smtp'
 
-    _destination_emails: list[str] = []
+    _destination_emails: List[str] = []
     _send_event_decider: SendEventDecider = None
     _needs_authentication: bool = None
     _username: str = None

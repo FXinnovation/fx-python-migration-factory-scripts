@@ -9,6 +9,7 @@ import pathlib
 import sys
 from pathlib import Path
 from shutil import copy2
+from typing import List
 
 import mf
 from mf.cloud_endure import CloudEndureRequester
@@ -27,7 +28,7 @@ class WavePreparator:
     _endpoints_loader: EndpointsLoader = None
     _migration_factory_requester: MigrationFactoryRequester = None
     _cloud_endure_requester: CloudEndureRequester = None
-    _environments: list[str] = []
+    _environments: List[str] = []
     _path_wave: str = ''
 
     def __init__(self):

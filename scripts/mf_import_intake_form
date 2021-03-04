@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import sys
+from typing import List
 
 import mf
 from mf.config_loaders import EndpointsLoader
@@ -20,7 +21,7 @@ class IntakeFormImporter:
     _migration_factory_data_validator: MigrationFactoryDataValidator = None
     _path_wave: str = ''
     _validation_error_bag: MessageBag = MessageBag('error')
-    _csv_content: list[dict] = []
+    _csv_content: List[dict] = []
 
     def __init__(self):
         parser = argparse.ArgumentParser()

@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import sys
+from typing import List
 
 import mf
 from mf.config_loaders import EndpointsLoader
@@ -23,7 +24,7 @@ class TagsImporter:
     _endpoints_loader: EndpointsLoader = None
     _migration_factory_requester: MigrationFactoryRequester = None
     _path_wave: str = ''
-    _csv_content: list[str] = []
+    _csv_content: List[str] = []
 
     def __init__(self):
         parser = argparse.ArgumentParser()

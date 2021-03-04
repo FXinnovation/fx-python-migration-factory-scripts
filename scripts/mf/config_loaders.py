@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import MutableMapping
+from typing import List
 
 import yaml
 
@@ -97,7 +98,7 @@ class DefaultsLoader:
     """ Loads default configuration values for every wave and fetch available environments """
 
     _defaults: DefaultValues = None
-    _available_environments: list[str] = []
+    _available_environments: List[str] = []
 
     def load(self, default_config_file, environment):
         with open(default_config_file, 'r') as stream:

@@ -4,7 +4,7 @@ import json
 import logging
 import re
 import sys
-from typing import Any
+from typing import Any, List
 
 import requests_cache
 
@@ -262,7 +262,7 @@ class MigrationFactoryDataValidator:
     _validation_error_bag = MessageBag(type_of_bag='error')
 
     @classmethod
-    def validate_servers_data(cls, servers: list[Server], exit_on_error: bool = True):
+    def validate_servers_data(cls, servers: List[Server], exit_on_error: bool = True):
         apps = list(map(lambda x: x.get_app(), servers))
         waves = list(map(lambda x: x.get_wave(), apps))
 
@@ -319,14 +319,14 @@ class MigrationFactoryDataValidator:
             sys.exit(1)
 
     @classmethod
-    def _check_dict_value_consistency(cls, objects_to_check: list[MigrationFactoryData], key: str):
+    def _check_dict_value_consistency(cls, objects_to_check: List[MigrationFactoryData], key: str):
         if len(list(dict.fromkeys(map(lambda x: x.get(key).strip(), objects_to_check)))) != 1:
             cls._validation_error_bag.add('{}: “{}” key is not consistent among all servers.'.format(
                 cls.__class__.__name__, key
             ))
 
     @classmethod
-    def _check_dict_value_duplication(cls, objects_to_check: list[Server], key: str):
+    def _check_dict_value_duplication(cls, objects_to_check: List[Server], key: str):
         if list(map(lambda x: x.get(key).strip(), objects_to_check)).count(key) > 1:
             cls._validation_error_bag.add('{}: “{}” key is duplicated among all servers.'.format(
                 cls.__class__.__name__, key
