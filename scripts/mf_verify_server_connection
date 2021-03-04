@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
 
 from __future__ import print_function
-import sys
+
 import argparse
-import requests
-import json
-import subprocess
 import getpass
-import paramiko
+import json
 import socket
-import os
+import sys
+
+import paramiko
+import requests
 
 import mf
+from mf.config_loaders import EndpointsLoader
 from mf.migration_factory import MfField, MigrationFactoryRequester
 from mf.utils import EnvironmentVariableFetcher
-from mf.config_loaders import EndpointsLoader
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
 
+
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
     r = requests.post(LoginHOST + '/prod/login',
-                  data=json.dumps(login_data))
+                      data=json.dumps(login_data))
     if r.status_code == 200:
         print("Migration Factory : You have successfully logged in")
         print("")
@@ -35,13 +36,14 @@ def Factorylogin(username, password, LoginHOST):
         print(r.text)
         sys.exit(2)
 
+
 def ServerList(waveid, token, UserHOST, Projectname):
-# Get all Apps and servers from migration factory
+    # Get all Apps and servers from migration factory
     auth = {"Authorization": token}
     servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
-    #print(servers)
+    # print(servers)
     apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
-    #print(apps)
+    # print(apps)
 
     # Get App list
     applist = []
@@ -54,8 +56,8 @@ def ServerList(waveid, token, UserHOST, Projectname):
                 else:
                     applist.append(app['app_id'])
 
-    #print(apps)
-    #print(servers)
+    # print(apps)
+    # print(servers)
     # Get Server List
     servers_Windows = []
     servers_Linux = []
@@ -72,7 +74,8 @@ def ServerList(waveid, token, UserHOST, Projectname):
                         print("ERROR: server_fqdn for server: " + server['server_name'] + " doesn't exist")
                         sys.exit(4)
                 else:
-                    print ('server_os attribute does not exist for server: ' + server['server_name'] + ", please update this attribute")
+                    print('server_os attribute does not exist for server: ' + server[
+                        'server_name'] + ", please update this attribute")
                     sys.exit(2)
     if len(servers_Windows) == 0 and len(servers_Linux) == 0:
         print("ERROR: Serverlist for wave: " + waveid + " in CE Project " + Projectname + " is empty....")
@@ -92,16 +95,18 @@ def ServerList(waveid, token, UserHOST, Projectname):
                 print(server['server_name'])
         return servers_Windows, servers_Linux
 
+
 def check_windows(Servers_Windows, RDPPort):
     for s in Servers_Windows:
-      a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      location = (s["server_fqdn"], int(RDPPort))
-      result_of_check = a_socket.connect_ex(location)
-      if result_of_check == 0:
-          print(" RDP test to Server " + s["server_fqdn"] + " : Pass")
-      else:
-          print(" RDP test to Server " + s["server_fqdn"] + " : Fail")
-      a_socket.close()
+        a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        location = (s["server_fqdn"], int(RDPPort))
+        result_of_check = a_socket.connect_ex(location)
+        if result_of_check == 0:
+            print(" RDP test to Server " + s["server_fqdn"] + " : Pass")
+        else:
+            print(" RDP test to Server " + s["server_fqdn"] + " : Fail")
+        a_socket.close()
+
 
 def check_ssh_connectivity(ip, user_name, pass_key, is_key, SSHPort):
     ssh, error = open_ssh(ip, user_name, pass_key, is_key, SSHPort)
@@ -110,6 +115,7 @@ def check_ssh_connectivity(ip, user_name, pass_key, is_key, SSHPort):
         return None
     else:
         print(" SSH test to server " + ip + " : Pass")
+
 
 def open_ssh(host, username, key_pwd, using_key, SSHPort):
     ssh = None
@@ -132,6 +138,7 @@ def open_ssh(host, username, key_pwd, using_key, SSHPort):
                 username + " due to " + str(ssh_exception)
     return ssh, error
 
+
 def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -140,13 +147,13 @@ def main(arguments):
     parser.add_argument('--ssh-port', default="22")
     parser.add_argument('--rdp-port', default="3389")
     parser.add_argument(
-           '--config-file-endpoints',
-           default=EnvironmentVariableFetcher.fetch(
-               env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
-               default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
-           ),
-           help='Configuration file containing the Migration Factory endpoint URLs'
-       )
+        '--config-file-endpoints',
+        default=EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+            default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+        ),
+        help='Configuration file containing the Migration Factory endpoint URLs'
+    )
     args = parser.parse_args(arguments)
 
     _endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
@@ -162,8 +169,10 @@ def main(arguments):
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
-    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
+    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME,
+                                                          env_var_description='Factory username', sensitive=False)
+    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD,
+                                                          env_var_description='Factory password', sensitive=True)
 
     token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
@@ -189,7 +198,7 @@ def main(arguments):
         else:
             pass_key_first = getpass.getpass('Linux Password: ')
             pass_key_second = getpass.getpass('Re-enter Password: ')
-            while(pass_key_first != pass_key_second):
+            while (pass_key_first != pass_key_second):
                 print("Password mismatch, please try again!")
                 pass_key_first = getpass.getpass('Linux Password: ')
                 pass_key_second = getpass.getpass('Re-enter Password: ')
@@ -211,6 +220,7 @@ def main(arguments):
         print("")
         for s in Servers_Linux:
             check_ssh_connectivity(s["server_fqdn"], user_name, pass_key, has_key.lower() in 'y', args.ssh_port)
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

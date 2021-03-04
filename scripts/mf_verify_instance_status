@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 
 from __future__ import print_function
-import sys
+
 import argparse
-import requests
 import json
-import boto3
-import getpass
-import datetime
+import sys
 import time
-import os
+
+import boto3
+import requests
 
 import mf
+from mf.config_loaders import EndpointsLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher
-from mf.config_loaders import EndpointsLoader
 
 HOST = 'https://console.cloudendure.com'
 headers = {'Content-Type': 'application/json'}
@@ -23,6 +22,7 @@ endpoint = '/api/latest/{}'
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
+
 
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
@@ -38,10 +38,11 @@ def Factorylogin(username, password, LoginHOST):
         print("")
         sys.exit(1)
 
+
 def CElogin(userapitoken, endpoint):
     login_data = {'userApiToken': userapitoken}
     r = requests.post(HOST + endpoint.format('login'),
-                  data=json.dumps(login_data), headers=headers)
+                      data=json.dumps(login_data), headers=headers)
     if r.status_code == 200:
         print("CloudEndure : You have successfully logged in")
         print("")
@@ -51,19 +52,21 @@ def CElogin(userapitoken, endpoint):
         elif r.status_code == 402:
             print('ERROR: There is no active license configured for this CloudEndure account....')
         elif r.status_code == 429:
-            print('ERROR: CloudEndure Authentication failure limit has been reached. The service will become available for additional requests after a timeout....')
+            print(
+                'ERROR: CloudEndure Authentication failure limit has been reached. The service will become available for additional requests after a timeout....')
 
     # check if need to use a different API entry point
     if r.history:
         endpoint = '/' + '/'.join(r.url.split('/')[3:-1]) + '/{}'
         r = requests.post(HOST + endpoint.format('login'),
-                      data=json.dumps(login_data), headers=headers)
+                          data=json.dumps(login_data), headers=headers)
 
     session['session'] = r.cookies['session']
     try:
-       headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
+        headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
     except:
-       pass
+        pass
+
 
 def GetCEProject(projectname, session, headers, endpoint, HOST):
     r = requests.get(HOST + endpoint.format('projects'), headers=headers, cookies=session)
@@ -77,8 +80,8 @@ def GetCEProject(projectname, session, headers, endpoint, HOST):
         project_exist = False
         for project in projects:
             if project["name"] == projectname:
-               project_id = project["id"]
-               project_exist = True
+                project_id = project["id"]
+                project_exist = True
         if project_exist == False:
             print("ERROR: Project Name does not exist in CloudEndure....")
             sys.exit(3)
@@ -87,9 +90,13 @@ def GetCEProject(projectname, session, headers, endpoint, HOST):
         print("ERROR: Failed to fetch the project....")
         sys.exit(4)
 
+
 def GetRegion(project_id):
-    rep = requests.get(HOST + endpoint.format('projects/{}/replicationConfigurations').format(project_id), headers=headers, cookies=session)
-    region = requests.get(HOST + endpoint.format('cloudCredentials/{}/regions/{}').format(json.loads(rep.text)['items'][0]['cloudCredentials'], json.loads(rep.text)['items'][0]['region']), headers=headers, cookies=session)
+    rep = requests.get(HOST + endpoint.format('projects/{}/replicationConfigurations').format(project_id),
+                       headers=headers, cookies=session)
+    region = requests.get(HOST + endpoint.format('cloudCredentials/{}/regions/{}').format(
+        json.loads(rep.text)['items'][0]['cloudCredentials'], json.loads(rep.text)['items'][0]['region']),
+                          headers=headers, cookies=session)
     name = json.loads(region.text)['name']
     region_code = ""
     if "Northern Virginia" in name:
@@ -137,6 +144,7 @@ def GetRegion(project_id):
         sys.exit(7)
     return region_code
 
+
 def GetServerList(projectname, waveid, token):
     try:
         # Get all Apps and servers from migration factory
@@ -165,35 +173,41 @@ def GetServerList(projectname, waveid, token):
         print("ERROR: Getting server list failed....")
         sys.exit(6)
 
+
 def GetInstanceId(project_id, serverlist, session, headers, endpoint, HOST, token):
-        # Get Machine List from CloudEndure
-        m = requests.get(HOST + endpoint.format('projects/{}/machines').format(project_id), headers=headers, cookies=session)
-        if "sourceProperties" not in m.text:
-            print("ERROR: Failed to fetch the machines....")
-            sys.exit(11)
-        InstanceList = []
-        for s in serverlist:
-            for machine in json.loads(m.text)["items"]:
-                if s['server_name'].lower() == machine['sourceProperties']['name'].lower():
-                    if 'replica' in machine:
-                        if machine['replica'] != '':
-                            InstanceInfo = {}
-                            # print(machine['replica'])
-                            target_replica = requests.get(HOST + endpoint.format('projects/{}/replicas').format(project_id) + '/' + machine['replica'], headers=headers, cookies=session)
-                            # print(json.loads(target_replica.text))
-                            InstanceInfo['InstanceName'] = machine['sourceProperties']['name'].lower()
-                            InstanceInfo['InstanceId'] = json.loads(target_replica.text)['machineCloudId']
-                            InstanceInfo["lifeCycle"] = machine["lifeCycle"]
-                            InstanceList.append(InstanceInfo)
-                    else:
-                        print("ERROR: Target instance doesn't exist for machine: " + machine['sourceProperties']['name'])
-                        sys.exit(12)
-        return InstanceList
+    # Get Machine List from CloudEndure
+    m = requests.get(HOST + endpoint.format('projects/{}/machines').format(project_id), headers=headers,
+                     cookies=session)
+    if "sourceProperties" not in m.text:
+        print("ERROR: Failed to fetch the machines....")
+        sys.exit(11)
+    InstanceList = []
+    for s in serverlist:
+        for machine in json.loads(m.text)["items"]:
+            if s['server_name'].lower() == machine['sourceProperties']['name'].lower():
+                if 'replica' in machine:
+                    if machine['replica'] != '':
+                        InstanceInfo = {}
+                        # print(machine['replica'])
+                        target_replica = requests.get(
+                            HOST + endpoint.format('projects/{}/replicas').format(project_id) + '/' + machine[
+                                'replica'], headers=headers, cookies=session)
+                        # print(json.loads(target_replica.text))
+                        InstanceInfo['InstanceName'] = machine['sourceProperties']['name'].lower()
+                        InstanceInfo['InstanceId'] = json.loads(target_replica.text)['machineCloudId']
+                        InstanceInfo["lifeCycle"] = machine["lifeCycle"]
+                        InstanceList.append(InstanceInfo)
+                else:
+                    print("ERROR: Target instance doesn't exist for machine: " + machine['sourceProperties']['name'])
+                    sys.exit(12)
+    return InstanceList
+
 
 def verify_instance_status(InstanceList, serverlist, token, access_key_id, secret_access_key, region_id):
     print("")
     auth = {"Authorization": token}
-    ec2_client = boto3.client('ec2', aws_access_key_id=access_key_id, aws_secret_access_key=secret_access_key, region_name=region_id)
+    ec2_client = boto3.client('ec2', aws_access_key_id=access_key_id, aws_secret_access_key=secret_access_key,
+                              region_name=region_id)
     instanceIds = []
     for instance in InstanceList:
         instanceIds.append(instance['InstanceId'])
@@ -211,7 +225,8 @@ def verify_instance_status(InstanceList, serverlist, token, access_key_id, secre
                 for status in resp['InstanceStatuses']:
                     if status['InstanceState']['Name'] == "running":
                         if instance['InstanceId'] == status['InstanceId']:
-                            if status['InstanceStatus']['Status'].lower() == "ok" and status['SystemStatus']['Status'].lower() == "ok":
+                            if status['InstanceStatus']['Status'].lower() == "ok" and status['SystemStatus'][
+                                'Status'].lower() == "ok":
                                 instance['Status'] = "ok"
                             else:
                                 instance['Status'] = "failed"
@@ -273,13 +288,14 @@ def verify_instance_status(InstanceList, serverlist, token, access_key_id, secre
                 serverattr = {"migration_status": lifeCycle + "2/2 status checks : Failed"}
             for s in serverlist:
                 if s['server_name'].lower() == instance['InstanceName'].lower():
-                    updateserver = requests.put(UserHOST + serverendpoint + '/' + s['server_id'], headers=auth, data=json.dumps(serverattr))
+                    updateserver = requests.put(UserHOST + serverendpoint + '/' + s['server_id'], headers=auth,
+                                                data=json.dumps(serverattr))
             if updateserver.status_code == 401:
-               print("Error: Access to migration_status attribute is denied")
-               sys.exit(9)
+                print("Error: Access to migration_status attribute is denied")
+                sys.exit(9)
             elif updateserver.status_code != 200:
-               print("Error: Update migration_status attribute failed")
-               sys.exit(10)
+                print("Error: Update migration_status attribute failed")
+                sys.exit(10)
 
         if instance_not_ready:
             count = count + 1
@@ -296,6 +312,7 @@ def verify_instance_status(InstanceList, serverlist, token, access_key_id, secre
             print("")
             time.sleep(300)
 
+
 def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -303,13 +320,13 @@ def main(arguments):
     parser.add_argument('--cloudendure-project-name', required=True)
     parser.add_argument('--wave-name', required=True)
     parser.add_argument(
-           '--config-file-endpoints',
-           default=EnvironmentVariableFetcher.fetch(
-               env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
-               default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
-           ),
-           help='Configuration file containing the Migration Factory endpoint URLs'
-       )
+        '--config-file-endpoints',
+        default=EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+            default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+        ),
+        help='Configuration file containing the Migration Factory endpoint URLs'
+    )
 
     args = parser.parse_args(arguments)
 
@@ -326,8 +343,10 @@ def main(arguments):
     print("******************************")
     print("* Login to Migration factory *")
     print("******************************")
-    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
-    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
+    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME,
+                                                          env_var_description='Factory username', sensitive=False)
+    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD,
+                                                          env_var_description='Factory password', sensitive=True)
 
     token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
@@ -335,7 +354,8 @@ def main(arguments):
     print("************************")
     print("* Login to CloudEndure *")
     print("************************")
-    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
+    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_CLOUDENDURE_TOKEN,
+                                                          env_var_description='CE API token', sensitive=True)
 
     r = CElogin(_ce_user_api_token, endpoint)
     if r is not None and "ERROR" in r:
@@ -362,10 +382,13 @@ def main(arguments):
     print("*****************************")
     print("** Verify instance  status **")
     print("*****************************")
-    _aws_access_key = EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID', sensitive=False)
-    _aws_secret_access_key = EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_SECRET_KEY_NAMES, 'AWS Access Secret Key', sensitive=True)
+    _aws_access_key = EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID',
+                                                       sensitive=False)
+    _aws_secret_access_key = EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_SECRET_KEY_NAMES, 'AWS Access Secret Key',
+                                                              sensitive=True)
 
     verify_instance_status(InstanceList, serverlist, token, _aws_access_key, _aws_secret_access_key, region_id)
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

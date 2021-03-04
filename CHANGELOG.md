@@ -1,3 +1,8 @@
+## 12.0.1
+
+* refactor: fixes styles of most scripts
+* refactor: removes unused imports of most scripts
+
 ## 12.0.0
 
 * refactor(BREAKING): uses --wave-name instead of --WaveId in all scripts

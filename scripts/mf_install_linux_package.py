@@ -2,6 +2,7 @@
 
 import paramiko
 
+
 def execute_cmd(host, username, key, cmd, using_key):
     output = ''
     error = ''
@@ -149,7 +150,7 @@ def install_python3(host, username, key_pwd, using_key):
             stdin, stdout, stderr = ssh.exec_command("sudo dnf install python3")
             stdin.write('Y\n')
             stdin.flush()
-        else: #This installs on centos
+        else:  # This installs on centos
             ssh.exec_command("sudo yum update")
             ssh.exec_command("sudo yum install centos-release-scl")
             ssh.exec_command("sudo yum install rh-python36")
@@ -171,19 +172,19 @@ def install_cloud_endure(host, username, key_pwd, using_key, install_token):
     print("")
     print("")
     print("--------------------------------------------------------")
-    print("- Installing CloudEndure for:  "+ host + " -")
+    print("- Installing CloudEndure for:  " + host + " -")
     print("--------------------------------------------------------")
     try:
         output = None
         error = None
         command = "wget -O ./installer_linux.py " \
-              "https://console.cloudendure.com/installer_linux.py"
+                  "https://console.cloudendure.com/installer_linux.py"
         output, error = execute_cmd(host=host, username=username, key=key_pwd,
-                                cmd=command, using_key=using_key)
+                                    cmd=command, using_key=using_key)
         if "not found" in error or "No such file or directory" in error:
             install_wget(host, username, key_pwd, using_key)
             output, error = execute_cmd(host=host, username=username, key=key_pwd,
-                                    cmd=command, using_key=using_key)
+                                        cmd=command, using_key=using_key)
         # Check if python is already installed if not install python3
         python_str = "python"
         if not check_python(host, username, key_pwd, using_key):
@@ -194,18 +195,18 @@ def install_cloud_endure(host, username, key_pwd, using_key, install_token):
                 python_str = "python3"
         # Step 2 - execute linux installer
         command = "sudo " + python_str + " ./installer_linux.py -t " + \
-              install_token + " --no-prompt"
+                  install_token + " --no-prompt"
         print("Executing " + command)
         output, error = execute_cmd(host=host, username=username, key=key_pwd,
-                                cmd=command, using_key=using_key)
+                                    cmd=command, using_key=using_key)
     except Exception as e:
         error = 'Got exception! ' + str(e)
     if not error and 'Error: Installation failed' not in output:
         print("***** CloudEndure installation completed successfully on "
-              +host+ "*****")
+              + host + "*****")
         return True
     else:
-        print("Unable to install CloudEndure on "+host+" due to: ")
+        print("Unable to install CloudEndure on " + host + " due to: ")
         print("")
         if output:
             print(output)

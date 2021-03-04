@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 
 from __future__ import print_function
-import sys
+
 import argparse
-import requests
 import json
-import boto3
-import getpass
-import os
+import sys
+
+import requests
 
 import mf
+from mf.config_loaders import EndpointsLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher
-from mf.config_loaders import EndpointsLoader
 
 HOST = 'https://console.cloudendure.com'
 headers = {'Content-Type': 'application/json'}
@@ -21,6 +20,7 @@ endpoint = '/api/latest/{}'
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
+
 
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
@@ -36,10 +36,11 @@ def Factorylogin(username, password, LoginHOST):
         print("")
         sys.exit(5)
 
+
 def CElogin(userapitoken, endpoint):
     login_data = {'userApiToken': userapitoken}
     r = requests.post(HOST + endpoint.format('login'),
-                  data=json.dumps(login_data), headers=headers)
+                      data=json.dumps(login_data), headers=headers)
     if r.status_code == 200:
         print("CloudEndure : You have successfully logged in")
         print("")
@@ -49,19 +50,21 @@ def CElogin(userapitoken, endpoint):
         elif r.status_code == 402:
             print('ERROR: There is no active license configured for this CloudEndure account....')
         elif r.status_code == 429:
-            print('ERROR: CloudEndure Authentication failure limit has been reached. The service will become available for additional requests after a timeout....')
+            print(
+                'ERROR: CloudEndure Authentication failure limit has been reached. The service will become available for additional requests after a timeout....')
 
     # check if need to use a different API entry point
     if r.history:
         endpoint = '/' + '/'.join(r.url.split('/')[3:-1]) + '/{}'
         r = requests.post(HOST + endpoint.format('login'),
-                      data=json.dumps(login_data), headers=headers)
+                          data=json.dumps(login_data), headers=headers)
 
     session['session'] = r.cookies['session']
     try:
-       headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
+        headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
     except:
-       pass
+        pass
+
 
 def GetCEProject(projectname):
     r = requests.get(HOST + endpoint.format('projects'), headers=headers, cookies=session)
@@ -75,8 +78,8 @@ def GetCEProject(projectname):
         project_exist = False
         for project in projects:
             if project["name"] == projectname:
-               project_id = project["id"]
-               project_exist = True
+                project_id = project["id"]
+                project_exist = True
         if project_exist == False:
             print("ERROR: Project Name does not exist in CloudEndure....")
             sys.exit(3)
@@ -85,13 +88,14 @@ def GetCEProject(projectname):
         print("ERROR: Failed to fetch the project....")
         sys.exit(4)
 
+
 def ProjectList(waveid, token, UserHOST):
-# Get all Apps and servers from migration factory
+    # Get all Apps and servers from migration factory
     auth = {"Authorization": token}
     servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
-    #print(servers)
+    # print(servers)
     apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
-    #print(apps)
+    # print(apps)
     newapps = []
 
     CEProjects = []
@@ -114,13 +118,13 @@ def ProjectList(waveid, token, UserHOST):
     return Projects
 
 
-
 def GetServerList(apps, servers, CEProjects, waveid):
     try:
         serverlist = servers
         for project in CEProjects:
             # Get Machine List from CloudEndure
-            m = requests.get(HOST + endpoint.format('projects/{}/machines').format(project['ProjectId']), headers=headers, cookies=session)
+            m = requests.get(HOST + endpoint.format('projects/{}/machines').format(project['ProjectId']),
+                             headers=headers, cookies=session)
             if "sourceProperties" not in m.text:
                 print("ERROR: Failed to fetch the machines in Project: " + project['ProjectName'])
                 sys.exit(3)
@@ -138,15 +142,19 @@ def GetServerList(apps, servers, CEProjects, waveid):
                                         if 'lastCutoverDateTime' not in machine["lifeCycle"]:
                                             if 'replica' in machine:
                                                 if machine['replica'] != '':
-                                                    ReplicaIdList[machine['sourceProperties']['name']] = machine['replica']
+                                                    ReplicaIdList[machine['sourceProperties']['name']] = machine[
+                                                        'replica']
                                                 else:
-                                                    print("ERROR: Target Instance does not exist for machine: " + machine['sourceProperties']['name'])
+                                                    print("ERROR: Target Instance does not exist for machine: " +
+                                                          machine['sourceProperties']['name'])
                                                     sys.exit(4)
                                             else:
-                                                print("ERROR: Target Instance does not exist for machine: " + machine['sourceProperties']['name'])
+                                                print("ERROR: Target Instance does not exist for machine: " +
+                                                      machine['sourceProperties']['name'])
                                                 sys.exit(8)
                                         else:
-                                            print("ERROR: Instance can not be terminated after cutover : " + machine['sourceProperties']['name'])
+                                            print("ERROR: Instance can not be terminated after cutover : " +
+                                                  machine['sourceProperties']['name'])
                                             sys.exit(8)
                                     else:
                                         print("ERROR: Machine has not been launched in test mode..... ")
@@ -166,7 +174,8 @@ def terminate_instances(Projects):
         if len(project['ReplicaIdList'].keys()) > 0:
             machine_data = {'replicaIDs': list(project['ReplicaIdList'].values())}
             machine_names = list(project['ReplicaIdList'].keys())
-            r = requests.delete(HOST + endpoint.format('projects/{}/replicas').format(project['ProjectId']), data = json.dumps(machine_data), headers=headers, cookies=session)
+            r = requests.delete(HOST + endpoint.format('projects/{}/replicas').format(project['ProjectId']),
+                                data=json.dumps(machine_data), headers=headers, cookies=session)
             if r.status_code == 202:
                 print("Cleanup Job created for the following machines in Project: " + project['ProjectName'])
                 for machine in machine_names:
@@ -179,19 +188,20 @@ def terminate_instances(Projects):
                     print("***** " + machine + " *****")
             print("")
 
+
 def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--wave-name', required=True)
     parser.add_argument(
-           '--config-file-endpoints',
-           default=EnvironmentVariableFetcher.fetch(
-               env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
-               default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
-           ),
-           help='Configuration file containing the Migration Factory endpoint URLs'
-       )
+        '--config-file-endpoints',
+        default=EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+            default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+        ),
+        help='Configuration file containing the Migration Factory endpoint URLs'
+    )
     args = parser.parse_args(arguments)
 
     global LoginHOST, UserHOST
@@ -206,8 +216,10 @@ def main(arguments):
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
-    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
+    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME,
+                                                          env_var_description='Factory username', sensitive=False)
+    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD,
+                                                          env_var_description='Factory password', sensitive=True)
 
     token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
@@ -215,7 +227,8 @@ def main(arguments):
     print("************************")
     print("* Login to CloudEndure *")
     print("************************")
-    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
+    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_CLOUDENDURE_TOKEN,
+                                                          env_var_description='CE API token', sensitive=True)
 
     r = CElogin(_ce_user_api_token, endpoint)
 
@@ -242,6 +255,7 @@ def main(arguments):
     print("**************************")
 
     terminate_instances(Projects)
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

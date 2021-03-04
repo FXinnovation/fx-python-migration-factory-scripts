@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
 
 from __future__ import print_function
-import sys
+
 import argparse
-import requests
+import getpass
 import json
 import subprocess
-import time
-import getpass
-import os
+import sys
+
+import requests
 
 import mf
+from mf.config_loaders import EndpointsLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher
-from mf.config_loaders import EndpointsLoader
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
 
+
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
     r = requests.post(LoginHOST + '/prod/login',
-                  data=json.dumps(login_data))
+                      data=json.dumps(login_data))
     if r.status_code == 200:
         print("Migration Factory : You have successfully logged in")
         print("")
@@ -34,13 +35,14 @@ def Factorylogin(username, password, LoginHOST):
         print(r.text)
         sys.exit(2)
 
+
 def ServerList(waveid, token, UserHOST):
-# Get all Apps and servers from migration factory
+    # Get all Apps and servers from migration factory
     auth = {"Authorization": token}
     servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
-    #print(servers)
+    # print(servers)
     apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
-    #print(apps)
+    # print(apps)
 
     # Get App list
     applist = []
@@ -49,8 +51,8 @@ def ServerList(waveid, token, UserHOST):
             if str(app['wave_id']) == str(waveid):
                 applist.append(app['app_id'])
 
-    #print(apps)
-    #print(servers)
+    # print(apps)
+    # print(servers)
     # Get Server List
     serverlist = []
     for app in applist:
@@ -64,7 +66,8 @@ def ServerList(waveid, token, UserHOST):
                         print("ERROR: server_fqdn for server: " + server['server_name'] + " doesn't exist")
                         sys.exit(4)
                 else:
-                    print ('server_os attribute does not exist for server: ' + server['server_name'] + ", please update this attribute")
+                    print('server_os attribute does not exist for server: ' + server[
+                        'server_name'] + ", please update this attribute")
                     sys.exit(2)
     if len(serverlist) == 0:
         print("ERROR: Windows Serverlist for wave: " + waveid + " is empty....")
@@ -76,26 +79,27 @@ def ServerList(waveid, token, UserHOST):
             print(server)
         return serverlist
 
+
 def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--wave-name', required=True)
-    parser.add_argument('--windows-user', default =
-        EnvironmentVariableFetcher.fetch(
-            env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
-            default=''
-        ),
-        help= "The windows username"
-    )
+    parser.add_argument('--windows-user', default=
+    EnvironmentVariableFetcher.fetch(
+        env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
+        default=''
+    ),
+                        help="The windows username"
+                        )
     parser.add_argument(
-           '--config-file-endpoints',
-           default=EnvironmentVariableFetcher.fetch(
-               env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
-               default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
-           ),
-           help='Configuration file containing the Migration Factory endpoint URLs'
-       )
+        '--config-file-endpoints',
+        default=EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+            default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+        ),
+        help='Configuration file containing the Migration Factory endpoint URLs'
+    )
     args = parser.parse_args(arguments)
 
     _endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
@@ -125,8 +129,10 @@ def main(arguments):
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
-    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
+    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME,
+                                                          env_var_description='Factory username', sensitive=False)
+    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD,
+                                                          env_var_description='Factory password', sensitive=True)
 
     token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
@@ -136,7 +142,8 @@ def main(arguments):
     Servers = ServerList(wave_id, token, UserHOST)
     print("")
     if Domain_User != "":
-        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
+        Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
+                                                           env_var_description='Windows password', sensitive=True)
     if choice == '1':
         print("")
         print("************************************")
@@ -145,7 +152,7 @@ def main(arguments):
         LocalAdminUser = input("Enter Local admin username: ")
         localadmin_pass_first = getpass.getpass('Local admin Password: ')
         localadmin_pass_second = getpass.getpass('Re-enter Password: ')
-        while(localadmin_pass_first != localadmin_pass_second):
+        while (localadmin_pass_first != localadmin_pass_second):
             print("Password mismatch, please try again!")
             localadmin_pass_first = getpass.getpass('Local admin Password: ')
             localadmin_pass_second = getpass.getpass('Re-enter Password: ')
@@ -154,7 +161,7 @@ def main(arguments):
         for s in Servers:
             command1 = "Invoke-Command -ComputerName " + s + " -ScriptBlock {net user " + LocalAdminUser + " " + localadmin_pass + " /add}"
             if Domain_User != "":
-              command1 += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
+                command1 += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
             print("------------------------------------------------------")
             print("- Creating a local user on: " + s + " -")
             print("------------------------------------------------------")
@@ -162,7 +169,7 @@ def main(arguments):
             p.communicate()
             command2 = "Invoke-Command -ComputerName " + s + " -ScriptBlock {net localgroup Administrators " + LocalAdminUser + " /add}"
             if Domain_User != "":
-              command2 += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
+                command2 += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
             print("Adding user to local admin group on server: " + s)
             p = subprocess.Popen(["pwsh", "-Command", command2], stdout=sys.stdout)
             p.communicate()
@@ -178,12 +185,13 @@ def main(arguments):
         for s in Servers:
             command1 = "Invoke-Command -ComputerName " + s + " -ScriptBlock {net user " + LocalAdminUser + " /delete}"
             if Domain_User != "":
-              command1 += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
+                command1 += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
             print("------------------------------------------------------")
             print("- Deleting a local user on: " + s + " -")
             print("------------------------------------------------------")
             p = subprocess.Popen(["pwsh", "-Command", command1], stdout=sys.stdout)
             p.communicate()
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

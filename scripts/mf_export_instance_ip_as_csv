@@ -1,27 +1,20 @@
 #!/usr/bin/env python3
 
 from __future__ import print_function
-import sys
+
 import argparse
-import requests
-import json
-import boto3
-import getpass
-import datetime
 import logging
-import csv
 import os
 
 import mf
-from mf.utils import EnvironmentVariableFetcher, Utils
-from mf.config_loaders import EndpointsLoader
-from mf.cloud_endure import CloudEndureRequester
-from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.aws import AWSServiceAccessor
+from mf.cloud_endure import CloudEndureRequester
+from mf.config_loaders import EndpointsLoader
+from mf.migration_factory import MigrationFactoryRequester, MfField
+from mf.utils import EnvironmentVariableFetcher, Utils
 
 
 class Ec2InstanceExporter:
-
     _cloud_endure_requester = None
     _migration_factory_requester = None
     _endpoints_loader = None
@@ -64,7 +57,9 @@ class Ec2InstanceExporter:
             return
 
         for instance_id in instance_ids:
-            instance_id['ips'] = ';'.join(self._aws_service_accessor.get_ec2_instance_ips(instance_id['machine_cloud_id']))
+            instance_id['ips'] = ';'.join(
+                self._aws_service_accessor.get_ec2_instance_ips(instance_id['machine_cloud_id'])
+            )
             instances.append(instance_id)
 
         Utils.write_csv_with_headers(os.path.join(self._path_wave, 'ips.csv'), instances)
@@ -75,9 +70,10 @@ class Ec2InstanceExporter:
         _machine_ids = []
         for app in apps:
             if MfField.CLOUDENDURE_PROJECT_NAME not in app:
-                logging.getLogger('root').warn("\n{}: app “{}” is in wave “{}” but it seems it doesn’t have a cloudendure project by that name.".format(
-                    self.__class__.__name__, app[MfField.APP_NAME], self._arguments.wave_name
-                ))
+                logging.getLogger('root').warning(
+                    "\n{}: app “{}” is in wave “{}” but it seems it doesn’t have a cloudendure project by that name.".format(
+                        self.__class__.__name__, app[MfField.APP_NAME], self._arguments.wave_name
+                    ))
                 continue
 
             _ce_machines = self._cloud_endure_requester.get_machines(app[MfField.CLOUDENDURE_PROJECT_NAME])
@@ -85,11 +81,15 @@ class Ec2InstanceExporter:
                 continue
             for _ce_machine in _ce_machines['items']:
                 if _ce_machine['replica'] == '':
-                    logging.getLogger('root').warn("\n{}: machine “{}” wasn’t launched as a test/cutover target yet.".format(
-                        self.__class__.__name__, _ce_machine['sourceProperties']['name']
-                    ))
+                    logging.getLogger('root').warning(
+                        "\n{}: machine “{}” wasn’t launched as a test/cutover target yet.".format(
+                            self.__class__.__name__, _ce_machine['sourceProperties']['name']
+                        )
+                    )
 
-                _ce_replica = self._cloud_endure_requester.get_machine_replica(_ce_machine['replica'], app[MfField.CLOUDENDURE_PROJECT_NAME])
+                _ce_replica = self._cloud_endure_requester.get_machine_replica(
+                    _ce_machine['replica'], app[MfField.CLOUDENDURE_PROJECT_NAME]
+                )
 
                 instance_information = {}
                 instance_information['machine_name'] = _ce_machine['sourceProperties']['name']

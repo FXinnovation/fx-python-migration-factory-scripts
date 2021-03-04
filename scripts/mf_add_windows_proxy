@@ -11,6 +11,7 @@ from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
 
+
 class WindowsProxyAdder:
     """Add proxy for Windows servers"""
 

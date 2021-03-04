@@ -60,7 +60,6 @@ class TemplateSecurityGroupCreator:
 
         self._aws_service_accessor = AWSServiceAccessor()
 
-
     def create(self):
         return self._create()
 
@@ -85,7 +84,8 @@ class TemplateSecurityGroupCreator:
         ])['SecurityGroups'][0]
 
         vpc_id = self._aws_service_accessor.get_ec2().describe_subnets(SubnetIds=[
-             self._defaults_loader.get()['test_subnet_id'] if for_testing else self._defaults_loader.get()['target_subnet_id']
+            self._defaults_loader.get()['test_subnet_id'] if for_testing else self._defaults_loader.get()[
+                'target_subnet_id']
         ])['Subnets'][0]['VpcId']
 
         print('### Create template Security Group copy' + (' (testing)' if for_testing else '') + '…', end=' ')

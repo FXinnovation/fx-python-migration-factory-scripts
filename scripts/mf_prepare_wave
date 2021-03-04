@@ -180,8 +180,8 @@ class WavePreparator:
             file_object.write(','.join(default_values))
 
         logging.getLogger('root').info('{}: “{}” file updated'.format(
-                self.__class__.__name__, os.path.join(self._path_wave, mf.FILE_CSV_TAG)
-            ))
+            self.__class__.__name__, os.path.join(self._path_wave, mf.FILE_CSV_TAG)
+        ))
 
         print('✔ Done')
 
@@ -246,7 +246,9 @@ class WavePreparator:
         print('## Setup Cloud Credentials…', end=' ')
         if not project['cloudCredentialsIDs']:
             credentials_data = {
-                'publicKey': EnvironmentVariableFetcher.fetch(mf.ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID', sensitive=False),
+                'publicKey': EnvironmentVariableFetcher.fetch(
+                    mf.ENV_VAR_AWS_ACCESS_KEY_NAMES, 'AWS Access Key ID', sensitive=False
+                ),
                 'privateKey': base64.b64encode(
                     EnvironmentVariableFetcher.fetch(
                         mf.ENV_VAR_AWS_SECRET_KEY_NAMES, 'AWS Access Secret Key', sensitive=True
@@ -271,7 +273,10 @@ class WavePreparator:
 
         if 'replicationConfiguration' not in project.keys():
             region_id = self._cloud_endure_requester.get_aws_region_id(
-                cloud_credentials_id, EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_AWS_REGION_NAMES, env_var_description='AWS target region')
+                cloud_credentials_id,
+                EnvironmentVariableFetcher.fetch(
+                    env_var_names=mf.ENV_VAR_AWS_REGION_NAMES, env_var_description='AWS target region'
+                )
             )
 
             project_replication_config = {

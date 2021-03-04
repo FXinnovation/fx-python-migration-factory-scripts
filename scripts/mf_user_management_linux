@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 
-import sys
 import argparse
-import json
-import requests
 import getpass
+import json
+import sys
+
 import paramiko
+import requests
 
 import mf
+from mf.config_loaders import EndpointsLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher
-from mf.config_loaders import EndpointsLoader
 
 server_endpoint = '/prod/user/servers'
 app_endpoint = '/prod/user/apps'
 
+
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
     r = requests.post(LoginHOST + '/prod/login',
-                  data=json.dumps(login_data))
+                      data=json.dumps(login_data))
     if r.status_code == 200:
         print("Migration Factory : You have successfully logged in")
         print("")
@@ -30,6 +32,7 @@ def Factorylogin(username, password, LoginHOST):
     else:
         print(r.text)
         sys.exit(2)
+
 
 def ServerList(waveid, token, UserHOST, Projectname):
     # Get all Apps and servers from migration factory
@@ -78,6 +81,7 @@ def ServerList(waveid, token, UserHOST, Projectname):
         print("")
         return servers_linux
 
+
 def open_ssh(host, username, key_pwd, using_key):
     ssh = None
     try:
@@ -99,6 +103,7 @@ def open_ssh(host, username, key_pwd, using_key):
                 username + " due to " + str(ssh_exception)
         print(error)
     return ssh
+
 
 def find_distribution(ssh):
     distribution = "linux"
@@ -122,6 +127,7 @@ def find_distribution(ssh):
         distribution = "suse"
     return distribution
 
+
 def get_add_user_cmd(ssh, new_user_name, new_user_password):
     try:
         distribution = find_distribution(ssh)
@@ -133,6 +139,7 @@ def get_add_user_cmd(ssh, new_user_name, new_user_password):
         print("Error while fetching add user command due to " + str(ex))
     else:
         return command
+
 
 def create_user(host, system_login_username, system_key_pwd, using_key, new_user_name, new_password):
     if not (new_user_name and new_password):
@@ -151,7 +158,7 @@ def create_user(host, system_login_username, system_key_pwd, using_key, new_user
             users_list = users_output_str.split("\n")
             if new_user_name in users_list:
                 print("")
-                print("User %s got created successfully on host %s" %(new_user_name, host))
+                print("User %s got created successfully on host %s" % (new_user_name, host))
                 ssh_client.exec_command(no_password_sudoers_cmd)
                 print("Modified sudoers to set NOPASSWORD for user " + new_user_name)
             else:
@@ -167,6 +174,7 @@ def create_user(host, system_login_username, system_key_pwd, using_key, new_user
     finally:
         if ssh_client:
             ssh_client.close()
+
 
 def delete_linux_user(host, system_login_username, system_key_pwd, using_key, username_to_delete):
     if not username_to_delete:
@@ -185,7 +193,7 @@ def delete_linux_user(host, system_login_username, system_key_pwd, using_key, us
             if not username_to_delete in users_list:
                 print("User deleted successfully on " + host)
             else:
-                print("Deletion of user %s is not successfull on %s" %(
+                print("Deletion of user %s is not successfull on %s" % (
                     username_to_delete, host))
         except paramiko.SSHException as ssh_exception:
             error = "Server fails to execute the AddUser command on host " + host + " with username " + \
@@ -199,6 +207,7 @@ def delete_linux_user(host, system_login_username, system_key_pwd, using_key, us
         if ssh_client:
             ssh_client.close()
 
+
 def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -206,13 +215,13 @@ def main(arguments):
     parser.add_argument('--wave-name', required=True)
     parser.add_argument('--cloudendure-project-name', default="")
     parser.add_argument(
-           '--config-file-endpoints',
-           default=EnvironmentVariableFetcher.fetch(
-               env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
-               default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
-           ),
-           help='Configuration file containing the Migration Factory endpoint URLs'
-       )
+        '--config-file-endpoints',
+        default=EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+            default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+        ),
+        help='Configuration file containing the Migration Factory endpoint URLs'
+    )
 
     args = parser.parse_args(arguments)
 
@@ -242,8 +251,10 @@ def main(arguments):
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
-    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
+    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME,
+                                                          env_var_description='Factory username', sensitive=False)
+    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD,
+                                                          env_var_description='Factory password', sensitive=True)
 
     token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
@@ -263,7 +274,7 @@ def main(arguments):
         else:
             pass_key_first = getpass.getpass('Linux Password: ')
             pass_key_second = getpass.getpass('Re-enter Password: ')
-            while(pass_key_first != pass_key_second):
+            while (pass_key_first != pass_key_second):
                 print("Password mismatch, please try again!")
                 pass_key_first = getpass.getpass('Linux Password: ')
                 pass_key_second = getpass.getpass('Re-enter Password: ')
@@ -285,7 +296,7 @@ def main(arguments):
             for server in linux_servers:
                 host = server["server_fqdn"]
                 create_user(host, admin_usr_name, pass_key, has_key.lower() in
-                        'y', new_user_name, new_password)
+                            'y', new_user_name, new_password)
                 print("")
         else:
             print("")
@@ -298,7 +309,7 @@ def main(arguments):
             for server in linux_servers:
                 host = server["server_fqdn"]
                 delete_linux_user(host, admin_usr_name, pass_key, has_key.lower() in
-                        'y', new_user_name)
+                                  'y', new_user_name)
                 print("")
     else:
         print("ERROR: There is no Linux servers in this Wave")

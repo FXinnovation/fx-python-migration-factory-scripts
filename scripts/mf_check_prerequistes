@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 
 from __future__ import print_function
-import sys
 import argparse
-import requests
 import json
 import subprocess
-import getpass
 import paramiko
-import socket
 import os
 import logging
 
@@ -16,6 +12,7 @@ import mf
 from mf.utils import EnvironmentVariableFetcher
 from mf.config_loaders import EndpointsLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
+
 
 class PrerequisitesChecker:
     """Check prerequisites"""
@@ -77,11 +74,7 @@ class PrerequisitesChecker:
         windows_results = self._check_windows()
         linux_results = self._check_linux()
 
-        print("")
-        print("********************************************")
-        print("***** Final results for all servers *****")
-        print("********************************************")
-        print("")
+        print('### Final results for all servers…')
 
         self._print_results("Windows", windows_results)
         self._print_results("Linux", linux_results)
@@ -449,5 +442,5 @@ class PrerequisitesChecker:
 
 
 if __name__ == '__main__':
-   prerequisitesChecker = PrerequisitesChecker()
-   prerequisitesChecker.check()
+   prerequisites_checker = PrerequisitesChecker()
+   prerequisites_checker.check()

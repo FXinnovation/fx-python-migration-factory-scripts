@@ -1,27 +1,29 @@
 #!/usr/bin/env python3
 
 from __future__ import print_function
-import sys
+
 import argparse
-import requests
+import getpass
 import json
 import subprocess
-import getpass
+import sys
+
 import paramiko
-import os
+import requests
 
 import mf
+from mf.config_loaders import EndpointsLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher
-from mf.config_loaders import EndpointsLoader
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
 
+
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
     r = requests.post(LoginHOST + '/prod/login',
-                  data=json.dumps(login_data))
+                      data=json.dumps(login_data))
     if r.status_code == 200:
         print("Migration Factory : You have successfully logged in")
         print("")
@@ -34,13 +36,14 @@ def Factorylogin(username, password, LoginHOST):
         print(r.text)
         sys.exit(2)
 
+
 def ServerList(waveid, token, UserHOST, serverendpoint, appendpoint):
-# Get all Apps and servers from migration factory
+    # Get all Apps and servers from migration factory
     auth = {"Authorization": token}
     servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
-    #print(servers)
+    # print(servers)
     apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
-    #print(apps)
+    # print(apps)
 
     # Get App list
     applist = []
@@ -68,6 +71,7 @@ def ServerList(waveid, token, UserHOST, serverendpoint, appendpoint):
         print("")
     else:
         return winServerlist, linuxServerlist
+
 
 def open_ssh(host, username, key_pwd, using_key):
     ssh = None
@@ -108,15 +112,15 @@ def execute_cmd(host, username, key, cmd, using_key):
             for line in stderr.readlines():
                 error = error + line
     except IOError as io_error:
-        error = "Unable to execute the command " + cmd + " on " +host+ " due to " + \
+        error = "Unable to execute the command " + cmd + " on " + host + " due to " + \
                 str(io_error)
         print(error)
     except paramiko.SSHException as ssh_exception:
-        error = "Unable to execute the command " + cmd + " on " +host+ " due to " + \
+        error = "Unable to execute the command " + cmd + " on " + host + " due to " + \
                 str(ssh_exception)
         print(error)
     except Exception as e:
-        error = "Unable to execute the command " + cmd + " on " +host+ " due to " + str(e)
+        error = "Unable to execute the command " + cmd + " on " + host + " due to " + str(e)
         print(error)
     finally:
         if ssh is not None:
@@ -129,21 +133,21 @@ def main(arguments):
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--wave-name', required=True)
-    parser.add_argument('--windows-user', default =
-        EnvironmentVariableFetcher.fetch(
-            env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
-            default=''
-        ),
-        help= "The windows username"
-    )
+    parser.add_argument('--windows-user', default=
+    EnvironmentVariableFetcher.fetch(
+        env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
+        default=''
+    ),
+                        help="The windows username"
+                        )
     parser.add_argument(
-           '--config-file-endpoints',
-           default=EnvironmentVariableFetcher.fetch(
-               env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
-               default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
-           ),
-           help='Configuration file containing the Migration Factory endpoint URLs'
-       )
+        '--config-file-endpoints',
+        default=EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+            default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+        ),
+        help='Configuration file containing the Migration Factory endpoint URLs'
+    )
 
     args = parser.parse_args(arguments)
 
@@ -159,23 +163,26 @@ def main(arguments):
     print("****************************")
     print("*Login to Migration factory*")
     print("****************************")
-    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
-    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
+    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME,
+                                                          env_var_description='Factory username', sensitive=False)
+    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD,
+                                                          env_var_description='Factory password', sensitive=True)
 
     token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
     winServers, linuxServers = ServerList(wave_id, token, UserHOST,
-                                   serverendpoint, appendpoint)
+                                          serverendpoint, appendpoint)
     if len(winServers) > 0:
         print("****************************")
         print("*Shutting down Windows servers*")
         print("****************************")
         if Domain_User != "":
-            Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD, env_var_description='Windows password', sensitive=True)
+            Domain_Password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
+                                                               env_var_description='Windows password', sensitive=True)
         for s in winServers:
             command = "Invoke-Command -ComputerName " + s + " -ScriptBlock {Stop-Computer -Force}"
             if Domain_User != "":
-              command += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
+                command += " -Credential (New-Object System.Management.Automation.PSCredential('" + Domain_User + "', (ConvertTo-SecureString '" + Domain_Password + "' -AsPlainText -Force))) -Authentication Negotiate"
             print("Shutting down server: " + s)
             p = subprocess.Popen(["pwsh", "-Command", command], stdout=sys.stdout)
             p.communicate()
@@ -192,7 +199,7 @@ def main(arguments):
         else:
             pass_key_first = getpass.getpass('Linux Password: ')
             pass_key_second = getpass.getpass('Re-enter Password: ')
-            while(pass_key_first != pass_key_second):
+            while (pass_key_first != pass_key_second):
                 print("Password mismatch, please try again!")
                 pass_key_first = getpass.getpass('Linux Password: ')
                 pass_key_second = getpass.getpass('Re-enter Password: ')
@@ -205,6 +212,7 @@ def main(arguments):
             else:
                 print("unable to shutdown server " + s + " due to " + error)
             print("")
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 
 from __future__ import print_function
-import sys
+
 import argparse
-import requests
-import json
-import boto3
-import getpass
 import datetime
+import json
+import sys
 import time
-import os
+
+import requests
 
 import mf
+from mf.config_loaders import EndpointsLoader
 from mf.migration_factory import MigrationFactoryRequester, MfField
 from mf.utils import EnvironmentVariableFetcher
-from mf.config_loaders import EndpointsLoader
 
 HOST = 'https://console.cloudendure.com'
 headers = {'Content-Type': 'application/json'}
@@ -23,6 +22,7 @@ endpoint = '/api/latest/{}'
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
+
 
 def Factorylogin(username, password, LoginHOST):
     login_data = {'username': username, 'password': password}
@@ -38,10 +38,11 @@ def Factorylogin(username, password, LoginHOST):
         print("")
         sys.exit(1)
 
+
 def CElogin(userapitoken, endpoint):
     login_data = {'userApiToken': userapitoken}
     r = requests.post(HOST + endpoint.format('login'),
-                  data=json.dumps(login_data), headers=headers)
+                      data=json.dumps(login_data), headers=headers)
     if r.status_code == 200:
         print("CloudEndure : You have successfully logged in")
         print("")
@@ -51,19 +52,21 @@ def CElogin(userapitoken, endpoint):
         elif r.status_code == 402:
             print('ERROR: There is no active license configured for this CloudEndure account....')
         elif r.status_code == 429:
-            print('ERROR: CloudEndure Authentication failure limit has been reached. The service will become available for additional requests after a timeout....')
+            print(
+                'ERROR: CloudEndure Authentication failure limit has been reached. The service will become available for additional requests after a timeout....')
 
     # check if need to use a different API entry point
     if r.history:
         endpoint = '/' + '/'.join(r.url.split('/')[3:-1]) + '/{}'
         r = requests.post(HOST + endpoint.format('login'),
-                      data=json.dumps(login_data), headers=headers)
+                          data=json.dumps(login_data), headers=headers)
 
     session['session'] = r.cookies['session']
     try:
-       headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
+        headers['X-XSRF-TOKEN'] = r.cookies['XSRF-TOKEN']
     except:
-       pass
+        pass
+
 
 def GetCEProject(projectname):
     r = requests.get(HOST + endpoint.format('projects'), headers=headers, cookies=session)
@@ -77,8 +80,8 @@ def GetCEProject(projectname):
         project_exist = False
         for project in projects:
             if project["name"] == projectname:
-               project_id = project["id"]
-               project_exist = True
+                project_id = project["id"]
+                project_exist = True
         if project_exist == False:
             print("ERROR: Project Name does not exist in CloudEndure....")
             sys.exit(3)
@@ -87,13 +90,14 @@ def GetCEProject(projectname):
         print("ERROR: Failed to fetch the project....")
         sys.exit(4)
 
+
 def ProjectList(waveid, token, UserHOST, serverendpoint, appendpoint):
-# Get all Apps and servers from migration factory
+    # Get all Apps and servers from migration factory
     auth = {"Authorization": token}
     servers = json.loads(requests.get(UserHOST + serverendpoint, headers=auth).text)
-    #print(servers)
+    # print(servers)
     apps = json.loads(requests.get(UserHOST + appendpoint, headers=auth).text)
-    #print(apps)
+    # print(apps)
     newapps = []
 
     CEProjects = []
@@ -115,6 +119,7 @@ def ProjectList(waveid, token, UserHOST, serverendpoint, appendpoint):
     Projects = GetServerList(newapps, servers, CEProjects, waveid)
     return Projects
 
+
 def GetServerList(apps, servers, CEProjects, waveid):
     servercount = 0
     Projects = CEProjects
@@ -125,13 +130,14 @@ def GetServerList(apps, servers, CEProjects, waveid):
                 for server in servers:
                     if app['app_id'] == server['app_id']:
                         if 'server_os' in server:
-                                if 'server_fqdn' in server:
-                                        ServersList.append(server)
-                                else:
-                                    print("ERROR: server_fqdn for server: " + server['server_name'] + " doesn't exist")
-                                    sys.exit(4)
+                            if 'server_fqdn' in server:
+                                ServersList.append(server)
+                            else:
+                                print("ERROR: server_fqdn for server: " + server['server_name'] + " doesn't exist")
+                                sys.exit(4)
                         else:
-                            print ('server_os attribute does not exist for server: ' + server['server_name'] + ", please update this attribute")
+                            print('server_os attribute does not exist for server: ' + server[
+                                'server_name'] + ", please update this attribute")
                             sys.exit(2)
         Project['Servers'] = ServersList
         # print(Project)
@@ -154,7 +160,8 @@ def verify_replication(projects, token):
             print("")
             project_id = project['ProjectId']
             serverlist = project['Servers']
-            m = requests.get(HOST + endpoint.format('projects/{}/machines').format(project_id), headers=headers, cookies=session)
+            m = requests.get(HOST + endpoint.format('projects/{}/machines').format(project_id), headers=headers,
+                             cookies=session)
             if "sourceProperties" not in m.text:
                 print("ERROR: Failed to fetch the machines for project: " + project['ProjectName'])
                 sys.exit(7)
@@ -182,10 +189,12 @@ def verify_replication(projects, token):
                                     y = int(datetime.datetime.utcnow().isoformat()[14:16])
                                     result = (a - x) * 60 + (b - y)
                                     if result < 60:
-                                        machine_status[server["server_name"]] = "Initial sync in progress, ETA: " + str(result) + " Minutes"
+                                        machine_status[server["server_name"]] = "Initial sync in progress, ETA: " + str(
+                                            result) + " Minutes"
                                     else:
                                         hours = int(result / 60)
-                                        machine_status[server["server_name"]] = "Initial sync in progress, ETA: " + str(hours) + " Hours"
+                                        machine_status[server["server_name"]] = "Initial sync in progress, ETA: " + str(
+                                            hours) + " Hours"
                                 else:
                                     machine_status[server["server_name"]] = "Initial sync in progress"
                             else:
@@ -209,15 +218,17 @@ def verify_replication(projects, token):
                     sys.exit(8)
             for server in serverlist:
                 if machine_status[server["server_name"]] != "":
-                    print ("Server " + server["server_name"] + " replication status: " + machine_status[server["server_name"]])
+                    print("Server " + server["server_name"] + " replication status: " + machine_status[
+                        server["server_name"]])
                     serverattr = {"replication_status": machine_status[server["server_name"]]}
                     if machine_status[server["server_name"]] != "Continuous Data Replication":
                         replication_not_finished = True
                 else:
-                    print ("Server " + server["server_name"] + " replication status: Not Started" )
+                    print("Server " + server["server_name"] + " replication status: Not Started")
                     serverattr = {"replication_status": "Not Started"}
                     replication_not_finished = True
-                updateserver = requests.put(UserHOST + serverendpoint + '/' + server['server_id'], headers=auth, data=json.dumps(serverattr))
+                updateserver = requests.put(UserHOST + serverendpoint + '/' + server['server_id'], headers=auth,
+                                            data=json.dumps(serverattr))
                 if updateserver.status_code == 401:
                     print("Error: Access to replication_status attribute is denied")
                     sys.exit(9)
@@ -227,7 +238,7 @@ def verify_replication(projects, token):
             replication_status.append(replication_not_finished)
         for status in replication_status:
             if status == True:
-               Not_finished = True
+                Not_finished = True
         if Not_finished:
             print("")
             print("***************************************************")
@@ -235,22 +246,23 @@ def verify_replication(projects, token):
             print("***************************************************")
             time.sleep(300)
 
+
 def main(arguments):
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--wave-name', required=True)
     parser.add_argument(
-           '--config-file-endpoints',
-           default=EnvironmentVariableFetcher.fetch(
-               env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
-               default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
-           ),
-           help='Configuration file containing the Migration Factory endpoint URLs'
-       )
+        '--config-file-endpoints',
+        default=EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+            default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+        ),
+        help='Configuration file containing the Migration Factory endpoint URLs'
+    )
     args = parser.parse_args(arguments)
 
-    global LoginHOST,UserHOST
+    global LoginHOST, UserHOST
     _endpoints_loader = EndpointsLoader(endpoint_config_file=args.config_file_endpoints)
     _migration_factory_requester = MigrationFactoryRequester(
         _endpoints_loader
@@ -263,15 +275,18 @@ def main(arguments):
     print("******************************")
     print("* Login to Migration factory *")
     print("******************************")
-    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME, env_var_description='Factory username', sensitive=False)
-    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD, env_var_description='Factory password', sensitive=True)
+    _mf_login_username = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_USERNAME,
+                                                          env_var_description='Factory username', sensitive=False)
+    _mf_login_password = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_MIGRATION_FACTORY_PASSWORD,
+                                                          env_var_description='Factory password', sensitive=True)
 
     token = Factorylogin(_mf_login_username, _mf_login_password, LoginHOST)
 
     print("************************")
     print("* Login to CloudEndure *")
     print("************************")
-    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_CLOUDENDURE_TOKEN, env_var_description='CE API token', sensitive=True)
+    _ce_user_api_token = EnvironmentVariableFetcher.fetch(env_var_names=mf.ENV_VAR_CLOUDENDURE_TOKEN,
+                                                          env_var_description='CE API token', sensitive=True)
 
     r = CElogin(_ce_user_api_token, endpoint)
     if r is not None and "ERROR" in r:
@@ -292,6 +307,7 @@ def main(arguments):
     print("* Verify replication status *")
     print("*****************************")
     verify_replication(Projects, token)
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
