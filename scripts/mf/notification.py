@@ -7,7 +7,7 @@ import time
 from abc import ABC
 from email.message import EmailMessage
 from threading import Thread
-from typing import List
+from typing import List, Dict
 
 import pymsteams
 import validators
@@ -62,7 +62,7 @@ class CanNotify(ABC):
 class NotifierBag:
     """ Data class containing all available Notifiers """
 
-    _bag: dict[str, CanNotify] = {}
+    _bag: Dict[str, CanNotify] = {}
 
     def add(self, notifier: CanNotify):
         self._bag[notifier.get_name()] = notifier

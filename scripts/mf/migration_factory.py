@@ -4,7 +4,7 @@ import json
 import logging
 import re
 import sys
-from typing import Any, List
+from typing import Any, List, Dict
 
 import requests_cache
 
@@ -45,10 +45,10 @@ class MfField:
 class MigrationFactoryData:
     """ Data object representing any data in Migration Factory (superclass) """
 
-    FIELDS: dict[str, Any] = {}
-    PUT_FIELDS: dict[str, Any] = {}
+    FIELDS: Dict[str, Any] = {}
+    PUT_FIELDS: Dict[str, Any] = {}
 
-    _data: dict[str, Any] = {}
+    _data: Dict[str, Any] = {}
     _id: int = None
 
     def __init__(self, data: dict, identifier: int = None):
@@ -125,7 +125,7 @@ class Wave(MigrationFactoryData):
         MfField.WAVE_DESCRIPTION: str,
     }
 
-    _data: dict[str, Any] = {}
+    _data: Dict[str, Any] = {}
     _id: int = None
 
     def __init__(self, data: dict = None, identifier: int = None):
@@ -152,7 +152,7 @@ class App(MigrationFactoryData):
     }
 
     _wave: Wave = None
-    _data: dict[str, Any] = {}
+    _data: Dict[str, Any] = {}
     _id: int = None
 
     def __init__(self, data: dict = None, identifier: int = None, wave: Wave = Wave()):
@@ -221,7 +221,7 @@ class Server(MigrationFactoryData):
     }
 
     _app: App = None
-    _data: dict[str, Any] = {}
+    _data: Dict[str, Any] = {}
     _id: int = None
 
     def __init__(self, data: dict = None, identifier: int = None, app: App = App()):
