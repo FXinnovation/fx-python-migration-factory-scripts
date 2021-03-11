@@ -1,3 +1,7 @@
+## 12.0.2
+
+* fix: (copyScripts) tries to extract files for pwsh4
+
 ## 12.0.1
 
 * refactor: fixes styles of most scripts

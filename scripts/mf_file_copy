@@ -146,6 +146,11 @@ class WindowsHost(Host):
             target=self._do_run_powershell,
             args=[self._get_unzip_command()],
             name='Unzip “{}.zip” on server'.format(self._server_fqdn)
+        ),
+            Thread(
+            target=self._do_run_powershell,
+            args=[self._get_unzip_command_pwsh4()],
+            name='Unzip (pwsh4) “{}.zip” on server'.format(self._server_fqdn)
         )]
 
     def get_cleanup_tasks(self) -> list:
@@ -167,6 +172,22 @@ class WindowsHost(Host):
         )
 
         PowershellRunner.run(command)
+
+    def _get_unzip_command_pwsh4(self):
+        command = f'Invoke-Command -ComputerName {self._server_fqdn} ' \
+                  f'-ScriptBlock {{' \
+                  f'[System.IO.Compression.ZipFile]::ExtractToDirectory(' \
+                  f'"{self.WINDOWS_POST_LAUNCH_DESTINATION}{self._server_fqdn}.zip","{self.WINDOWS_POST_LAUNCH_DESTINATION}")' \
+                  f'}}'
+
+        if self._password is not None:
+            command = PowershellRunner.authenticate_command(
+                command,
+                self._username,
+                self._password
+            )
+
+        return command
 
     def _get_unzip_command(self):
         command = f'Invoke-Command -ComputerName {self._server_fqdn} ' \
