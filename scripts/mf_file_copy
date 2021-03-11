@@ -174,11 +174,12 @@ class WindowsHost(Host):
         PowershellRunner.run(command)
 
     def _get_unzip_command_pwsh4(self):
+        #
         command = f'Invoke-Command -ComputerName {self._server_fqdn} ' \
                   f'-ScriptBlock {{' \
                   f'Add-Type -Assembly "System.IO.Compression.Filesystem"; [System.IO.Compression.ZipFile]::ExtractToDirectory(' \
                   f'"{self.WINDOWS_POST_LAUNCH_DESTINATION}{self._server_fqdn}.zip",' \
-                  f'"{self.WINDOWS_POST_LAUNCH_DESTINATION}", $true) | Out-Null' \
+                  f'"{self.WINDOWS_POST_LAUNCH_DESTINATION}") | Out-Null' \
                   f'}}'
 
         if self._password is not None:
