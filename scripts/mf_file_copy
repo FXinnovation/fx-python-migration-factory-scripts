@@ -178,7 +178,7 @@ class WindowsHost(Host):
                   f'-ScriptBlock {{' \
                   f'Add-Type -Assembly "System.IO.Compression.Filesystem"; [System.IO.Compression.ZipFile]::ExtractToDirectory(' \
                   f'"{self.WINDOWS_POST_LAUNCH_DESTINATION}{self._server_fqdn}.zip",' \
-                  f'"{self.WINDOWS_POST_LAUNCH_DESTINATION}", $true)' \
+                  f'"{self.WINDOWS_POST_LAUNCH_DESTINATION}", $true) | Out-Null' \
                   f'}}'
 
         if self._password is not None:
