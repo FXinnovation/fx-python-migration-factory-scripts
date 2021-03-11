@@ -176,7 +176,7 @@ class WindowsHost(Host):
     def _get_unzip_command_pwsh4(self):
         command = f'Invoke-Command -ComputerName {self._server_fqdn} ' \
                   f'-ScriptBlock {{' \
-                  f'[System.IO.Compression.ZipFile]::ExtractToDirectory(' \
+                  f'Add-Type -Assembly "System.IO.Compression.Filesystem"; [System.IO.Compression.ZipFile]::ExtractToDirectory(' \
                   f'"{self.WINDOWS_POST_LAUNCH_DESTINATION}{self._server_fqdn}.zip","{self.WINDOWS_POST_LAUNCH_DESTINATION}")' \
                   f'}}'
 
