@@ -40,9 +40,18 @@ function agent-install {
           Write-Host $message
         }
 
-        $drive_id = Invoke-Command -Session $s -ScriptBlock {Get-WmiObject -class Win32_DiskDrive| Select-Object -ExpandProperty DeviceID}
-        $drive_id = $drive_id -join ','
-        $command = $ScriptPath + "installer_win.exe -t " + $key + " --no-prompt" + " --skip-dotnet-check --force-volumes --drives=`"" + $drive_id + "`" --no-auto-disk-detection"
+        $device_ids = @()
+
+        $boot_disk_index = Get-WmiObject -class Win32_DiskPartition |Where-Object {$_.BootPartition -eq $True}| Select-Object -ExpandProperty DiskIndex
+        $boot_device_id = Get-WmiObject -class Win32_DiskDrive |Where-Object {$_.Index -eq "$boot_disk_index"}| Select-Object -ExpandProperty DeviceID
+        $device_ids += $boot_device_id
+
+        $no_boot_device_ids = Get-WmiObject -class Win32_DiskDrive | Where-Object {$_.Index -ne "$boot_disk_index"}| Select -ExpandProperty DeviceID
+        $device_ids += $no_boot_device_ids
+
+        $device_ids_flat = $device_ids -Join ','
+
+        $command = $ScriptPath + "installer_win.exe -t " + $key + " --no-prompt" + " --skip-dotnet-check --force-volumes --drives=`"" + $device_ids_flat + "`" --no-auto-disk-detection"
         Write-Host $command
         $scriptblock2 = $executioncontext.invokecommand.NewScriptBlock($command)
 
