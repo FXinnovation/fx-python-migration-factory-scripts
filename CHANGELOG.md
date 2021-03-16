@@ -1,3 +1,7 @@
+## 12.0.3
+
+* fix: (install_ce_windows) Wrong order to physical drive ID
+
 ## 12.0.2
 
 * fix: (copyScripts) tries to extract files for pwsh4
