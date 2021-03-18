@@ -10,7 +10,7 @@ import sys
 
 import requests
 
-# This is mandatory to place before import mf library
+# This is mandatory to placed it before import mf library
 # Otherwise, python will not find mf library in its path
 sys.path.append('scripts')
 
