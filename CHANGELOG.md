@@ -1,3 +1,7 @@
+## 12.0.4
+
+* fix: (install) Wrong MF library import
+
 ## 12.0.3
 
 * fix: (install_ce_windows) Wrong order to physical drive ID
