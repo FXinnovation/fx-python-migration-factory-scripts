@@ -10,11 +10,14 @@ import sys
 
 import requests
 
+# This is mandatory to place before import mf library
+# Otherwise, python will not find mf library in its path
+sys.path.append('scripts')
+
 import mf
 from mf.config_loaders import EndpointsLoader
 from mf.utils import EnvironmentVariableFetcher
 
-sys.path.append('scripts')
 
 serverendpoint = '/prod/user/servers'
 appendpoint = '/prod/user/apps'
