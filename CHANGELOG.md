@@ -1,3 +1,7 @@
+## 12.0.5
+
+* doc: updates README with instructions to remove the AWS MigrationFactory
+
 ## 12.0.4
 
 * fix: (install) Wrong MF library import
