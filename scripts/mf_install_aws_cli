@@ -19,9 +19,9 @@ from mf.notification import Notifier
 from mf.utils import EnvironmentVariableFetcher, PowershellRunner
 
 
-class CeAgentInstaller:
+class AwsCliInstaller:
     """
-        Install CloudEndure Agent on a distant machine
+        Install Aws Cli on a distant machine
         Works with Linux or Windows hosts.
     """
 
@@ -91,11 +91,11 @@ class CeAgentInstaller:
         self._notifier = Notifier(self._config_loader.get_notifications_config())
 
     def install(self):
-        self._install_windows_agent()
-        self._install_linux_agent()
+        self._install_windows_cli()
+        self._install_linux_cli()
         self._agent_check()
 
-    def _install_windows_agent(self):
+    def _install_windows_cli(self):
         print('### Install Windows CloudEndure agent…', end=' ')
 
         _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(
@@ -117,7 +117,7 @@ class CeAgentInstaller:
             return
 
         for server in _server_list:
-            install_command = os.path.dirname(os.path.abspath(__file__)) + '/mf_install_windows_agent.ps1 "No" "' + \
+            install_command = os.path.dirname(os.path.abspath(__file__)) + '/mf_download_windows_aws_cli.ps1 "No" "' + \
                 _api_tokens[server[MfField.APP_ID]] + '" "' + server[MfField.SERVER_FQDN] + '"'
 
             if self._has_windows_user():
@@ -131,7 +131,7 @@ class CeAgentInstaller:
 
         print('✔ done.')
 
-    def _install_linux_agent(self):
+    def _install_linux_cli(self):
         print('### Install Linux CloudEndure agent…', end=' ')
 
         _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(
@@ -243,5 +243,5 @@ class CeAgentInstaller:
 
 
 if __name__ == '__main__':
-    ce_agent_installer = CeAgentInstaller()
+    ce_agent_installer = AwsCliInstaller()
     ce_agent_installer.install()
