@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+
+from __future__ import print_function
+
+import argparse
+import logging
+import os
+
+import mf
+from mf.aws import AWSServiceAccessor
+from mf.cloud_endure import CloudEndureRequester
+from mf.config_loaders import EndpointsLoader, ConfigLoader
+from mf.migration_factory import MigrationFactoryRequester, MfField
+from mf.notification import Notifier
+from mf.utils import EnvironmentVariableFetcher, PowershellRunner
+
+
+class AwsCliDownloader:
+    """
+        Download Aws Cli on a distant machine
+        Works with Windows hosts.
+    """
+
+    _path: str = None
+    _domain_password: str = None
+    _cloud_endure_requester: CloudEndureRequester = None
+    _migration_factory_requester: MigrationFactoryRequester = None
+    _endpoints_loader: EndpointsLoader = None
+    _aws_service_accessor: AWSServiceAccessor = None
+    _config_loader: ConfigLoader = None
+    _notifier: Notifier = None
+
+    def __init__(self):
+        parser = argparse.ArgumentParser(__doc__)
+        parser.add_argument('-v', action='store_true', help='Enable info outputs')
+        parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
+        parser.add_argument('--skip-notify', action='store_true', help='Whether or not to notify the results')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to act on')
+        parser.add_argument('--windows-username', default=EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
+            default=''
+        ),
+            help="The windows username"
+        )
+        parser.add_argument(
+            '--config-file-endpoints',
+            default=EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+                default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+            ),
+            help='Configuration file containing the Migration Factory endpoint URLs'
+        )
+
+        self._arguments = parser.parse_args()
+
+        mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
+
+        self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
+        self._migration_factory_requester = MigrationFactoryRequester(
+            self._endpoints_loader
+        )
+        self._cloud_endure_requester = CloudEndureRequester()
+
+        self._aws_service_accessor = AWSServiceAccessor()
+
+        if self._has_windows_user():
+            self._domain_password = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
+                env_var_description='Windows password',
+                default='',
+                sensitive=True
+            )
+
+        self._config_loader = ConfigLoader()
+        self._notifier = Notifier(self._config_loader.get_notifications_config())
+
+    def download(self):
+        self._download_windows_cli()
+
+    def _download_windows_cli(self):
+        print('### Download Windows AWS CLI…', end=' ')
+
+        _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(
+            filter_wave_name=self._arguments.wave_name,
+            filter_os='windows'
+        )
+
+        if not _server_list:
+            print('✔ No Windows server in this wave. Nothing to do')
+            return
+
+        _api_tokens = self._get_api_tokens()
+
+        logging.getLogger('root').debug(
+            self.__class__.__name__ + ':api token: “{}”'.format(_api_tokens)
+        )
+
+        if _api_tokens is None:
+            return
+
+        for server in _server_list:
+            download_command = os.path.dirname(os.path.abspath(__file__)) + '/mf_download_windows_aws_cli.ps1 "No" "' + \
+                _api_tokens[server[MfField.APP_ID]] + '" "' + server[MfField.SERVER_FQDN] + '"'
+
+            if self._has_windows_user():
+                download_command += ' "' + self._arguments.windows_username + '" "' + self._domain_password + '"'
+
+            logging.getLogger('root').info(
+                self.__class__.__name__ + ':Running “{}”'.format(download_command)
+            )
+
+            PowershellRunner.run(download_command)
+
+        print('✔ done.')
+
+    def _get_api_tokens(self):
+        _apps = self._migration_factory_requester.get_user_apps_by_wave_name(wave_name=self._arguments.wave_name)
+
+        if _apps is None:
+            logging.getLogger('root').info('{}: wave “{}” don\'t have cloudendure project)'.format(
+                self.__class__.__name__, self._arguments.wave_name
+            ))
+            return None
+
+        _installation_token_by_app_id = {}
+
+        for app in _apps:
+            if MfField.CLOUDENDURE_PROJECT_NAME not in app:
+                logging.getLogger('root').info('{}: app “{}” don\'t have cloudendure project)'.format(
+                    self.__class__.__name__, app[MfField.APP_NAME]
+                ))
+                continue
+
+            _installation_token_by_app_id[app[MfField.APP_ID]] = self._cloud_endure_requester.get_api_token(
+                project_name=app[MfField.CLOUDENDURE_PROJECT_NAME]
+            )
+
+        return _installation_token_by_app_id
+
+    def _has_windows_user(self):
+        return self._arguments.windows_username != ""
+
+
+if __name__ == '__main__':
+    aws_cli_downloader = AwsCliDownloader()
+    aws_cli_downloader.download()
