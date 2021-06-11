@@ -18,7 +18,7 @@ function awscli-download {
       }
       if ($reinstall -eq 'Yes' -or ($reinstall -eq 'No' -and (!(Invoke-Command -Session $s -ScriptBlock {Test-path "C:\Program Files\Amazon\AWSCLIV2"})))) {
         write-host "--------------------------------------------------------"
-        write-host "- Installing AWSCli for:   $machine -" -BackgroundColor Blue
+        write-host "- Downloading AWSCli for:   $machine -" -BackgroundColor Blue
         write-host "--------------------------------------------------------"
         if (!(Invoke-Command -Session $s -ScriptBlock {Test-path "C:\PROGRA~2\CloudEndure\post_launch"})) {
           Invoke-Command -Session $s -ScriptBlock {New-Item -Path "C:\PROGRA~2\CloudEndure\post_launch" -ItemType directory}
