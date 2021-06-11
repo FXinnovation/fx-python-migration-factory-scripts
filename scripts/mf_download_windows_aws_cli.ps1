@@ -1,20 +1,46 @@
-#Set the system to support TLS 1.2
-$p = [Enum]::ToObject([System.Net.SecurityProtocolType], 3072);
-[System.Net.ServicePointManager]::SecurityProtocol = $p;
+param ($reinstall = "No",
+       $API_Token,
+       $Servername,
+       $Username = "",
+       $Password = ""
+)
 
+function agent-install {
+  Param($key, $account, $Username, $Password)
 
-$Link =  "https://awscli.amazonaws.com/AWSCLIV2.msi"
-$AWSCliInstallFile="C:\PROGRA~2\CloudEndure\post_launch\AWSCLIV2.msi"
+  if ($account -ne "") {
+    foreach ($machine in $account -split (',')) {
+      if ($Username -ne "") {
+        $s = New-PSSession -ComputerName $machine -Credential (New-Object System.Management.Automation.PSCredential($Username, (ConvertTo-SecureString $Password -AsPlainText -Force))) -Authentication Negotiate
+      }
+      else {
+        $s = New-PSSession -ComputerName $machine
+      }
+      if ($reinstall -eq 'Yes' -or ($reinstall -eq 'No' -and (!(Invoke-Command -Session $s -ScriptBlock {Test-path "C:\Program Files\Amazon\AWSCLIV2"})))) {
+        write-host "--------------------------------------------------------"
+        write-host "- Installing AWSCli for:   $machine -" -BackgroundColor Blue
+        write-host "--------------------------------------------------------"
+        if (!(Invoke-Command -Session $s -ScriptBlock {Test-path "C:\PROGRA~2\CloudEndure\post_launch"})) {
+          Invoke-Command -Session $s -ScriptBlock {New-Item -Path "C:\PROGRA~2\CloudEndure\post_launch" -ItemType directory}
+        }
 
-#Use the webclient api and disable the proxy to download the file
-if (!(test-path "C:\PROGRA~2\CloudEndure\post_launch")) {
-		mkdir C:\PROGRA~2\CloudEndure\post_launch
+        Invoke-Command -Session $s -ScriptBlock {
+          $p = [Enum]::ToObject([System.Net.SecurityProtocolType], 3072);
+          [System.Net.ServicePointManager]::SecurityProtocol = $p;
+          $WebClient = New-Object System.Net.WebClient
+          $WebClient.proxy=$null
+          $WebClient.DownloadFile("https://awscli.amazonaws.com/AWSCLIV2.msi","C:\PROGRA~2\CloudEndure\post_launch\AWSCLIV2.msi")
+        }
+
+        $fileexist = Invoke-Command -Session $s -ScriptBlock {Test-path "C:\PROGRA~2\CloudEndure\post_launch\AWSCLIV2.msi"}
+
+        if ($fileexist -eq "true") {
+          $message = "** Successfully downloaded AWSCli for: " + $machine + " **"
+          Write-Host $message
+        }
+      }
+    }
+  }
 }
 
-if (test-path "$AWSCliPath\aws.exe") {
-	new-item "C:\PROGRA~2\CloudEndure\post_launch\aws_already_installed.lock" -type file
-} else {
-	$WebClient = New-Object System.Net.WebClient
-	$WebClient.proxy=$null
-	$WebClient.DownloadFile("$Link",$AWSCliInstallFile);
-}
+agent-install $API_Token $Servername $Username $Password
