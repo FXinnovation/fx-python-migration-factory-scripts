@@ -5,7 +5,7 @@ param ($reinstall = "No",
        $Password = ""
 )
 
-function agent-install {
+function awscli-download {
   Param($key, $account, $Username, $Password)
 
   if ($account -ne "") {
@@ -43,4 +43,4 @@ function agent-install {
   }
 }
 
-agent-install $API_Token $Servername $Username $Password
+awscli-download $API_Token $Servername $Username $Password
