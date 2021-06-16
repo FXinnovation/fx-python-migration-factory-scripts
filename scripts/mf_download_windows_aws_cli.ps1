@@ -1,12 +1,11 @@
 param ($reinstall = "No",
-       $API_Token,
        $Servername,
        $Username = "",
        $Password = ""
 )
 
 function awscli-download {
-  Param($key, $account, $Username, $Password)
+  Param($account, $Username, $Password)
 
   if ($account -ne "") {
     foreach ($machine in $account -split (',')) {
@@ -16,7 +15,7 @@ function awscli-download {
       else {
         $s = New-PSSession -ComputerName $machine
       }
-      if ($reinstall -eq 'Yes' -or ($reinstall -eq 'No' -and (!(Invoke-Command -Session $s -ScriptBlock {Test-path "C:\Program Files\Amazon\AWSCLIV2"})))) {
+      if (!(Invoke-Command -Session $s -ScriptBlock {Test-path "C:\Program Files\Amazon\AWSCLIV2"})) {
         write-host "--------------------------------------------------------"
         write-host "- Downloading AWSCli for:   $machine -" -BackgroundColor Blue
         write-host "--------------------------------------------------------"
