@@ -42,4 +42,4 @@ function awscli-download {
   }
 }
 
-awscli-download $API_Token $Servername $Username $Password
+awscli-download $Servername $Username $Password
