@@ -167,7 +167,7 @@ class CeAgentInstaller:
                 server[MfField.SERVER_FQDN],
                 user_name,
                 pass_key,
-                'y' if has_key else 'n',
+                has_key,
                 _api_tokens[server[MfField.APP_ID]]
             )
 

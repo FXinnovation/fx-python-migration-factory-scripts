@@ -35,7 +35,7 @@ def execute_cmd(host, username, key, cmd, using_key):
 def open_ssh(host, username, key_pwd, using_key):
     ssh = None
     try:
-        if using_key == "y":
+        if using_key:
             private_key = paramiko.RSAKey.from_private_key_file(key_pwd)
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
