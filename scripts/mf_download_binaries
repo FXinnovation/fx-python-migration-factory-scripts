@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+
+from __future__ import print_function
+
+import argparse
+import logging
+import os
+
+import mf
+import mf_download_linux_package
+from mf.aws import AWSServiceAccessor
+from mf.cloud_endure import CloudEndureRequester
+from mf.config_loaders import EndpointsLoader, ConfigLoader
+from mf.migration_factory import MigrationFactoryRequester, MfField
+from mf.notification import Notifier
+from mf.utils import EnvironmentVariableFetcher, PowershellRunner
+
+
+class BinariesDownloader:
+    """
+        Download Binaries on a distant machine
+        Works with Linux or Windows hosts.
+    """
+
+    _path: str = None
+    _domain_password: str = None
+    _cloud_endure_requester: CloudEndureRequester = None
+    _migration_factory_requester: MigrationFactoryRequester = None
+    _endpoints_loader: EndpointsLoader = None
+    _aws_service_accessor: AWSServiceAccessor = None
+    _config_loader: ConfigLoader = None
+    _notifier: Notifier = None
+
+    def __init__(self):
+        parser = argparse.ArgumentParser(__doc__)
+        parser.add_argument('-v', action='store_true', help='Enable info outputs')
+        parser.add_argument('-vv', action='store_true', help='Enable debug outputs')
+        parser.add_argument('--skip-notify', action='store_true', help='Whether or not to notify the results')
+        parser.add_argument('--wave-name', required=True, help='Name of the wave to act on')
+        parser.add_argument('--windows-username', default=EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_WINDOWS_USERNAME,
+            default=''
+        ),
+            help="The windows username"
+        )
+        parser.add_argument('--linux-username', default=EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_LINUX_USERNAME,
+            default=''
+        ),
+            help="The linux username"
+        )
+        parser.add_argument('--linux-private-key-file', default=EnvironmentVariableFetcher.fetch(
+            env_var_names=mf.ENV_VAR_LINUX_PRIVATE_KEY_FILE,
+            default=''
+        ),
+            help="The linux private key file"
+        )
+        parser.add_argument(
+            '--config-file-endpoints',
+            default=EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_ENDPOINT_CONFIG_FILE,
+                default=mf.DEFAULT_ENV_VAR_ENDPOINT_CONFIG_FILE
+            ),
+            help='Configuration file containing the Migration Factory endpoint URLs'
+        )
+
+        self._arguments = parser.parse_args()
+
+        mf.setup_logging(logging, self._arguments.v, self._arguments.vv)
+
+        self._endpoints_loader = EndpointsLoader(endpoint_config_file=self._arguments.config_file_endpoints)
+        self._migration_factory_requester = MigrationFactoryRequester(
+            self._endpoints_loader
+        )
+        self._cloud_endure_requester = CloudEndureRequester()
+
+        self._aws_service_accessor = AWSServiceAccessor()
+
+        if self._has_windows_user():
+            self._domain_password = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_WINDOWS_PASSWORD,
+                env_var_description='Windows password',
+                default='',
+                sensitive=True
+            )
+
+        self._config_loader = ConfigLoader()
+        self._notifier = Notifier(self._config_loader.get_notifications_config())
+
+    def install(self):
+        self._download_windows_binaries()
+        self._download_linux_binaries()
+
+    def _download_windows_binaries(self):
+        print('### Download Binaries on Windows instances…', end=' ')
+
+        _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(
+            filter_wave_name=self._arguments.wave_name,
+            filter_os='windows'
+        )
+
+        if not _server_list:
+            print('✔ No Windows server in this wave. Nothing to do')
+            return
+
+        for server in _server_list:
+            install_command = os.path.dirname(os.path.abspath(__file__)) + '/mf_download_windows_binaries.ps1 "' + '" "' + server[MfField.SERVER_FQDN] + '"'
+
+            if self._has_windows_user():
+                install_command += ' "' + self._arguments.windows_username + '" "' + self._domain_password + '"'
+
+            logging.getLogger('root').info(
+                self.__class__.__name__ + ':Running “{}”'.format(install_command)
+            )
+
+            PowershellRunner.run(install_command)
+
+        print('✔ done.')
+
+    def _download_linux_binaries(self):
+        print('### Download Binaries on Linux instances…', end=' ')
+
+        _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(
+            filter_wave_name=self._arguments.wave_name, filter_os='linux'
+        )
+
+        if not _server_list:
+            print('✔ No Linux server in this wave. Nothing to do.')
+            return
+
+        if self._arguments.linux_username.lower().strip() != '':
+            user_name = self._arguments.linux_username
+        else:
+            user_name = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_USERNAME, env_var_description='Linux username'
+            )
+
+        has_key = self._arguments.linux_private_key_file.lower().strip() != ''
+        if has_key:
+            pass_key = self._arguments.linux_private_key_file
+        else:
+            pass_key = EnvironmentVariableFetcher.fetch(
+                env_var_names=mf.ENV_VAR_LINUX_PASSWORD, env_var_description='Linux password', sensitive=True
+            )
+
+        for server in _server_list:
+            mf_download_linux_package.download_ssm_agent(
+                server[MfField.SERVER_FQDN],
+                user_name,
+                pass_key,
+                has_key
+            )
+
+        print('✔ done.')
+
+    def _has_windows_user(self):
+        return self._arguments.windows_username != ""
+
+
+if __name__ == '__main__':
+    binaries_downloader = BinariesDownloader()
+    binaries_downloader.install()
