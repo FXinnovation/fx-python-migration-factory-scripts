@@ -177,7 +177,7 @@ def download_ssm_agent(host, username, key_pwd, using_key):
     try:
         output = None
         error = None
-        command = "wget -O /tmp/amazon-ssm-agent-redhat7.rpm" \
+        command = "wget -O /tmp/amazon-ssm-agent-redhat7.rpm " \
                   "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
         output, error = execute_cmd(host=host, username=username, key=key_pwd,
                                     cmd=command, using_key=using_key)
@@ -192,7 +192,7 @@ def download_ssm_agent(host, username, key_pwd, using_key):
               + host + "*****")
         return True
     else:
-        print("Unable to download CloudEndure on " + host + " due to: ")
+        print("Unable to download SSM Agent on " + host + " due to: ")
         print("")
         if output:
             print(output)

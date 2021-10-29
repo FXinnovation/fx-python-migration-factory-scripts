@@ -104,7 +104,7 @@ class BinariesDownloader:
             return
 
         for server in _server_list:
-            install_command = os.path.dirname(os.path.abspath(__file__)) + '/mf_download_windows_binaries.ps1 "' + '" "' + server[MfField.SERVER_FQDN] + '"'
+            install_command = os.path.dirname(os.path.abspath(__file__)) + '/mf_download_windows_ssm_agent.ps1 "' + '" "' + server[MfField.SERVER_FQDN] + '"'
 
             if self._has_windows_user():
                 install_command += ' "' + self._arguments.windows_username + '" "' + self._domain_password + '"'
