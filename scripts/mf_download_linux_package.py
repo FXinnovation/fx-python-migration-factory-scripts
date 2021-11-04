@@ -61,8 +61,10 @@ def find_distribution(host, username, key_pwd, using_key):
                             using_key)
     if "ubuntu" in output:
         distribution = "ubuntu"
-    elif "fedora" in output:
-        distribution = "fedora"
+    elif "Red Hat" and "6." in output:
+        distribution = "Red Hat 6"
+    elif "Red Hat" and "7." in output:
+        distribution = "Red Hat 7"
     elif "suse" in output:
         distribution = "suse"
     return distribution
@@ -86,7 +88,6 @@ def install_wget(host, username, key_pwd, using_key):
             stdin.flush()
         else:
             # This condition works with centos, fedora and RHEL distributions
-            ssh.exec_command("sudo yum update")
             stdin, _, stderr = ssh.exec_command("sudo yum install wget -y")
         # Check if there is any error while installing wget
         error = ''
@@ -151,10 +152,7 @@ def install_python3(host, username, key_pwd, using_key):
             stdin.write('Y\n')
             stdin.flush()
         else:  # This installs on centos
-            ssh.exec_command("sudo yum update")
-            ssh.exec_command("sudo yum install centos-release-scl")
-            ssh.exec_command("sudo yum install rh-python36")
-            ssh.exec_command("scl enable rh-python36 bash")
+            ssh.exec_command("sudo yum install -y python3")
             _, _, stderr = ssh.exec_command("python --version")
         error = ''
         for line in stderr.readlines():
@@ -177,14 +175,20 @@ def download_ssm_agent(host, username, key_pwd, using_key):
     try:
         output = None
         error = None
-        command = "wget -O /tmp/amazon-ssm-agent-redhat7.rpm " \
-                  "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
-        output, error = execute_cmd(host=host, username=username, key=key_pwd,
-                                    cmd=command, using_key=using_key)
-        if "not found" in error or "No such file or directory" in error:
-            install_wget(host, username, key_pwd, using_key)
-            output, error = execute_cmd(host=host, username=username, key=key_pwd,
-                                        cmd=command, using_key=using_key)
+        distribution = find_distribution(host, username, key_pwd, using_key)
+        if distribution == "Red Hat 6":
+            command = "wget -O /tmp/amazon-ssm-agent-redhat6.rpm " \
+                      "https://s3.us-east-1.amazonaws.com/amazon-ssm-us-east-1/3.0.1390.0/linux_amd64/amazon-ssm-agent.rpm"
+            output, error = execute_cmd(host=host, username=username, key=key_pwd, cmd=command, using_key=using_key)
+            if "not found" in error or "No such file or directory" in error:
+                install_wget(host, username, key_pwd, using_key)
+                output, error = execute_cmd(host=host, username=username, key=key_pwd, cmd=command, using_key=using_key)
+        elif distribution == "Red Hat 7":
+            command = "wget -O /tmp/amazon-ssm-agent-redhat7.rpm " \
+                      "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm"
+            output, error = execute_cmd(host=host, username=username, key=key_pwd, cmd=command, using_key=using_key)
+            if "not found" in error or "No such file or directory" in error:
+                install_wget(host, username, key_pwd, using_key)
     except Exception as e:
         error = 'Got exception! ' + str(e)
     if not error:

@@ -61,8 +61,10 @@ def find_distribution(host, username, key_pwd, using_key):
                             using_key)
     if "ubuntu" in output:
         distribution = "ubuntu"
-    elif "fedora" in output:
-        distribution = "fedora"
+    elif "Red Hat" and "6." in output:
+        distribution = "Red Hat 6"
+    elif "Red Hat" and "7." in output:
+        distribution = "Red Hat 7"
     elif "suse" in output:
         distribution = "suse"
     return distribution
@@ -151,10 +153,7 @@ def install_python3(host, username, key_pwd, using_key):
             stdin.write('Y\n')
             stdin.flush()
         else:  # This installs on centos
-            ssh.exec_command("sudo yum update")
-            ssh.exec_command("sudo yum install centos-release-scl")
-            ssh.exec_command("sudo yum install rh-python36")
-            ssh.exec_command("scl enable rh-python36 bash")
+            ssh.exec_command("sudo yum install -y python3")
             _, _, stderr = ssh.exec_command("python --version")
         error = ''
         for line in stderr.readlines():
@@ -192,7 +191,7 @@ def install_cloud_endure(host, username, key_pwd, using_key, install_token):
                 install_python3(host, username, key_pwd, using_key)
                 python_str = "python3"
             else:
-                python_str = "python3"
+                python_str = "python"
         # Step 2 - execute linux installer
         command = "sudo " + python_str + " ./installer_linux.py -t " + \
                   install_token + " --no-prompt"

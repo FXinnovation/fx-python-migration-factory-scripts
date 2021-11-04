@@ -16,7 +16,7 @@ from mf.notification import Notifier
 from mf.utils import EnvironmentVariableFetcher, PowershellRunner
 
 
-class BinariesDownloader:
+class PackagesDownloader:
     """
         Download Binaries on a distant machine
         Works with Linux or Windows hosts.
@@ -88,10 +88,10 @@ class BinariesDownloader:
         self._notifier = Notifier(self._config_loader.get_notifications_config())
 
     def install(self):
-        self._download_windows_binaries()
-        self._download_linux_binaries()
+        self._download_windows_packages()
+        self._download_linux_packages()
 
-    def _download_windows_binaries(self):
+    def _download_windows_packages(self):
         print('### Download Binaries on Windows instances…', end=' ')
 
         _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(
@@ -117,7 +117,7 @@ class BinariesDownloader:
 
         print('✔ done.')
 
-    def _download_linux_binaries(self):
+    def _download_linux_packages(self):
         print('### Download Binaries on Linux instances…', end=' ')
 
         _server_list = self._migration_factory_requester.get_user_servers_by_wave_and_os(
@@ -158,5 +158,5 @@ class BinariesDownloader:
 
 
 if __name__ == '__main__':
-    binaries_downloader = BinariesDownloader()
-    binaries_downloader.install()
+    packagesdownloader = PackagesDownloader()
+    packagesdownloader.install()

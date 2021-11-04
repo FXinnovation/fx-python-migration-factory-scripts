@@ -117,7 +117,7 @@ class CeAgentInstaller:
             return
 
         for server in _server_list:
-            install_command = os.path.dirname(os.path.abspath(__file__)) + '/mf_install_windows_agent.ps1 "No" "' + \
+            install_command = os.path.dirname(os.path.abspath(__file__)) + '/mf_install_windows_ce_agent.ps1 "No" "' + \
                 _api_tokens[server[MfField.APP_ID]] + '" "' + server[MfField.SERVER_FQDN] + '"'
 
             if self._has_windows_user():
@@ -232,7 +232,7 @@ class CeAgentInstaller:
                 )
                 time.sleep(ceil(((2 ** i) - 1) / 2) * 5)
 
-            if is_agent_installed:
+            if not is_agent_installed:
                 continue
 
             self._migration_factory_requester.put(
