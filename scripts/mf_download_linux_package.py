@@ -213,8 +213,8 @@ def download_cloudwatch_agent(host, username, key_pwd, using_key):
     try:
         output = None
         error = None
-        command = "wget -O /tmp/AmazonCloudWatchAgent.zip " \
-                  "https://s3.amazonaws.com/amazoncloudwatch-agent/linux/amd64/latest/AmazonCloudWatchAgent.zip"
+        command = "wget -O /tmp/amazon-cloudwatch-agent-redhat.rpm " \
+                  "https://s3.us-east-1.amazonaws.com/amazoncloudwatch-agent-us-east-1/redhat/amd64/latest/amazon-cloudwatch-agent.rpm"
         output, error = execute_cmd(host=host, username=username, key=key_pwd, cmd=command, using_key=using_key)
         if "not found" in error or "No such file or directory" in error:
             install_wget(host, username, key_pwd, using_key)
