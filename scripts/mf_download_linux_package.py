@@ -242,7 +242,7 @@ def download_node_exporter(host, username, key_pwd, using_key):
     try:
         output = None
         error = None
-        command = "wget -O /tmp/node_exporter-1.2.2.darwin-amd64.tar.gz " \
+        command = "wget -O /tmp/node_exporter-1.2.2.linux-amd64.tar.gz " \
                   "https://github.com/prometheus/node_exporter/releases/download/v1.2.2/node_exporter-1.2.2.linux-amd64.tar.gz"
         output, error = execute_cmd(host=host, username=username, key=key_pwd, cmd=command, using_key=using_key)
         if "not found" in error or "No such file or directory" in error:
