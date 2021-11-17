@@ -1,0 +1,32 @@
+#!/bin/bash
+
+### --------------------------------------------------------------------
+###   install-ssm-agent.sh | © 2021 FXInnovation
+### --------------------------------------------------------------------
+###   Script which will install Node Exporter
+### --------------------------------------------------------------------
+###   This code is for the use of "© 2021 FXInnovation" only.
+###   Individuals using this code without authority, or in violation
+###   of copyright are subject to investigation. Any evidence of
+###   copyright infringement will be reported to law enforcement officials.
+### --------------------------------------------------------------------
+
+cd /tmp
+tar xvfz node_exporter-*.*-amd64.tar.gz
+mv node_exporter-*.*-amd64/node_exporter /usr/local/bin
+
+printf "[Unit]
+Description=Node Exporter
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/node_exporter
+
+[Install]
+WantedBy=multi-user.target
+" > /etc/systemd/system/node-exporter.service
+
+systemctl daemon-reload
+systemctl start node-exporter
+systemctl enable node-exporter

@@ -159,6 +159,14 @@ class PackagesDownloader:
                 has_key
             )
 
+        for server in _server_list:
+            mf_download_linux_package.download_node_exporter(
+                server[MfField.SERVER_FQDN],
+                user_name,
+                pass_key,
+                has_key
+            )
+
         print('✔ done.')
 
     def _has_windows_user(self):
