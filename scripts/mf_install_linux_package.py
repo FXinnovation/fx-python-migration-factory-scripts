@@ -114,19 +114,13 @@ def install_wget(host, username, key_pwd, using_key):
 def check_python(host, username, key_pwd, using_key):
     _, error = execute_cmd(host, username, key_pwd, "python --version",
                            using_key)
-    if error:
-        return False
-    else:
-        return True
+    return "Python 2" in error
 
 
 def check_python3(host, username, key_pwd, using_key):
     _, error = execute_cmd(host, username, key_pwd, "python3 --version",
                            using_key)
-    if error:
-        return False
-    else:
-        return True
+    return "Python 3" in error
 
 
 def install_python3(host, username, key_pwd, using_key):

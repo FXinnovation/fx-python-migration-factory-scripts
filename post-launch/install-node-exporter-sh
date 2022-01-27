@@ -1,9 +1,9 @@
 #!/bin/bash
 
 ### --------------------------------------------------------------------
-###   install-ssm-agent.sh | © 2021 FXInnovation
+###   install-node-exporter.sh | © 2021 FXInnovation
 ### --------------------------------------------------------------------
-###   Script which will install Node Exporter
+###   Script which will install latest node exporter and make it a service
 ### --------------------------------------------------------------------
 ###   This code is for the use of "© 2021 FXInnovation" only.
 ###   Individuals using this code without authority, or in violation
@@ -11,22 +11,114 @@
 ###   copyright infringement will be reported to law enforcement officials.
 ### --------------------------------------------------------------------
 
-cd /tmp
-tar xvfz node_exporter-*.*-amd64.tar.gz
-mv node_exporter-*.*-amd64/node_exporter /usr/local/bin
 
-printf "[Unit]
-Description=Node Exporter
-After=network.target
+# Prepare minimal
+yum install -y \
+  wget \
+  unzip
 
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/node_exporter
+exec 1>>/tmp/migrate.log 2>&1
+echo "`date -u` Installation of node exporter"
 
-[Install]
-WantedBy=multi-user.target
-" > /etc/systemd/system/node-exporter.service
+REDHAT_VERSION=$(cat /etc/redhat-release | awk -F'[^0-9]*' '$0=$2')
 
-systemctl daemon-reload
-systemctl start node-exporter
-systemctl enable node-exporter
+if [ "${REDHAT_VERSION}" -ge 7 ]
+then
+
+    cd /tmp
+    tar xvfz /tmp/node_exporter-*.*-amd64.tar.gz
+    sudo mv /tmp/node_exporter-*.*-amd64/node_exporter /usr/local/bin
+
+    printf "[Unit]
+    Description=Node Exporter
+    After=network.target
+
+    [Service]
+    Type=simple
+    ExecStart=/usr/local/bin/node_exporter
+
+    [Install]
+    WantedBy=multi-user.target
+    " > /etc/systemd/system/node-exporter.service
+
+    systemctl daemon-reload
+    systemctl start node-exporter
+    systemctl enable node-exporter
+
+elif [[ "${REDHAT_VERSION}" -lt 7 ]]
+then
+  sudo useradd -rs /bin/false node_exporter
+
+  cd /tmp
+  tar xvfz /tmp/node_exporter-*.*-amd64.tar.gz
+  sudo mv /tmp/node_exporter-*.*-amd64/node_exporter /usr/local/bin
+
+cat << 'EOF' > /etc/init.d/node_exporter
+#!/bin/bash
+OPTIONS=`cat /etc/sysconfig/node_exporter`
+RETVAL=0
+PROG="node_exporter"
+EXEC="/usr/local/bin/node_exporter"
+LOCKFILE="/var/lock/subsys/$PROG"
+LOGFILE=/var/log/node_exporter.log
+ErrLOGFILE=/var/log/node_exporter_error.log
+# Source function library.
+if [ -f /etc/rc.d/init.d/functions ]; then
+  . /etc/rc.d/init.d/functions
+else
+  echo "/etc/rc.d/init.d/functions is not exists"
+  exit 0
+fi
+start() {
+  if [ -f $LOCKFILE ]
+  then
+    echo "$PROG is already running!"
+  else
+    echo -n "Starting $PROG: "
+    nohup $EXEC $OPTIONS > $LOGFILE 2> $ErrLOGFILE &
+    RETVAL=$?
+    [ $RETVAL -eq 0 ] && touch $LOCKFILE && success || failure
+    echo
+    return $RETVAL
+  fi
+}
+stop() {
+  echo -n "Stopping $PROG: "
+  killproc $EXEC
+  RETVAL=$?
+  [ $RETVAL -eq 0 ] && rm -r $LOCKFILE && success || failure
+  echo
+}
+restart ()
+{
+  stop
+  sleep 1
+  start
+}
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  status)
+    status $PROG
+    ;;
+  restart)
+    restart
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|status}"
+    exit 1
+esac
+exit $RETVAL
+EOF
+
+  chmod 755 /etc/init.d/node_exporter
+  service node_exporter start
+  sudo chkconfig --add node_exporter
+
+else
+    echo "Could not install Node Exporter: unknown version of redhat: ${REDHAT_VERSION}"
+fi

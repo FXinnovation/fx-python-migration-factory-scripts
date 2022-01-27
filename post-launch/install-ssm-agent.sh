@@ -12,17 +12,22 @@
 ### --------------------------------------------------------------------
 
 REDHAT_VERSION=$(cat /etc/redhat-release | awk -F'[^0-9]*' '$0=$2')
-REGION=us-east-1
+
+exec 1>>/tmp/migrate.log 2>&1
+echo "`date -u` Installation of ssm agent"
 
 if [ "${REDHAT_VERSION}" -ge 7 ]
 then
-    sudo yum install -y /tmp/amazon-ssm-agent-redhat7.rpm
+    sudo test -f /tmp/amazon-ssm-agent-redhat7.rpm && echo "package is present" ||  echo "package is not present"
+    sudo rpm -U /tmp/amazon-ssm-agent-redhat7.rpm
     sudo systemctl start amazon-ssm-agent
     sudo systemctl enable amazon-ssm-agent
 elif [[ "${REDHAT_VERSION}" -lt 7 ]]
 then
-    sudo yum install -y /tmp/amazon-ssm-agent-redhat6.rpm
-    sudo start amazon-ssm-agent
+    sudo test -f /tmp/amazon-ssm-agent-redhat6.rpm && echo "package is present" ||  echo "package is not present"
+    sudo rpm -U /tmp/amazon-ssm-agent-redhat6.rpm
+    sudo systemctl start amazon-ssm-agent
+    sudo systemctl enable amazon-ssm-agent
 else
     echo "Could not install SSM agent: unknown version of redhat: ${REDHAT_VERSION}"
 fi
