@@ -43,7 +43,7 @@ You can also use the command `source mf_setup_environment` to set all these envi
 
 ## Technical documentation
 
-See [this repository wiki](https://scm.dazzlingwrench.fxinnovation.com/fxinnovation-public/python-migration-factory-scripts/wiki).
+See [this repository wiki](https://github.com/FXinnovation/fx-python-migration-factory-scripts/wiki).
 
 ## Versioning
 This repository follows [Semantic Versioning 2.0.0](https://semver.org/)
@@ -60,7 +60,7 @@ pre-commit install -t commit-msg
 
 ## Commit Messages
 
-This repository follows the [afcmf](https://scm.dazzlingwrench.fxinnovation.com/fxinnovation-public/pre-commit-afcmf) standard for it's commit messages.
+This repository follows the [afcmf](https://github.com/FXinnovation/fx-pre-commit-afcmf) standard for it's commit messages.
 
 ## NOTE
 
