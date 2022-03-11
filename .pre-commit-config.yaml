@@ -11,7 +11,7 @@ repos:
     - id: check-yaml
     - id: no-commit-to-branch
     - id: requirements-txt-fixer
-- repo: https://scm.dazzlingwrench.fxinnovation.com/fxinnovation-public/pre-commit-afcmf
+- repo: https://github.com/FXinnovation/fx-pre-commit-afcmf
   rev: 0.1.1
   hooks:
     - id: afcmf_commit_validation
